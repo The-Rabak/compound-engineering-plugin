@@ -1,0 +1,26 @@
+{
+  "name": "compound-engineering-marketplace",
+  "owner": {
+    "name": "The Rabak",
+    "url": "https://github.com/The-Rabak/compound-engineering-plugin"
+  },
+  "metadata": {
+    "description": "Plugin marketplace for Claude Code extensions",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "compound-engineering",
+      "description": "AI-powered development tools. Make each unit of engineering work easier than the last. Includes 26 specialized agents, 22 commands, and 16 skills for code review, research, design, and workflow automation.",
+      "version": "4.0.0",
+      "author": {
+        "name": "The Rabak",
+        "url": "https://github.com/The-Rabak/compound-engineering-plugin",
+        "email": "arielvaron@gmail.com"
+      },
+      "homepage": "https://github.com/The-Rabak/compound-engineering-plugin",
+      "tags": ["ai-powered", "compound-engineering", "workflow-automation", "code-review", "quality", "knowledge-management", "image-generation"],
+      "source": "./plugins/compound-engineering"
+    }
+  ]
+}

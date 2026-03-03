@@ -1,0 +1,35 @@
+{
+  "name": "compound-engineering",
+  "version": "4.0.0",
+  "description": "AI-powered development tools. 26 specialized agents, 22 commands, and 16 skills for code review, research, design, and workflow automation.",
+  "author": {
+    "name": "The Rabak",
+    "email": "arielvaron@gmail.com",
+    "url": "https://github.com/The-Rabak/compound-engineering-plugin"
+  },
+  "homepage": "https://github.com/The-Rabak/compound-engineering-plugin",
+  "repository": "https://github.com/The-Rabak/compound-engineering-plugin",
+  "license": "MIT",
+  "keywords": [
+    "ai-powered",
+    "compound-engineering",
+    "workflow-automation",
+    "code-review",
+    "rust",
+    "laravel",
+    "vue",
+    "nestjs",
+    "python",
+    "typescript",
+    "knowledge-management",
+    "image-generation",
+    "agent-browser",
+    "browser-automation"
+  ],
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    }
+  }
+}
