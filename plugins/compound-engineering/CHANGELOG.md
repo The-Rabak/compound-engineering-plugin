@@ -5,15 +5,20 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.1.0] - 2025-07-18
+## [4.1.0] - 2026-03-07
 
 ### Added
 
-- **`rabak-nest-reviewer` agent** -- Specialized NestJS code review agent prioritizing simplicity, performance, and security (in that order). Covers module architecture, validation & DTOs (global ValidationPipe, class-validator), authentication & authorization (JWT, RBAC, Passport, refresh token rotation), security hardening (Helmet, CORS, throttler, exception filters), performance (async patterns, caching, connection pooling, N+1 prevention, pagination), error handling (BaseExceptionFilter, domain exceptions, graceful shutdown), TypeScript strict mode, testing (unit/E2E with Test.createTestingModule), configuration (@nestjs/config with Joi validation), observability (structured logging, correlation IDs), and API design (Swagger, versioning). Findings categorized as P1 (blocker), P2 (important), P3 (nice-to-have).
+- **Execution agent prompt template** (`commands/workflows/references/execution-agent-prompt.md`) -- Standardized 4-phase protocol for all execution subagents: understand (question/assumption phase), implement (standard or TDD), self-review (completeness, quality, discipline, testing, evidence), structured report. Inspired by superpowers plugin's implementer-prompt pattern, adapted for compound engineering's learnings-based methodology.
+- **Spec compliance review prompt** (`commands/workflows/references/spec-review-prompt.md`) -- Lightweight per-task spec compliance check for inline review mode. Verifies implementation matches specification by reading actual code, not trusting implementer reports.
+- **Code quality review prompt** (`commands/workflows/references/quality-review-prompt.md`) -- Lightweight per-task quality check for inline review mode. Dispatched only after spec compliance passes. Checks code quality, testing, architecture, security, and performance basics.
+- **`systematic-debugging` skill** -- Structured 4-phase debugging methodology (observe, hypothesize, test, fix) for diagnosing unexpected errors during implementation. Prevents trial-and-error guessing. Complements existing `bug-reproduction-validator` agent (which validates reported bugs).
+- **`finishing-branch` skill** -- Structured branch completion workflow: final verification (tests + lint), completion options (merge/PR/keep/discard), worktree cleanup, plan status updates. Referenced by `workflows:work` Phase 4.
 
 ### Changed
 
-- Agent count bumped from 25 to 26 in README.md
+- **`workflows:work`** -- Added `--review-mode bulk|inline|both` argument (default: `bulk`). Subagent prompts now reference execution agent template for standardized 4-phase protocol. When `inline` or `both` mode is active, two-stage review (spec compliance then code quality) runs after each task. Added `finishing-branch` skill reference to Phase 4. Added `systematic-debugging` reference to failure handling principles.
+- Skill count bumped from 16 to 18 in plugin.json, marketplace.json, and README.md
 
 ## [4.0.0] - 2026-03-03
 

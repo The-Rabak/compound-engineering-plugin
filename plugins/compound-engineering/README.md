@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 26 specialized agents, 22 commands, and 16 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 26 specialized agents, 22 commands, and 18 skills.
 
 ## Components
 
@@ -8,7 +8,7 @@ AI-powered development tools that get smarter with every use. Make each unit of 
 |-----------|-------|
 | Agents | 26 |
 | Commands | 22 |
-| Skills | 16 |
+| Skills | 18 |
 | Hooks | 1 |
 | MCP Servers | 1 |
 
@@ -123,9 +123,11 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `brainstorming` | Explore requirements and approaches through collaborative dialogue |
 | `document-review` | Improve documents through structured self-review |
 | `file-todos` | File-based todo tracking system |
+| `finishing-branch` | Structured branch completion with verification, merge/PR options, and cleanup |
 | `git-worktree` | Manage Git worktrees for parallel development |
 | `resolve-pr-parallel` | Resolve PR review comments in parallel |
 | `setup` | Configure which review agents run for your project |
+| `systematic-debugging` | Structured 4-phase debugging methodology (observe, hypothesize, test, fix) |
 
 ### Multi-Agent Orchestration
 

@@ -1,7 +1,7 @@
 {
   "name": "compound-engineering",
-  "version": "4.0.0",
-  "description": "AI-powered development tools. 26 specialized agents, 22 commands, and 16 skills for code review, research, design, and workflow automation.",
+  "version": "4.1.0",
+  "description": "AI-powered development tools. 26 specialized agents, 22 commands, and 18 skills for code review, research, design, and workflow automation.",
   "author": {
     "name": "The Rabak",
     "email": "arielvaron@gmail.com",

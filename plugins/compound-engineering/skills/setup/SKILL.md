@@ -176,12 +176,18 @@ options:
 
 **Plan review agents:** stack-specific reviewer + `code-simplicity-reviewer`.
 
+**Execution settings:**
+- `tdd_enabled`: false (default) or true (enables TDD mode in execution agent template)
+- `review_mode`: "bulk" (default), "inline", or "both" (controls per-task review in workflows:work)
+
 Write `compound-engineering.local.md`:
 
 ```markdown
 ---
 review_agents: [{computed agent list}]
 plan_review_agents: [{computed plan agent list}]
+tdd_enabled: false
+review_mode: bulk
 ---
 
 # Review Context

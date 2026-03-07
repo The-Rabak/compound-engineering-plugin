@@ -1,7 +1,7 @@
 ---
 name: workflows:work
 description: Execute work plans efficiently while maintaining quality and finishing features
-argument-hint: "[plan file, specification, or todo file path]"
+argument-hint: "[plan file, specification, or todo file path] [--review-mode bulk|inline|both]"
 ---
 
 # Work Plan Execution Command
@@ -10,7 +10,17 @@ Execute a work plan efficiently while maintaining quality and finishing features
 
 ## Introduction
 
-This command takes a work document (plan, specification, or todo file) and executes it systematically using a **subagent orchestration model**. The orchestrator (this conversation) decomposes the plan into scoped chunks and delegates each to a focused subagent. Each subagent implements, tests, and retries independently. Execution learnings accumulate across tasks via session files, compounding knowledge throughout the build.
+This command takes a work document (plan, specification, or todo file) and executes it systematically using a **subagent orchestration model**. The orchestrator (this conversation) decomposes the plan into scoped chunks and delegates each to a focused subagent. Each subagent follows a standardized 4-phase protocol (understand, implement, self-review, report) defined in the execution agent prompt template. Execution learnings accumulate across tasks via session files, compounding knowledge throughout the build.
+
+### Review Mode
+
+This command supports a `--review-mode` argument that controls when code review happens:
+
+- **`bulk`** (default) -- Review happens after ALL tasks complete, using `/workflows:review`. This is the standard behavior and is fastest for most work.
+- **`inline`** -- After each task, a lightweight two-stage review (spec compliance then code quality) runs automatically. Catches spec drift early but adds 2-4 extra subagent calls per task.
+- **`both`** -- Inline review per task AND comprehensive `/workflows:review` at the end. Maximum quality assurance.
+
+If no `--review-mode` is specified, check `compound-engineering.local.md` for a `review_mode` setting. If not found there either, default to `bulk`.
 
 ## Input Document
 
@@ -159,14 +169,23 @@ For each task (or parallel batch of tasks), follow this cycle:
 
 ##### a. Build Scoped Prompt
 
-For each task, the orchestrator constructs a focused prompt containing ONLY what the subagent needs:
+For each task, the orchestrator constructs a focused prompt by reading the **execution agent prompt template** from `commands/workflows/references/execution-agent-prompt.md` and filling in the context blocks:
 
-- **Task description and acceptance criteria** -- exactly what to implement
-- **Files to read/create/modify** -- from the plan
-- **Success criteria and test command** -- how the subagent knows it succeeded
-- **Learnings brief** from previous tasks, filtered by domain relevance (only include backend learnings for backend tasks, frontend learnings for frontend tasks, etc.)
-- **Project conventions** from CLAUDE.md
-- **Relevant code patterns** from the plan's references section (if any)
+- **{{TASK_NAME}}** and **{{TASK_DESCRIPTION}}** -- from the plan
+- **{{FILE_LIST}}** -- files to create/modify from the plan
+- **{{SUCCESS_CRITERIA}}** -- checkboxes that define "done"
+- **{{TEST_COMMAND}}** -- how to verify the task works
+- **{{COMPLETED_DEPENDENCIES}}** -- list of already-completed tasks this depends on
+- **{{ARCHITECTURAL_CONTEXT}}** -- where this task fits in the larger feature
+- **{{LEARNINGS_BRIEF}}** -- from previous tasks, filtered by domain relevance (only include backend learnings for backend tasks, frontend learnings for frontend tasks, etc.)
+- **{{PROJECT_CONVENTIONS}}** -- from CLAUDE.md
+- **{{TDD_SECTION}}** -- if `tdd_enabled: true` in `compound-engineering.local.md`, include the TDD Implementation Section from the template; otherwise include the Standard Implementation Section
+
+The execution agent template instructs each subagent to follow a 4-phase protocol:
+1. **Understand** -- review requirements, surface ambiguities, state assumptions before coding
+2. **Implement** -- follow standard or TDD mode, retry on failure (up to 3 attempts)
+3. **Self-review** -- check completeness, quality, discipline, testing, and evidence
+4. **Report** -- return a structured execution report with test output, assumptions, patterns discovered
 
 ##### b. Spawn Subagent
 
@@ -176,7 +195,7 @@ Delegate the task to a focused subagent:
 Task(general-purpose, prompt=scoped_prompt)
 ```
 
-The subagent prompt must instruct it to:
+The subagent prompt is constructed from the execution agent template (`commands/workflows/references/execution-agent-prompt.md`). The template already includes instructions for the 4-phase protocol (understand, implement, self-review, report). The orchestrator fills in the context blocks and passes the result:
 
 1. Read referenced files and understand existing patterns
 2. Implement the task following conventions
@@ -275,18 +294,54 @@ session_id: [SESSION_ID]
 - Attempts: [n]
 ```
 
-**2. Update STATE.md** -- mark the task status, increment `current_task`, update the task status table
+**2. Inline Review (when `--review-mode inline` or `--review-mode both`)**
 
-**3. Update learnings brief** -- add new learnings from this task, tagged by domain, deduplicated against existing learnings
+   If the `--review-mode` argument is `inline` or `both`, perform a two-stage inline review before proceeding to the next task. If `--review-mode` is `bulk` (the default), skip this step.
 
-**4. Update plan file** -- check off completed items (`[ ]` to `[x]`) in the original plan document
+   **Stage 1: Spec Compliance Review**
 
-**5. Regression guard** -- run test commands from ALL previously completed tasks. If any regress:
+   Read the spec review prompt template from `commands/workflows/references/spec-review-prompt.md`. Fill in:
+   - `{{TASK_REQUIREMENTS}}` -- the task description and success criteria
+   - `{{SUCCESS_CRITERIA}}` -- the success criteria checkboxes
+   - `{{IMPLEMENTER_REPORT}}` -- the execution report from the subagent
+
+   Spawn a spec reviewer subagent:
+   ```
+   Task(general-purpose, prompt=filled_spec_review_prompt)
+   ```
+
+   - If **PASS**: proceed to Stage 2
+   - If **FAIL**: spawn a new execution subagent with the specific issues to fix, then re-run the spec reviewer (max 2 fix-review cycles). If still failing after 2 cycles, log the issues and ask the user how to proceed.
+
+   **Stage 2: Code Quality Review** (only after spec compliance passes)
+
+   Read the quality review prompt template from `commands/workflows/references/quality-review-prompt.md`. Fill in:
+   - `{{IMPLEMENTER_REPORT}}` -- the execution report
+   - `{{FILES_CHANGED}}` -- list of files from the report
+
+   Spawn a quality reviewer subagent:
+   ```
+   Task(general-purpose, prompt=filled_quality_review_prompt)
+   ```
+
+   - If **PASS**: proceed to next steps
+   - If **FAIL** with Critical issues: spawn fix subagent, re-review (max 2 cycles)
+   - If **FAIL** with only Important/Minor issues: log them for the orchestrator's attention but proceed to next task (these will also be caught by `/workflows:review` if run later)
+
+   **Note:** Inline review is a lightweight per-task check. It does NOT replace the comprehensive `/workflows:review` multi-agent review. When `--review-mode both` is active, inline review runs per-task AND `/workflows:review` runs after all tasks complete.
+
+**3. Update STATE.md** -- mark the task status, increment `current_task`, update the task status table
+
+**4. Update learnings brief** -- add new learnings from this task, tagged by domain, deduplicated against existing learnings
+
+**5. Update plan file** -- check off completed items (`[ ]` to `[x]`) in the original plan document
+
+**6. Regression guard** -- run test commands from ALL previously completed tasks. If any regress:
    - Log the regression in the current task's session file
    - Spawn a fix subagent with context about what broke and why
    - Do not proceed to the next task until the regression is fixed
 
-**6. Incremental commit** if appropriate (logical unit complete, tests pass):
+**7. Incremental commit** if appropriate (logical unit complete, tests pass):
 
    | Commit when... | Don't commit when... |
    |----------------|---------------------|
@@ -356,6 +411,14 @@ If a subagent fails after its internal retries:
    - If there is truly no production/runtime impact, still include the section with: `No additional operational monitoring required` and a one-line reason.
 
 ### Phase 4: Ship It
+
+Use the `finishing-branch` skill for structured branch completion. This skill handles final verification, commit, merge/PR options, worktree cleanup, and plan status updates.
+
+```
+skill: finishing-branch
+```
+
+If the `finishing-branch` skill is not available, follow the manual steps below:
 
 1. **Create Commit**
 
@@ -602,6 +665,7 @@ See the `orchestrating-swarms` skill for detailed swarm patterns and best practi
 - Escalation path (reframe, ask user, skip, stop) -- not infinite loops
 - Progress is persistent: STATE.md means you can resume after crashes
 - Regression is caught early: previous tests re-run after each task
+- When debugging unexpected errors, use the `systematic-debugging` skill for structured root-cause analysis instead of trial-and-error
 
 ## Quality Checklist
 

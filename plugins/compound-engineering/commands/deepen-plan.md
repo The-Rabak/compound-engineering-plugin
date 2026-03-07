@@ -103,6 +103,37 @@ Execution Readiness: X/Y tasks have complete structure (Z%)
 3. Write concrete success criteria (not vague goals)
 4. Determine the test command (look at existing test patterns in the codebase)
 5. Map dependencies between tasks
+6. Add a suggested commit message per task (conventional format: `feat(scope): description`)
+
+### 1.2 Task Complexity Check
+
+<thinking>
+Check if any tasks are too large for reliable subagent execution. Large tasks with many files or success criteria should be split.
+</thinking>
+
+**For each task, check complexity:**
+
+| Metric | Threshold | Action |
+|--------|-----------|--------|
+| Files touched | > 3 files | Flag for splitting |
+| Success criteria | > 5 criteria | Flag for splitting |
+| Multiple concerns | Mixes backend + frontend | Flag for splitting |
+| Vague scope | "Implement the feature" | Flag for clarification |
+
+**If any tasks exceed thresholds:**
+
+Report:
+```
+Task Complexity Warning: X tasks may be too large for reliable subagent execution.
+
+Task 2.1: "Build user auth" -- touches 5 files, 7 success criteria
+  Suggestion: Split into "Create auth service" (3 files) and "Add auth middleware" (2 files)
+
+Task 3.2: "Build dashboard UI" -- mixes backend API + frontend component
+  Suggestion: Split into "Create dashboard API endpoint" and "Build dashboard component"
+```
+
+Suggest splits that create self-contained tasks with non-overlapping file sets. Each split task should be completable by one subagent in a single session.
 
 **This validation ensures the plan is ready for `/workflows:work`'s subagent orchestration model**, where each task is delegated to a focused subagent with clear scope and termination criteria.
 
