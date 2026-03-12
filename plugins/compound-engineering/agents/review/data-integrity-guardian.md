@@ -79,6 +79,7 @@ When you identify issues:
 
 When reviewing database migrations in any framework, additionally verify:
 
+- **Never modify existing migrations**: Once a migration has been run in any environment (development, staging, or production), it must never be modified. Create a new migration to correct mistakes. Modifying existing migrations causes schema drift that is nearly impossible to recover from.
 - **Idempotent migrations**: Migrations must be safe to re-run (use IF NOT EXISTS, IF EXISTS guards)
 - **Separate concerns**: Table creation, indexes, and foreign keys in separate migration steps
 - **Ordered execution**: Migrations must be sequentially numbered or timestamped for deterministic ordering
@@ -89,13 +90,32 @@ When reviewing database migrations in any framework, additionally verify:
 
 ## Zero-Downtime Schema Changes
 
-Verify that schema changes follow safe deployment patterns:
+Verify that schema changes follow safe deployment patterns for live production databases:
 
-- **Expand-contract pattern**: Add new columns/tables first, migrate data, then remove old structures
-- **Non-locking DDL**: Prefer online DDL operations; avoid exclusive table locks on large tables
-- **Backward compatibility**: New schema must work with both old and new application code during rollout
-- **Column additions**: New columns must have defaults or be nullable to avoid full table rewrites
-- **Column removals**: Stop reading the column in code before dropping it from the schema
+- **Expand-contract pattern**: Add new columns/tables first, migrate data, then remove old structures. Never rename a column in a single migration.
+- **Non-locking DDL**: For large tables (>100k rows), prefer online DDL operations:
+  - MySQL/InnoDB: Many DDL operations are online in MySQL 8.0+ -- verify with `ALGORITHM=INSTANT` or `ALGORITHM=INPLACE` where possible
+  - Use pt-online-schema-change (pt-osc) or gh-ost for schema changes on tables that cannot tolerate any locking
+  - Flag `ALTER TABLE` on large tables without online DDL justification as P1
+- **Backward compatibility**: New schema must work with both old and new application code during rolling deploys
+- **Column additions**: New columns MUST have defaults or be nullable -- adding a NOT NULL column without a default rewrites the entire table on older MySQL versions
+- **Column removals**: Stop reading the column in application code before dropping it from the schema (two-phase removal)
+- **Index creation**: Create indexes with `CREATE INDEX ... ALGORITHM=INPLACE, LOCK=NONE` -- never during a transaction
+- **Constraint additions**: Adding foreign key constraints on large tables with existing data requires full table scan -- plan for maintenance windows or use pt-osc
+
+## JSON & Enum Column Safety
+
+### JSON Columns
+- **Schema validation**: JSON columns have no database-level schema enforcement -- verify application-level validation exists (JSON schema, class-validator, or equivalent)
+- **JSON path queries**: Flag unindexed JSON path queries on large tables -- generate JSON path indexes where supported (MySQL 8.0+)
+- **Nullable vs not-null JSON**: Decide explicitly -- `NULL` vs `'{}'` vs `'null'` (JSON null) are three different states; document the convention
+- **Migration safety**: Adding a JSON column with a default value is safe; removing a JSON column must follow the expand-contract pattern
+
+### Enum Columns
+- **Never remove an enum value**: Removing a MySQL enum value requires a full table rewrite. Flag enum removal without a migration plan as P1.
+- **Adding enum values**: In MySQL 8.0+, adding a value to an existing enum is instant -- but only if the new value is appended at the end of the list.
+- **Enum vs lookup table**: Enums are difficult to migrate and impossible to extend without a migration. Prefer lookup tables for values that may change.
+- **Sync application enums**: Verify that application-level enum definitions (PHP/TypeScript/etc.) exactly match the database enum values -- a mismatch causes silent data corruption.
 
 ## Data Versioning & Auditing
 

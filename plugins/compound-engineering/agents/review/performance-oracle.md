@@ -53,6 +53,7 @@ Perform Big O analysis for all loops and data transformations. Evaluate both tim
 - Identify loops that execute queries per iteration
 - Recommend eager loading, join strategies, or batch fetching
 - Verify that ORM relationships are loaded before access
+- **Eloquent / ORM strict mode:** Flag codebases that have not enabled `preventLazyLoading()` in development -- lazy loading N+1 is the single most common performance issue in ORM-based applications and must be detected at development time, not in production
 
 ### Index Analysis
 - Check for missing indexes on columns used in WHERE, JOIN, ORDER BY, and GROUP BY clauses
@@ -110,34 +111,13 @@ Evaluate the caching architecture at every layer:
 
 ## 5. Web Performance (Frontend)
 
-### Core Web Vitals
-- LCP (Largest Contentful Paint): target < 2.5s
-- FID / INP (First Input Delay / Interaction to Next Paint): target < 100ms
-- CLS (Cumulative Layout Shift): target < 0.1
-
-### Bundle Optimization
-- Verify tree shaking removes dead code
-- Recommend code splitting and dynamic imports for route-level or feature-level chunks
-- Flag new dependencies that significantly increase bundle size
-
-### Lazy Loading
-- Images below the fold, heavy components, and non-critical routes should load on demand
-
-### Rendering Strategy
-- Evaluate SSR vs SSG vs CSR tradeoffs for the use case
-- Recommend static generation for content that does not change per-request
-
-### Resource Hints
-- Use `preload` for critical resources, `prefetch` for likely next navigations, `preconnect` and `dns-prefetch` for third-party origins
-
-### Image Optimization
-- Recommend modern formats (WebP, AVIF) with fallbacks
-- Verify responsive images with srcset and appropriate sizes
-- Ensure lazy loading via `loading="lazy"` or Intersection Observer
-
-### Font Loading
-- Use `font-display: swap` or `optional` to avoid invisible text
-- Recommend font subsetting and preloading critical font files
+- **Core Web Vitals targets:** LCP < 2.5s, INP < 100ms, CLS < 0.1 -- flag code patterns that negatively impact these
+- **Bundle size:** Verify tree shaking; flag new large dependencies; recommend code splitting and dynamic imports for route-level chunks; initial JS bundle (gzipped) should stay under 200KB
+- **Lazy loading:** Images below the fold, heavy components, and non-critical routes must load on demand
+- **Rendering strategy:** Evaluate SSR vs SSG vs CSR tradeoffs; recommend static generation for content that does not change per request
+- **Resource hints:** Use `preload` for critical resources, `prefetch` for likely next navigations, `preconnect`/`dns-prefetch` for third-party origins
+- **Images:** Recommend modern formats (WebP/AVIF) with fallbacks; verify `srcset` and `loading="lazy"`
+- **Fonts:** Verify `font-display: swap` or `optional` to prevent invisible text during load
 
 ## 6. Memory Management
 
@@ -162,6 +142,18 @@ Evaluate the caching architecture at every layer:
 - **Sharding**: Evaluate data partitioning strategies when single-node capacity is a concern
 - **Event-driven architecture**: Decouple producers and consumers via message brokers for asynchronous workloads
 - **Circuit breaker**: Implement fail-fast patterns to prevent cascading failures across service boundaries
+
+## 9. Observability & Profiling
+
+Performance issues that are not measured cannot be fixed. Verify:
+
+- **APM integration:** Check for application performance monitoring (New Relic, Datadog, Sentry Performance, Laravel Telescope in development). Flag production codebases with no APM tooling.
+- **Query count enforcement:** In test/development environments, assert or log query counts per request. Flag absence of query count assertions in performance-sensitive test suites.
+- **Slow query logging:** Verify slow query log is enabled in development/staging databases. Flag missing slow query threshold configuration.
+- **Profiling toolchain:** For backend, recommend XHProf, Blackfire, or built-in profiling (e.g., `EXPLAIN ANALYZE`). For frontend, recommend Lighthouse CI or WebPageTest in CI pipelines.
+- **Distributed tracing:** For microservices or distributed systems, verify trace context propagation (OpenTelemetry, Jaeger, Zipkin).
+- **Metrics collection:** Verify request duration histograms, error rates, queue depths, and cache hit ratios are instrumented and dashboarded.
+- **Performance budgets:** Flag absence of performance budget enforcement in CI (bundle size limits, Lighthouse score thresholds).
 
 ---
 
@@ -202,8 +194,9 @@ Follow this systematic approach for every review:
 3. **Check caching strategy**: Evaluate what is cached, TTLs, invalidation, and hit ratios
 4. **Review async patterns**: Verify parallel execution of independent operations, streaming for large data
 5. **Evaluate memory management**: Look for leaks, unbounded growth, and excessive allocation
-6. **Check network optimization**: Compression, batching, connection reuse, payload sizes
-7. **Validate against benchmarks**: Compare findings against the thresholds above
+6. **Check observability:** Verify APM, query count enforcement, and profiling toolchain are in place
+7. **Check network optimization**: Compression, batching, connection reuse, payload sizes
+8. **Validate against benchmarks**: Compare findings against the thresholds above
 
 ---
 

@@ -111,6 +111,11 @@ Verify migrations follow safe deployment strategies:
 - **Blue-green deployment support**: Migration must be compatible with both old and new code running simultaneously
 - **Idempotent migrations**: Every migration must be safe to re-run without side effects
 - **Reversibility requirement**: Document whether the migration is reversible; if not, explain why and what the recovery plan is
+- **MySQL DDL locking**: Understand which MySQL DDL operations acquire locks:
+  - `ALGORITHM=INSTANT`: Available for adding nullable columns in MySQL 8.0+ -- no rebuild, no lock
+  - `ALGORITHM=INPLACE`: Rebuilds table in-place -- allows concurrent reads but blocks writes briefly
+  - `ALGORITHM=COPY`: Full table copy -- blocks all reads and writes (avoid on tables >100k rows in production)
+  - When in doubt, test with `ALTER TABLE ... ALGORITHM=INSTANT` first; if unsupported, escalate to pt-osc
 
 ## Data Backfill Strategies
 
@@ -121,6 +126,43 @@ For backfills, verify:
 - [ ] Backfill can run concurrently with live traffic without data races
 - [ ] Backfill has been tested against production-like data volumes (not just fixtures)
 - [ ] Estimated runtime and resource impact are documented
+
+## High-Risk Migration Type Checklists
+
+### Enum Column Migrations
+
+Enum columns are high-risk. Use this checklist for any migration that adds, removes, or renames an enum value:
+
+- [ ] **Never remove an enum value** in a single-step migration -- this requires a full table rewrite and can break application code reading old values from the database
+- [ ] **Adding new enum values**: Only append at the end of the existing list; adding in the middle or beginning reorders internal MySQL storage
+- [ ] **Renaming an enum value**: Requires dual-write -- add the new value, update all code to write the new value, backfill all old values, then remove the old value in a separate migration
+- [ ] **Verify all application enums** (PHP, TypeScript, etc.) exactly match the database enum definition after migration
+- [ ] Provide a rollback plan -- can the old enum value be restored if the deploy is reverted?
+
+### Column Type Change Migrations
+
+- [ ] Assess implicit data truncation: changing from VARCHAR(255) to VARCHAR(100) silently truncates data exceeding 100 characters
+- [ ] Assess implicit data loss: INT -> SMALLINT, BIGINT -> INT -- verify no values exceed the target type's range
+- [ ] Numeric precision changes (DECIMAL(10,2) -> DECIMAL(8,2)) can silently truncate values
+- [ ] Text encoding changes (latin1 -> utf8mb4) may fail on rows with characters not representable in the target encoding
+- [ ] Changing NULL -> NOT NULL requires either a backfill of all NULL values or a DEFAULT -- verify no NULL rows exist before the migration runs
+- [ ] Test the column type change against a production data sample, not just fixtures
+
+### ID Type Change Migrations (e.g., INT -> BIGINT, or INT -> UUID)
+
+- [ ] All foreign keys referencing this column must also be changed in the same or a coordinated migration
+- [ ] Application code that assumes the ID type (casts, comparisons, serialization) must be updated
+- [ ] API consumers that receive this ID in responses may break if the format changes (numeric -> string for UUID)
+- [ ] Index coverage: the new column type may require different index strategies
+- [ ] For UUID migrations: dual-write both old and new IDs during transition; route model binding, URLs, and external references all need updating
+
+### Table Rename Migrations
+
+- [ ] All foreign keys pointing to this table must be updated
+- [ ] All application code referencing the old table name (models, repositories, raw queries, event listeners, jobs) must be updated
+- [ ] Audit logs, analytics, and reporting systems that reference the old table name by string
+- [ ] Background jobs that may be in-flight during the migration (jobs referencing old table name in serialized payloads)
+- [ ] Database views that reference the old table name
 
 ## Migration Testing Requirements
 

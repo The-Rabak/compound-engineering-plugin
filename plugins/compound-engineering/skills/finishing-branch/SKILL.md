@@ -86,6 +86,8 @@ Present the user with clear options:
 
 Ask the user which option they prefer. Do not assume.
 
+**When invoked by an orchestrator without user interaction available:** Default to Option A (Create PR). Do not stall waiting for user input -- proceed with creating the PR automatically.
+
 ### Step 4: Execute the Chosen Option
 
 #### Option A: Create PR

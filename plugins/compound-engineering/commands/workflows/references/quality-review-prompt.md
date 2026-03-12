@@ -59,7 +59,7 @@ Strengths: [brief summary of what was done well]
 ## Quality Review: FAIL
 
 ### Issues Found
-1. **[Critical/Important/Minor]:** [Description]
+1. **[P1 (Blocker)/P2 (Important)/P3 (Nice-to-have)]:** [Description]
    - File: `path/to/file:line`
    - Problem: [what is wrong]
    - Suggestion: [how to fix]
@@ -67,12 +67,12 @@ Strengths: [brief summary of what was done well]
 2. ...
 
 ### Summary
-- Critical: [count] (must fix before proceeding)
-- Important: [count] (should fix)
-- Minor: [count] (consider fixing)
+- P1 (Blocker): [count] (must fix before proceeding)
+- P2 (Important): [count] (should fix)
+- P3 (Nice-to-have): [count] (consider fixing)
 ```
 
 **Severity definitions:**
-- **Critical:** Bug, security vulnerability, data loss risk, or broken functionality. Must fix.
-- **Important:** Code smell, missing error handling, poor testability, or maintainability concern. Should fix.
-- **Minor:** Style issue, naming improvement, or minor optimization. Consider fixing.
+- **P1 (Blocker):** Bug, security vulnerability, data loss risk, or broken functionality. Must fix before proceeding.
+- **P2 (Important):** Code smell, missing error handling, poor testability, or maintainability concern. Should fix.
+- **P3 (Nice-to-have):** Style issue, naming improvement, or minor optimization. Consider fixing.

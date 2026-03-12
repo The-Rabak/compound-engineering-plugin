@@ -83,7 +83,7 @@ options:
 - **Vue/Nuxt:** `[rabak-vue-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
 - **React/Next.js:** `[rabak-typescript-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
 - **Angular:** `[rabak-typescript-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
-- **NestJS:** `[rabak-typescript-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
+- **NestJS:** `[rabak-nest-reviewer, rabak-typescript-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
 - **TypeScript:** `[rabak-typescript-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
 - **JavaScript:** `[rabak-typescript-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
 - **Python:** `[rabak-python-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
@@ -93,7 +93,7 @@ options:
 
 ### If Customize -> Step 3
 
-## Step 3: Customize (3 questions)
+## Step 3: Customize (5 questions)
 
 **a. Stack** -- confirm or override:
 
@@ -112,7 +112,7 @@ options:
   - label: "Angular"
     description: "Angular -- adds TypeScript reviewer"
   - label: "NestJS"
-    description: "NestJS -- adds TypeScript reviewer"
+    description: "NestJS -- adds NestJS and TypeScript reviewers"
   - label: "Python"
     description: "Python -- adds Pythonic pattern reviewer"
   - label: "Rust"
@@ -154,12 +154,39 @@ options:
     description: "All above + git history, data integrity, agent-native checks."
 ```
 
+**d. TDD mode:**
+
+```
+question: "Enable TDD mode?"
+header: "TDD"
+options:
+  - label: "Disabled (Default)"
+    description: "Standard implementation workflow. Tests optional."
+  - label: "Enabled"
+    description: "Enforces test-first workflow. Agents verify tests exist before implementation proceeds."
+```
+
+**e. Review mode:**
+
+```
+question: "When should reviews run during /workflows:work?"
+header: "Review mode"
+options:
+  - label: "Bulk (Default)"
+    description: "Review runs once at the end of all tasks. Faster, less interruption."
+  - label: "Inline"
+    description: "Review runs after each task. Slower, but catches issues earlier."
+  - label: "Both"
+    description: "Inline review per task AND bulk review at the end."
+```
+
 ## Step 4: Build Agent List and Write File
 
 **Stack-specific agents:**
 - Laravel/PHP -> `rabak-laravel-reviewer`
 - Vue/Nuxt -> `rabak-vue-reviewer`
-- React/Next.js/Angular/NestJS/TypeScript/JavaScript -> `rabak-typescript-reviewer`
+- React/Next.js/Angular/TypeScript/JavaScript -> `rabak-typescript-reviewer`
+- NestJS -> `rabak-nest-reviewer, rabak-typescript-reviewer`
 - Python -> `rabak-python-reviewer`
 - Rust/Go/General -> (none)
 

@@ -111,7 +111,7 @@ You will systematically evaluate code against every OWASP Top 10 2025 category:
 - **Sensitive data in logs**: Flag passwords, tokens, API keys, PII, or session identifiers written to log output.
 - **Log injection**: Check for unsanitized user input in log messages that could corrupt log integrity or exploit log viewers.
 
-### A10: Insufficient Attack Protection
+### A10: Application Defense Failures
 
 - **No WAF/DDoS awareness**: Note absence of rate limiting or web application firewall integration for public-facing endpoints.
 - **Missing request size limits**: Verify maximum request body size is configured to prevent resource exhaustion.
@@ -126,6 +126,33 @@ You will systematically evaluate code against every OWASP Top 10 2025 category:
 - **Secrets rotation**: Note whether the project supports or documents secrets rotation strategy.
 - **.env in .gitignore**: Verify `.env` and similar secret-containing files are in `.gitignore`. Flag any committed `.env` files.
 - **No secrets in commit history**: Flag any evidence of secrets in prior commits (e.g., `.env.example` with real values).
+
+---
+
+## AI / LLM Security
+
+Applications integrating AI or LLM providers introduce a new attack surface. When the codebase includes AI/LLM integrations, verify:
+
+### Prompt Injection
+- **Direct prompt injection:** Flag user input that is concatenated directly into LLM prompts without sanitization or role separation
+- **Indirect prompt injection:** Flag cases where LLM is given user-controlled content to process (documents, URLs, emails) without sandboxing the output context
+- **Mitigation:** Use system/user role separation; never allow user input to override system instructions; treat LLM output as untrusted
+
+### LLM Output Validation
+- **Unvalidated LLM output used in code execution:** Flag any case where LLM output is passed to `eval()`, `exec()`, shell commands, SQL queries, or file system operations without validation
+- **Unvalidated LLM output rendered as HTML:** Flag `innerHTML` or equivalent with raw LLM output -- treat LLM output as untrusted user input for XSS purposes
+- **Schema validation:** Verify structured LLM outputs (JSON mode, function calling) are validated against a strict schema before use
+
+### Data Leakage to AI Providers
+- **PII in prompts:** Flag personally identifiable information, session tokens, API keys, or sensitive business data sent to third-party AI providers
+- **Data residency:** Note if AI provider data processing agreements align with applicable regulations (GDPR, COPPA, FERPA)
+- **Logging of prompts/responses:** Verify that LLM request/response logs do not inadvertently store sensitive user data
+
+### AI Provider Integration Security
+- **API key management:** Verify AI provider API keys are stored as environment variables, never hardcoded
+- **Rate limiting:** Verify AI-powered endpoints have rate limiting to prevent prompt abuse and cost exploitation
+- **Response timeout:** Verify timeouts are configured for AI API calls to prevent request queue exhaustion
+- **Cost controls:** Note absence of usage limits or cost alerting for AI API calls
 
 ---
 

@@ -67,12 +67,30 @@ Refactoring patterns to suggest:
 | Parameters | <= 3 | 4 | > 4 (use options object/DTO) |
 | Nesting depth | <= 2 levels | 3 levels | > 5 levels |
 | Cognitive complexity | <= 10 | 11-15 | > 25 |
+| Constructor dependencies | <= 5 | 6-7 | > 8 (split the class) |
 
 Principles:
 - **Single responsibility**: Each function does ONE thing. If you need the word "and" to describe it, split it.
 - **Prefer early returns** over deeply nested `else` blocks. Invert conditions and return early.
 - **No boolean parameters** that change function behavior -- split into two functions instead.
 - **Pure functions** where possible -- same inputs always produce same outputs, no side effects.
+- **No god constructors**: A constructor with more than 8 injected dependencies is a P1 blocker -- the class has too many responsibilities. Split it.
+
+---
+
+## 2a. File & Class Size Limits
+
+| Metric | Acceptable | Needs Justification | Blocker |
+|---|---|---|---|
+| File length | <= 200 lines | 201-400 lines | > 500 lines |
+| Class/component | <= 200 lines | 201-400 lines | > 500 lines |
+| Public methods per class | <= 10 | 11-20 | > 20 |
+
+Rules:
+- **God classes (> 500 lines)**: Split into smaller, focused classes. A file over 500 lines is almost certainly doing too many things.
+- **Public API surface**: A class with more than 20 public methods is a design smell -- consider splitting by responsibility.
+- **File length**: Files over 500 lines should be split. Long files hide complexity and make navigation difficult.
+- **Exception**: Auto-generated files and files that are intentionally exhaustive (e.g., enum definitions, translation files) may exceed these limits with documented justification.
 
 ---
 
@@ -142,6 +160,19 @@ Mindless DRY creates **wrong abstractions** that are far worse than duplication.
 - **TODO comments MUST have a ticket/issue reference**: `// TODO` with no link is a graveyard. Flag it.
 - **Remove outdated/misleading comments**: A wrong comment is worse than no comment -- it actively misleads future developers.
 - **No section-divider comments**: `// ========== HELPERS ==========` means the file should be split, not decorated.
+
+---
+
+## 7a. Error Handling Complexity
+
+Error handling is the most common source of hidden complexity. Flag these patterns:
+
+- **Nested try-catch**: More than one level of try-catch nesting is a smell -- extract the inner block into its own function.
+- **Catch-all swallowing exceptions**: `catch (e) {}` or `catch (e) { logger.error(e) }` that swallows the exception and continues as if nothing happened. If you can't handle the error, let it propagate.
+- **Defensive null-checking chains**: `if (a && a.b && a.b.c && a.b.c.d)` -- use optional chaining, early returns, or fix the upstream null sources instead.
+- **Symptom masking**: Try-catch that catches a specific error and returns a default value without logging or alerting. Silent failures hide bugs.
+- **Exception type abuse**: Using exceptions for normal control flow (returning exceptions instead of typed results/discriminated unions).
+- **Missing error state propagation**: Functions that can fail but return `void` or `null` instead of a result type that communicates success/failure.
 
 ---
 
