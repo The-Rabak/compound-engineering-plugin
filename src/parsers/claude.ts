@@ -76,9 +76,10 @@ async function loadAgents(agentsDirs: string[]): Promise<ClaudeAgent[]> {
 
 async function loadCommands(commandsDirs: string[]): Promise<ClaudeCommand[]> {
   const files = await collectMarkdownFiles(commandsDirs)
+  const commandFiles = files.filter((file) => !isReferenceDoc(file))
 
   const commands: ClaudeCommand[] = []
-  for (const file of files) {
+  for (const file of commandFiles) {
     const raw = await readText(file)
     const { data, body } = parseFrontmatter(raw)
     const name = (data.name as string) ?? path.basename(file, ".md")
@@ -199,6 +200,10 @@ function toPathList(value?: string | string[]): string[] {
 async function collectMarkdownFiles(dirs: string[]): Promise<string[]> {
   const entries = await collectFiles(dirs)
   return entries.filter((file) => file.endsWith(".md"))
+}
+
+function isReferenceDoc(filePath: string): boolean {
+  return filePath.includes(`${path.sep}references${path.sep}`)
 }
 
 async function collectFiles(dirs: string[]): Promise<string[]> {

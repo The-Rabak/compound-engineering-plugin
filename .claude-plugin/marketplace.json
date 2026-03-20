@@ -11,15 +11,32 @@
   "plugins": [
     {
       "name": "compound-engineering",
-      "description": "AI-powered development tools. Make each unit of engineering work easier than the last. Includes 26 specialized agents, 22 commands, and 18 skills for code review, research, design, and workflow automation.",
+      "description": "AI-powered development tools. Includes 26 specialized agents, 22 commands, and 18 skills for code review, research, design, and workflow automation.",
       "version": "4.1.0",
       "author": {
         "name": "The Rabak",
-        "url": "https://github.com/The-Rabak/compound-engineering-plugin",
-        "email": "arielvaron@gmail.com"
+        "email": "arielvaron@gmail.com",
+        "url": "https://github.com/The-Rabak/compound-engineering-plugin"
       },
       "homepage": "https://github.com/The-Rabak/compound-engineering-plugin",
-      "tags": ["ai-powered", "compound-engineering", "workflow-automation", "code-review", "quality", "knowledge-management", "image-generation"],
+      "repository": "https://github.com/The-Rabak/compound-engineering-plugin",
+      "license": "MIT",
+      "keywords": [
+        "ai-powered",
+        "compound-engineering",
+        "workflow-automation",
+        "code-review",
+        "rust",
+        "laravel",
+        "vue",
+        "nestjs",
+        "python",
+        "typescript",
+        "knowledge-management",
+        "image-generation",
+        "agent-browser",
+        "browser-automation"
+      ],
       "source": "./plugins/compound-engineering"
     }
   ]

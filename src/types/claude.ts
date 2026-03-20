@@ -16,6 +16,9 @@ export type ClaudeManifest = {
     email?: string
     url?: string
   }
+  homepage?: string
+  repository?: string
+  license?: string
   keywords?: string[]
   agents?: string | string[]
   commands?: string | string[]

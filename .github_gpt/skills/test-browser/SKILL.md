@@ -1,0 +1,352 @@
+---
+name: test-browser
+description: Run browser tests on pages affected by current PR or branch
+---
+
+## Goal
+Run browser validation against routes affected by the current branch or PR using the agent-browser CLI only.
+
+## Use this skill when
+- UI or user-flow changes need end-to-end browser verification.
+- Branch or PR changes map to routes or pages that should be exercised in a real browser.
+- Manual or human-assisted verification is needed for sensitive flows.
+
+## Do not use this skill when
+- The change is backend-only with no meaningful browser surface to validate.
+- You are about to use Chrome MCP tooling instead of agent-browser.
+- The local dev server is unavailable and cannot be started.
+
+## Non-negotiable rules
+- Use the `agent-browser` CLI only. Never use Chrome MCP tools for this workflow.
+- Verify `agent-browser` is installed before testing.
+- Ask whether to run in headed or headless mode.
+- Map changed files to routes before testing.
+- Verify the local server is reachable before any route test.
+- Test routes sequentially.
+- Pause for human verification on OAuth, email, payments, SMS, and other sensitive external flows.
+- Capture screenshots for failures and document exact reproduction steps.
+
+## Procedure
+Execute the full source-of-truth workflow below. Preserve every conditional branch, phase, checklist, and validation step from the original instructions. When the workflow says to ask, wait, route, or run in parallel, do that exactly.
+
+#### Arguments
+[branch name or 'current' for current branch]
+
+### Browser Test Command
+
+Run end-to-end browser tests on pages affected by a PR or branch changes using agent-browser CLI.
+
+#### CRITICAL: Use agent-browser CLI Only
+
+**DO NOT use Chrome MCP tools (mcp__claude-in-chrome__*).**
+
+This command uses the `agent-browser` CLI exclusively. The agent-browser CLI is a Bash-based tool from Vercel that runs headless Chromium. It is NOT the same as Chrome browser automation via MCP.
+
+If you find yourself calling `mcp__claude-in-chrome__*` tools, STOP. Use `agent-browser` Bash commands instead.
+
+#### Introduction
+
+QA Engineer specializing in browser-based end-to-end testing
+
+This command tests affected pages in a real browser, catching issues that unit tests miss:
+- JavaScript integration bugs
+- CSS/layout regressions
+- User workflow breakages
+- Console errors
+
+#### Prerequisites
+
+- Local development server running (Docker containers for Laravel, `npm run dev` for frontend)
+- agent-browser CLI installed (see Setup below)
+- Git repository with changes to test
+
+#### Setup
+
+**Check installation:**
+```bash
+command -v agent-browser >/dev/null 2>&1 && echo "Installed" || echo "NOT INSTALLED"
+```
+
+**Install if needed:**
+```bash
+npm install -g agent-browser
+agent-browser install  # Downloads Chromium (~160MB)
+```
+
+See the `agent-browser` skill for detailed usage.
+
+#### Main Tasks
+
+##### 0. Verify agent-browser Installation
+
+Before starting ANY browser testing, verify agent-browser is installed:
+
+```bash
+command -v agent-browser >/dev/null 2>&1 && echo "Ready" || (echo "Installing..." && npm install -g agent-browser && agent-browser install)
+```
+
+If installation fails, inform the user and stop.
+
+##### 1. Ask Browser Mode
+
+
+Before starting tests, ask user if they want to watch the browser:
+
+Use AskUserQuestion with:
+- Question: "Do you want to watch the browser tests run?"
+- Options:
+  1. **Headed (watch)** - Opens visible browser window so you can see tests run
+  2. **Headless (faster)** - Runs in background, faster but invisible
+
+Store the choice and use `--headed` flag when user selects "Headed".
+
+
+##### 2. Determine Test Scope
+
+$ARGUMENTS
+
+
+**If 'current' or empty:**
+```bash
+git diff --name-only main...HEAD
+```
+
+**If branch name provided:**
+```bash
+git diff --name-only main...[branch]
+```
+
+
+##### 3. Map Files to Routes
+
+
+Map changed files to testable routes:
+
+| File Pattern | Route(s) |
+|-------------|----------|
+| `app/Http/Controllers/*Controller.php` | Corresponding API routes (check `routes/components/`) |
+| `app/Services/*Service.php` | API routes using those services |
+| `resources/views/*.blade.php` | Corresponding web routes |
+| `src/nuxt/*/pages/*` | Nuxt page routes (filesystem-based) |
+| `src/nuxt/*/components/*` | Pages using those components |
+| `www/apps/*/src/components/*` | Vue app pages using those components |
+| `www/apps/*/src/pages/*` | Vue app page routes |
+| `src/nuxt/*/layouts/*` | All pages (test homepage at minimum) |
+| `src/nuxt/*/assets/scss/*` | Visual regression on key pages |
+
+Build a list of URLs to test based on the mapping.
+
+
+##### 4. Verify Server is Running
+
+
+Before testing, verify the local server is accessible:
+
+```bash
+agent-browser open http://localhost-3000
+agent-browser snapshot -i
+```
+
+If server is not running, inform user:
+```markdown
+**Server not running**
+
+Please start your development server (e.g., `npm run dev`, `docker compose up`, etc.).
+
+Then run `/test-browser` again.
+```
+
+
+##### 5. Test Each Affected Page
+
+
+For each affected route, use agent-browser CLI commands (NOT Chrome MCP):
+
+**Step 1: Navigate and capture snapshot**
+```bash
+agent-browser open "http://localhost:3000/[route]"
+agent-browser snapshot -i
+```
+
+**Step 2: For headed mode (visual debugging)**
+```bash
+agent-browser --headed open "http://localhost:3000/[route]"
+agent-browser --headed snapshot -i
+```
+
+**Step 3: Verify key elements**
+- Use `agent-browser snapshot -i` to get interactive elements with refs
+- Page title/heading present
+- Primary content rendered
+- No error messages visible
+- Forms have expected fields
+
+**Step 4: Test critical interactions**
+```bash
+agent-browser click @e1  # Use ref from snapshot
+agent-browser snapshot -i
+```
+
+**Step 5: Take screenshots**
+```bash
+agent-browser screenshot page-name.png
+agent-browser screenshot --full page-name-full.png  # Full page
+```
+
+
+##### 6. Human Verification (When Required)
+
+
+Pause for human input when testing touches:
+
+| Flow Type | What to Ask |
+|-----------|-------------|
+| OAuth | "Please sign in with [provider] and confirm it works" |
+| Email | "Check your inbox for the test email and confirm receipt" |
+| Payments | "Complete a test purchase in sandbox mode" |
+| SMS | "Verify you received the SMS code" |
+| External APIs | "Confirm the [service] integration is working" |
+
+Use AskUserQuestion:
+```markdown
+**Human Verification Needed**
+
+This test touches the [flow type]. Please:
+1. [Action to take]
+2. [What to verify]
+
+Did it work correctly?
+1. Yes - continue testing
+2. No - describe the issue
+```
+
+
+##### 7. Handle Failures
+
+
+When a test fails:
+
+1. **Document the failure:**
+   - Screenshot the error state: `agent-browser screenshot error.png`
+   - Note the exact reproduction steps
+
+2. **Ask user how to proceed:**
+   ```markdown
+   **Test Failed: [route]**
+
+   Issue: [description]
+   Console errors: [if any]
+
+   How to proceed?
+   1. Fix now - I'll help debug and fix
+   2. Create todo - Add to todos/ for later
+   3. Skip - Continue testing other pages
+   ```
+
+3. **If "Fix now":**
+   - Investigate the issue
+   - Propose a fix
+   - Apply fix
+   - Re-run the failing test
+
+4. **If "Create todo":**
+   - Create `{id}-pending-p1-browser-test-{description}.md`
+   - Continue testing
+
+5. **If "Skip":**
+   - Log as skipped
+   - Continue testing
+
+
+##### 8. Test Summary
+
+
+After all tests complete, present summary:
+
+```markdown
+## Browser Test Results
+
+**Test Scope:** PR #[number] / [branch name]
+**Server:** http://localhost-3000
+
+### Pages Tested: [count]
+
+| Route | Status | Notes |
+|-------|--------|-------|
+| `/users` | Pass | |
+| `/settings` | Pass | |
+| `/dashboard` | Fail | Console error: [msg] |
+| `/checkout` | Skip | Requires payment credentials |
+
+### Console Errors: [count]
+- [List any errors found]
+
+### Human Verifications: [count]
+- OAuth flow: Confirmed
+- Email delivery: Confirmed
+
+### Failures: [count]
+- `/dashboard` - [issue description]
+
+### Created Todos: [count]
+- `005-pending-p1-browser-test-dashboard-error.md`
+
+### Result: [PASS / FAIL / PARTIAL]
+```
+
+
+#### Quick Usage Examples
+
+```bash
+# Test current branch changes
+/test-browser
+
+# Test specific PR
+/test-browser 847
+
+# Test specific branch
+/test-browser feature/new-dashboard
+```
+
+#### agent-browser CLI Reference
+
+**ALWAYS use these Bash commands. NEVER use mcp__claude-in-chrome__* tools.**
+
+```bash
+# Navigation
+agent-browser open [url]           # Navigate to URL
+agent-browser back                 # Go back
+agent-browser close                # Close browser
+
+# Snapshots (get element refs)
+agent-browser snapshot -i          # Interactive elements with refs (@e1, @e2, etc.)
+agent-browser snapshot -i --json   # JSON output
+
+# Interactions (use refs from snapshot)
+agent-browser click @e1            # Click element
+agent-browser fill @e1 "text"      # Fill input
+agent-browser type @e1 "text"      # Type without clearing
+agent-browser press Enter          # Press key
+
+# Screenshots
+agent-browser screenshot out.png       # Viewport screenshot
+agent-browser screenshot --full out.png # Full page screenshot
+
+# Headed mode (visible browser)
+agent-browser --headed open [url]      # Open with visible browser
+agent-browser --headed click @e1       # Click in visible browser
+
+# Wait
+agent-browser wait @e1             # Wait for element
+agent-browser wait 2000            # Wait milliseconds
+```
+
+## Required output
+Return a browser-test report with:
+- Test scope and base URL.
+- Pages tested.
+- Route-by-route pass, fail, or skip status.
+- Console errors.
+- Human verifications performed.
+- Failures and any todo files created.
+- Final result: PASS, FAIL, or PARTIAL.

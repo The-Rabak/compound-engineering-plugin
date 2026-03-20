@@ -1,0 +1,28 @@
+name: compound-engineering
+version: 4.1.0
+description:
+  lead: AI-powered development tools.
+  suffix: for code review, research, design, and workflow automation.
+author:
+  name: The Rabak
+  email: arielvaron@gmail.com
+  url: https://github.com/The-Rabak/compound-engineering-plugin
+homepage: https://github.com/The-Rabak/compound-engineering-plugin
+repository: https://github.com/The-Rabak/compound-engineering-plugin
+license: MIT
+keywords:
+  - compound-engineering
+  - workflow-automation
+  - code-review
+mcpServers:
+  context7:
+    type: http
+    url: https://mcp.context7.com/mcp
+marketplace:
+  name: compound-engineering-marketplace
+  owner:
+    name: The Rabak
+    url: https://github.com/The-Rabak/compound-engineering-plugin
+  metadata:
+    description: Plugin marketplace for Claude Code extensions
+    version: 1.0.0

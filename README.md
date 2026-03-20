@@ -2,7 +2,7 @@
 
 Development tools that compound. Every task you complete makes the next one faster -- not through magic, but through structured knowledge capture and reuse.
 
-26 specialized agents. 22 commands. 16 skills. One workflow that actually works.
+26 specialized agents. 22 commands. 18 skills. One workflow that actually works.
 
 ## Quick Start
 
@@ -18,6 +18,19 @@ claude /plugin install compound-engineering
 ```
 
 Setup auto-detects your stack (Laravel, NestJS, Python, Vue, TypeScript, Rust, etc.) and configures the right review agents for your project.
+
+The canonical source now lives in `portable/compound-engineering/`. This repository also ships generated Copilot assets under `.github/`, built from that same portable source.
+
+### Regenerate platform outputs
+
+```bash
+bun run build:platforms
+```
+
+That rebuilds:
+
+- `plugins/compound-engineering/` for Claude Code
+- `.github/` for Copilot
 
 ---
 

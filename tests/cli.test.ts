@@ -274,6 +274,40 @@ describe("CLI", () => {
     expect(await exists(path.join(tempRoot, "opencode.json"))).toBe(true)
   })
 
+  test("build writes Claude and Copilot outputs from portable source", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-build-"))
+    const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+
+    const proc = Bun.spawn([
+      "bun",
+      "run",
+      "src/index.ts",
+      "build",
+      fixtureRoot,
+      "--output",
+      tempRoot,
+    ], {
+      cwd: path.join(import.meta.dir, ".."),
+      stdout: "pipe",
+      stderr: "pipe",
+    })
+
+    const exitCode = await proc.exited
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+
+    if (exitCode !== 0) {
+      throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
+    }
+
+    expect(stdout).toContain("Built Claude output")
+    expect(stdout).toContain("Built Copilot output")
+    expect(await exists(path.join(tempRoot, "plugins", "compound-engineering", ".claude-plugin", "plugin.json"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".claude-plugin", "marketplace.json"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".github", "agents", "repo-research-analyst.agent.md"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".github", "skills", "workflows-plan", "SKILL.md"))).toBe(true)
+  })
+
   test("convert supports --codex-home for codex output", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-codex-home-"))
     const codexRoot = path.join(tempRoot, ".codex")

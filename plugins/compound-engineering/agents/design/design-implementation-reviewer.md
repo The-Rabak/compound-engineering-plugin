@@ -1,6 +1,6 @@
 ---
 name: design-implementation-reviewer
-description: "Visually compares live UI implementation against Figma designs and provides detailed feedback on discrepancies. Use after writing or modifying HTML/CSS/React components to verify design fidelity."
+description: Visually compares live UI implementation against Figma designs and provides detailed feedback on discrepancies. Use after writing or modifying HTML/CSS/React components to verify design fidelity.
 model: inherit
 ---
 
@@ -106,4 +106,3 @@ Your primary responsibility is to conduct thorough visual comparisons between im
 When you encounter ambiguity between the design and implementation requirements, clearly note the discrepancy and provide recommendations for both strict design adherence and practical implementation approaches.
 
 Your goal is to ensure the implementation delivers the intended user experience while maintaining design consistency and technical excellence.
-
