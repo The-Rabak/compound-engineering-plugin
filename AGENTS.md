@@ -1,6 +1,6 @@
 # Agent Instructions
 
-This repository is a Claude Code plugin marketplace distributing the compound-engineering plugin -- AI-powered development tools that get smarter with every use.
+This repository distributes the `compound-engineering` plugin from a portable source of truth, then generates platform-specific outputs for Claude Code and Copilot.
 
 ## Working Agreement
 
@@ -12,8 +12,10 @@ This repository is a Claude Code plugin marketplace distributing the compound-en
 
 ```
 compound-engineering-plugin/
-├── .claude-plugin/marketplace.json   # Marketplace catalog
-├── plugins/compound-engineering/     # The plugin
+├── portable/compound-engineering/    # Canonical portable source
+├── .claude-plugin/marketplace.json   # Generated Claude marketplace catalog
+├── .github/                          # Generated Copilot assets
+├── plugins/compound-engineering/     # Generated Claude plugin
 │   ├── .claude-plugin/plugin.json
 │   ├── agents/                       # Specialized AI agents
 │   ├── commands/                     # Slash commands
@@ -27,11 +29,24 @@ compound-engineering-plugin/
 
 When adding/removing agents, commands, or skills:
 
-1. Update `plugins/compound-engineering/.claude-plugin/plugin.json` -- version + description counts
-2. Update `.claude-plugin/marketplace.json` -- version + description counts
+1. Edit `portable/compound-engineering/` first
+2. Rebuild generated outputs with `bun run build:platforms`
 3. Update `plugins/compound-engineering/README.md` -- component tables
 4. Update `plugins/compound-engineering/CHANGELOG.md` -- document changes
 5. Validate JSON: `cat .claude-plugin/marketplace.json | jq .`
+
+## Portable Build Workflow
+
+Use the portable source as the only hand-edited definition:
+
+```bash
+bun run build:platforms
+```
+
+This regenerates:
+
+- `plugins/compound-engineering/` for Claude Code
+- `.github/` for Copilot
 
 ## Docs Directory Convention
 

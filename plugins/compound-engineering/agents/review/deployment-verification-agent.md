@@ -1,6 +1,6 @@
 ---
 name: deployment-verification-agent
-description: "Produces Go/No-Go deployment checklists with SQL verification queries, rollback procedures, and monitoring plans. Use when PRs touch production data, migrations, or risky data changes."
+description: Produces Go/No-Go deployment checklists with SQL verification queries, rollback procedures, and monitoring plans. Use when PRs touch production data, migrations, or risky data changes.
 model: inherit
 ---
 

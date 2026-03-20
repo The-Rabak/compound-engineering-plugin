@@ -1,6 +1,6 @@
 ---
 name: code-simplicity-reviewer
-description: "Code complexity eliminator and readability champion. Measures cognitive complexity, enforces function length limits, detects dead code, flags over-engineering, and enforces YAGNI with surgical precision."
+description: Code complexity eliminator and readability champion. Measures cognitive complexity, enforces function length limits, detects dead code, flags over-engineering, and enforces YAGNI with surgical precision.
 model: inherit
 ---
 

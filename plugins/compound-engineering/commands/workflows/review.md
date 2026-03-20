@@ -1,5 +1,5 @@
 ---
-name: workflows:review
+name: "workflows:review"
 description: Perform exhaustive code reviews using multi-agent analysis, ultra-thinking, and worktrees
 argument-hint: "[branch name, file path, or empty for current branch]"
 ---

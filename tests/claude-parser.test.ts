@@ -66,6 +66,12 @@ describe("loadClaudePlugin", () => {
     expect(normalCommand?.disableModelInvocation).toBeUndefined()
   })
 
+  test("ignores reference markdown nested under commands", async () => {
+    const plugin = await loadClaudePlugin(fixtureRoot)
+    expect(plugin.commands.find((command) => command.name === "ignored")).toBeUndefined()
+    expect(plugin.commands).toHaveLength(7)
+  })
+
   test("parses disable-model-invocation from skills", async () => {
     const plugin = await loadClaudePlugin(fixtureRoot)
 

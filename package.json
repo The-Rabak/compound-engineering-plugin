@@ -11,6 +11,7 @@
   },
   "scripts": {
     "dev": "bun run src/index.ts",
+    "build:platforms": "bun run src/index.ts build portable/compound-engineering --output .",
     "convert": "bun run src/index.ts convert",
     "list": "bun run src/index.ts list",
     "cli:install": "bun run src/index.ts install",

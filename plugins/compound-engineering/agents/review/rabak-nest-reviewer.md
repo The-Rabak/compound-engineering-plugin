@@ -1,6 +1,6 @@
 ---
 name: rabak-nest-reviewer
-description: "Reviews NestJS code enforcing simplicity, performance, and security standards. Use after implementing features, modifying code, or creating new NestJS components."
+description: Reviews NestJS code enforcing simplicity, performance, and security standards. Use after implementing features, modifying code, or creating new NestJS components.
 model: inherit
 ---
 

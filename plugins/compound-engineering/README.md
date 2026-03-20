@@ -2,6 +2,8 @@
 
 AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 26 specialized agents, 22 commands, and 18 skills.
 
+This repository also ships generated Copilot assets under the repo root `.github/`, built from the canonical portable source in `portable/compound-engineering/`.
+
 ## Components
 
 | Component | Count |

@@ -1,0 +1,52 @@
+import { describe, expect, test } from "bun:test"
+import { promises as fs } from "fs"
+import os from "os"
+import path from "path"
+import { loadPortablePlugin } from "../src/parsers/portable"
+import { writeClaudeBundle } from "../src/targets/claude"
+
+const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+
+async function exists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath)
+    return true
+  } catch {
+    return false
+  }
+}
+
+describe("writeClaudeBundle", () => {
+  test("writes a Claude plugin layout from portable source", async () => {
+    const plugin = await loadPortablePlugin(fixtureRoot)
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "claude-writer-"))
+    const outputRoot = path.join(tempRoot, "plugins", plugin.manifest.name)
+
+    await writeClaudeBundle(outputRoot, plugin)
+
+    const manifestPath = path.join(outputRoot, ".claude-plugin", "plugin.json")
+    const commandPath = path.join(outputRoot, "commands", "workflows", "plan.md")
+    const agentPath = path.join(outputRoot, "agents", "research", "repo-research-analyst.md")
+    const skillPath = path.join(outputRoot, "skills", "skill-one", "SKILL.md")
+    const supportFilePath = path.join(outputRoot, "skills", "skill-one", "references", "guide.txt")
+    const hooksPath = path.join(outputRoot, "hooks", "hooks.json")
+
+    expect(await exists(manifestPath)).toBe(true)
+    expect(await exists(commandPath)).toBe(true)
+    expect(await exists(agentPath)).toBe(true)
+    expect(await exists(skillPath)).toBe(true)
+    expect(await exists(supportFilePath)).toBe(true)
+    expect(await exists(hooksPath)).toBe(true)
+
+    const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8")) as { description?: string }
+    expect(manifest.description).toContain("Includes 1 specialized agent, 1 command, and 1 skill")
+
+    const commandContent = await fs.readFile(commandPath, "utf8")
+    expect(commandContent).toContain("allowed-tools:")
+    expect(commandContent).toContain("disable-model-invocation: true")
+
+    const skillContent = await fs.readFile(skillPath, "utf8")
+    expect(skillContent).toContain("disable-model-invocation: true")
+    expect(skillContent).toContain("Use this skill when the user needs a shared portable workflow.")
+  })
+})
