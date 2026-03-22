@@ -3,7 +3,7 @@ description: Reviews Python code with an extremely high quality bar for Pythonic
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

@@ -1,11 +1,13 @@
 ---
 name: rabak-typescript-reviewer
 description: >-
-  Reviews TypeScript code with an extremely high quality bar for type safety, modern patterns, and maintainability. Use
-  after implementing features, modifying code, or creating new TypeScript components.
+  Reviews TypeScript code with an extremely high quality bar for type safety, modern patterns, and
+  maintainability. Use after implementing features, modifying code, or creating new TypeScript
+  components.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

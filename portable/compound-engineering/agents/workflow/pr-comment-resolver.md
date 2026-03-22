@@ -1,11 +1,12 @@
 ---
 name: pr-comment-resolver
 description: >-
-  Addresses PR review comments by implementing requested changes and reporting resolutions. Use when code review
-  feedback needs to be resolved with code changes.
+  Addresses PR review comments by implementing requested changes and reporting resolutions. Use when
+  code review feedback needs to be resolved with code changes.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

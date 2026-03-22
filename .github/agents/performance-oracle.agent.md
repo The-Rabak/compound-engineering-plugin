@@ -3,7 +3,7 @@ description: Analyzes code for performance bottlenecks, algorithmic complexity, 
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

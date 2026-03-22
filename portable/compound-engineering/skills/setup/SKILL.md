@@ -1,9 +1,14 @@
 ---
 name: setup
-description: Configure which review agents run for your project. Auto-detects stack and writes compound-engineering.local.md.
+description: >-
+  Configure which review agents run for your project. Auto-detects stack and writes
+  compound-engineering.local.md.
+model: claude-sonnet-4.6
 platforms:
   claude:
     disable-model-invocation: true
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 # Compound Engineering Setup

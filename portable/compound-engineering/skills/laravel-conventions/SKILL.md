@@ -1,8 +1,12 @@
 ---
 name: laravel-conventions
 description: >-
-  Modern Laravel 11+ / PHP 8.3+ coding standards reference. Use when writing or reviewing PHP/Laravel code to ensure
-  convention compliance.
+  Modern Laravel 11+ / PHP 8.3+ coding standards reference. Use when writing or reviewing
+  PHP/Laravel code to ensure convention compliance.
+model: claude-sonnet-4.6
+platforms:
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 # Laravel Coding Conventions (Laravel 11+ / PHP 8.3+)

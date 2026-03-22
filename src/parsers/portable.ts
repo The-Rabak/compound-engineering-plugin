@@ -11,10 +11,12 @@ export async function loadPortablePlugin(inputPath: string): Promise<PortablePlu
   const root = await resolvePortableRoot(inputPath)
   const manifest = await readPortableManifest(path.join(root, PORTABLE_MANIFEST))
 
-  const agents = await loadPortableAgents(root)
-  const commands = await loadPortableCommands(root)
-  const skills = await loadPortableSkills(root)
-  const hooks = await loadPortableHooks(root)
+  const [agents, commands, skills, hooks] = await Promise.all([
+    loadPortableAgents(root),
+    loadPortableCommands(root),
+    loadPortableSkills(root),
+    loadPortableHooks(root),
+  ])
   const description = renderPortableDescription(manifest.description, {
     agents: agents.length,
     commands: commands.length,
@@ -86,49 +88,51 @@ async function readPortableManifest(manifestPath: string): Promise<PortableManif
 async function loadPortableAgents(root: string): Promise<ClaudeAgent[]> {
   const agentsRoot = path.join(root, "agents")
   const files = await collectMarkdownFiles(agentsRoot)
-  const agents: ClaudeAgent[] = []
 
-  for (const file of files) {
-    const raw = await readText(file)
-    const { data, body } = parseFrontmatter(raw)
-    const claude = getClaudePlatformConfig(data)
-    agents.push({
-      name: asString(data.name) ?? path.basename(file, ".md"),
-      description: asString(data.description),
-      capabilities: asStringArray(data.capabilities),
-      model: asString(claude?.model ?? data.model),
-      body: body.trim(),
-      sourcePath: file,
-    })
-  }
-
-  return agents
+  return await Promise.all(
+    files.map(async (file) => {
+      const raw = await readText(file)
+      const { data, body } = parseFrontmatter(raw)
+      const claude = getPlatformConfig(data, "claude")
+      const copilot = getPlatformConfig(data, "copilot")
+      return {
+        name: asString(data.name) ?? path.basename(file, ".md"),
+        description: asString(data.description),
+        capabilities: asStringArray(data.capabilities),
+        model: asString(claude?.model ?? data.model),
+        copilotModel: asString(copilot?.model ?? data.model),
+        body: body.trim(),
+        sourcePath: file,
+      }
+    }),
+  )
 }
 
 async function loadPortableCommands(root: string): Promise<ClaudeCommand[]> {
   const commandsRoot = path.join(root, "commands")
   const files = (await collectMarkdownFiles(commandsRoot)).filter((file) => !isReferenceDoc(file))
-  const commands: ClaudeCommand[] = []
 
-  for (const file of files) {
-    const raw = await readText(file)
-    const { data, body } = parseFrontmatter(raw)
-    const claude = getClaudePlatformConfig(data)
-    commands.push({
-      name: asString(data.name) ?? path.basename(file, ".md"),
-      description: asString(data.description),
-      argumentHint: asString(data["argument-hint"] ?? data.arguments),
-      model: asString(claude?.model ?? data.model),
-      allowedTools: parseAllowedTools(claude?.["allowed-tools"] ?? data["allowed-tools"]),
-      disableModelInvocation: toOptionalBoolean(
-        claude?.["disable-model-invocation"] ?? data["disable-model-invocation"],
-      ),
-      body: body.trim(),
-      sourcePath: file,
-    })
-  }
-
-  return commands
+  return await Promise.all(
+    files.map(async (file) => {
+      const raw = await readText(file)
+      const { data, body } = parseFrontmatter(raw)
+      const claude = getPlatformConfig(data, "claude")
+      const copilot = getPlatformConfig(data, "copilot")
+      return {
+        name: asString(data.name) ?? path.basename(file, ".md"),
+        description: asString(data.description),
+        argumentHint: asString(data["argument-hint"] ?? data.arguments),
+        model: asString(claude?.model ?? data.model),
+        copilotModel: asString(copilot?.model ?? data.model),
+        allowedTools: parseAllowedTools(claude?.["allowed-tools"] ?? data["allowed-tools"]),
+        disableModelInvocation: toOptionalBoolean(
+          claude?.["disable-model-invocation"] ?? data["disable-model-invocation"],
+        ),
+        body: body.trim(),
+        sourcePath: file,
+      }
+    }),
+  )
 }
 
 async function loadPortableSkills(root: string): Promise<ClaudeSkill[]> {
@@ -137,24 +141,27 @@ async function loadPortableSkills(root: string): Promise<ClaudeSkill[]> {
 
   const files = await walkFiles(skillsRoot)
   const skillFiles = files.filter((file) => path.basename(file) === "SKILL.md")
-  const skills: ClaudeSkill[] = []
 
-  for (const file of skillFiles) {
-    const raw = await readText(file)
-    const { data } = parseFrontmatter(raw)
-    const claude = getClaudePlatformConfig(data)
-    skills.push({
-      name: asString(data.name) ?? path.basename(path.dirname(file)),
-      description: asString(data.description),
-      disableModelInvocation: toOptionalBoolean(
-        claude?.["disable-model-invocation"] ?? data["disable-model-invocation"],
-      ),
-      sourceDir: path.dirname(file),
-      skillPath: file,
-    })
-  }
-
-  return skills
+  return await Promise.all(
+    skillFiles.map(async (file) => {
+      const raw = await readText(file)
+      const { data, body } = parseFrontmatter(raw)
+      const claude = getPlatformConfig(data, "claude")
+      const copilot = getPlatformConfig(data, "copilot")
+      return {
+        name: asString(data.name) ?? path.basename(path.dirname(file)),
+        description: asString(data.description),
+        model: asString(claude?.model ?? data.model),
+        copilotModel: asString(copilot?.model ?? data.model),
+        disableModelInvocation: toOptionalBoolean(
+          claude?.["disable-model-invocation"] ?? data["disable-model-invocation"],
+        ),
+        body: body.trim(),
+        sourceDir: path.dirname(file),
+        skillPath: file,
+      }
+    }),
+  )
 }
 
 async function loadPortableHooks(root: string): Promise<ClaudeHooks | undefined> {
@@ -173,18 +180,21 @@ function isReferenceDoc(filePath: string): boolean {
   return filePath.includes(`${path.sep}references${path.sep}`)
 }
 
-function getClaudePlatformConfig(data: Record<string, unknown>): Record<string, unknown> | undefined {
+function getPlatformConfig(
+  data: Record<string, unknown>,
+  platform: "claude" | "copilot",
+): Record<string, unknown> | undefined {
   const platforms = data.platforms
   if (!platforms || typeof platforms !== "object" || Array.isArray(platforms)) {
     return undefined
   }
 
-  const claude = (platforms as Record<string, unknown>).claude
-  if (!claude || typeof claude !== "object" || Array.isArray(claude)) {
+  const config = (platforms as Record<string, unknown>)[platform]
+  if (!config || typeof config !== "object" || Array.isArray(config)) {
     return undefined
   }
 
-  return claude as Record<string, unknown>
+  return config as Record<string, unknown>
 }
 
 function parseAllowedTools(value: unknown): string[] | undefined {

@@ -1,6 +1,7 @@
 ---
 name: create-agent-skills
 description: Expert guidance for creating Claude Code skills and slash commands. Use when working with SKILL.md files, authoring new skills, improving existing skills, creating slash commands, or understanding skill structure and best practices.
+model: claude-sonnet-4.6
 ---
 
 # Creating Skills & Commands
@@ -61,7 +62,7 @@ All fields are optional. Only `description` is recommended.
 | `disable-model-invocation` | No | Set `true` to prevent Claude auto-loading. Use for manual workflows like `/deploy`, `/commit`. Default: `false`. |
 | `user-invocable` | No | Set `false` to hide from `/` menu. Use for background knowledge. Default: `true`. |
 | `allowed-tools` | No | Tools Claude can use without permission prompts. Example: `Read, Bash(git *)` |
-| `model` | No | Model to use. Options: `haiku`, `sonnet`, `opus`. |
+| `model` | No | Model to use. Prefer explicit IDs. In this repo, default reasoning work to `claude-sonnet-4.6`, GPT code/review work to `gpt-5.3-codex` via platform overrides, and reserve `claude-haiku-4.5` / `gpt-5.4-mini` for lightweight search or research tasks. |
 | `context` | No | Set `fork` to run in isolated subagent context. |
 | `agent` | No | Subagent type when `context: fork`. Options: `Explore`, `Plan`, `general-purpose`, or custom agent name. |
 

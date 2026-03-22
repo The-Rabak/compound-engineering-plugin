@@ -1,12 +1,7 @@
 ---
-name: resolve_pr_parallel
-description: >-
-  Resolve all PR comments using parallel processing. Use when addressing PR review feedback, resolving review threads,
-  or batch-fixing PR comments.
-platforms:
-  claude:
-    allowed-tools: Bash(git *), Read
-    disable-model-invocation: true
+name: resolve-pr-parallel
+description: Resolve all PR comments using parallel processing. Use when addressing PR review feedback, resolving review threads, or batch-fixing PR comments.
+model: gpt-5.3-codex
 ---
 
 # Resolve PR Comments in Parallel

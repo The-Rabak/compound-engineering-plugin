@@ -5,6 +5,29 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.0] - 2026-03-21
+
+### Added
+
+- **`issue-intelligence-analyst` agent** -- Research agent for GitHub issue landscape analysis. Fetches open and recently closed issues, clusters them into recurring themes, and surfaces trend, severity, and recurrence signals for planning and prioritization.
+- **`schema-drift-detector` agent** -- Framework-agnostic schema drift reviewer that cross-references PR migrations or schema source changes against changed schema dumps, snapshots, and generated database artifacts.
+- **`rabak-frontend-races-reviewer` agent** -- Async UI review agent focused on race conditions, stale responses, cancellation bugs, and lifecycle hazards across React, Vue, shared stores, and browser APIs.
+- **`agent-native-audit` skill** -- Manual scored review workflow for auditing codebases against core agent-native architecture principles, with parallel audit tracks and prioritized recommendations.
+- **`ideate` skill** -- Grounded ideation workflow that scans the repository, generates a large candidate set, filters weak ideas aggressively, and preserves ranked survivors in `docs/ideation/` before handing one off to brainstorm.
+- **`compound-refresh` skill** -- Maintenance workflow for refreshing stale learnings and pattern docs in `docs/solutions/` by classifying them into Keep, Update, Replace, or Archive actions against the current codebase.
+- **`/workflows:ideate` command** -- Local public workflow entrypoint for repository-grounded ideation that feeds the existing brainstorm and planning pipeline.
+- **`/workflows:compound-refresh` command** -- Local public workflow entrypoint for maintaining compounded learnings as the codebase evolves.
+
+### Changed
+
+- **Portable model routing** -- Portable agents, commands, and skills now support shared `model` values plus per-platform overrides such as `platforms.copilot.model` and `platforms.claude.model`. Generated outputs respect the platform-specific route while preserving shared defaults.
+- **Research agent routing** -- Research-oriented agents now use lower-cost default routing where appropriate, including Copilot-specific `gpt-5.4-mini` overrides alongside shared `haiku` defaults.
+- **Reasoning model policy** -- Reasoning-heavy Claude agents and skills now route explicitly to `claude-sonnet-4.6`, GPT code/review routing now uses `gpt-5.3-codex`, and lightweight search/research surfaces remain on `claude-haiku-4.5` / `gpt-5.4-mini`.
+- **Copilot portable skill emission** -- Copilot builds now rewrite portable `SKILL.md` files through the Copilot transformation path so model overrides, slash-command flattening, and `.claude` path rewrites apply to copied skill directories too.
+- **OV sync hardening** -- `sync-ov` now strips inherited `BASH_FUNC_*` shell hooks, preserves a trusted executable `PATH`, and uses hardened fast-path shell helpers that avoid path-hijacked `cp`/`mkdir` calls.
+- **Workflow docs conventions** -- Repository guidance now recognizes `docs/ideation/` as the output location for ideation artifacts alongside plans, brainstorms, solutions, and execution sessions.
+- Agent count bumped from 26 to 29, command count from 22 to 24, and skill count from 18 to 21 in generated metadata and README surfaces
+
 ## [4.1.0] - 2026-03-07
 
 ### Added

@@ -3,7 +3,7 @@ description: Reviews database migrations, data models, and persistent data code 
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

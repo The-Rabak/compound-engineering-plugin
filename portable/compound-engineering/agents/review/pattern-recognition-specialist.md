@@ -1,11 +1,12 @@
 ---
 name: pattern-recognition-specialist
 description: >-
-  Analyzes code for design patterns, anti-patterns, naming conventions, and duplication. Use when checking codebase
-  consistency or verifying new code follows established patterns.
+  Analyzes code for design patterns, anti-patterns, naming conventions, and duplication. Use when
+  checking codebase consistency or verifying new code follows established patterns.
+model: claude-haiku-4.5
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.4-mini
 ---
 
 <examples>

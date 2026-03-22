@@ -3,7 +3,7 @@ description: Validates data migrations, backfills, and production data transform
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

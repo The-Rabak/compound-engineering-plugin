@@ -3,7 +3,7 @@ description: Reviews Laravel/PHP code enforcing modern Laravel 11+ and PHP 8.3+ 
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

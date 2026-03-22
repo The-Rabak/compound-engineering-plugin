@@ -5,6 +5,7 @@ import convert from "./commands/convert"
 import install from "./commands/install"
 import listCommand from "./commands/list"
 import sync from "./commands/sync"
+import syncOv from "./commands/sync-ov"
 
 const main = defineCommand({
   meta: {
@@ -18,6 +19,7 @@ const main = defineCommand({
     install: () => install,
     list: () => listCommand,
     sync: () => sync,
+    "sync-ov": () => syncOv,
   },
 })
 

@@ -3,7 +3,7 @@ description: Analyzes code for design patterns, anti-patterns, naming convention
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.4-mini
 ---
 
 <examples>

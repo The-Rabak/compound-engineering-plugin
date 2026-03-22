@@ -3,7 +3,7 @@ description: Produces Go/No-Go deployment checklists with SQL verification queri
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

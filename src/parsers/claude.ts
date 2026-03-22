@@ -18,10 +18,12 @@ export async function loadClaudePlugin(inputPath: string): Promise<ClaudePlugin>
   const manifestPath = path.join(root, PLUGIN_MANIFEST)
   const manifest = await readJson<ClaudeManifest>(manifestPath)
 
-  const agents = await loadAgents(resolveComponentDirs(root, "agents", manifest.agents))
-  const commands = await loadCommands(resolveComponentDirs(root, "commands", manifest.commands))
-  const skills = await loadSkills(resolveComponentDirs(root, "skills", manifest.skills))
-  const hooks = await loadHooks(root, manifest.hooks)
+  const [agents, commands, skills, hooks] = await Promise.all([
+    loadAgents(resolveComponentDirs(root, "agents", manifest.agents)),
+    loadCommands(resolveComponentDirs(root, "commands", manifest.commands)),
+    loadSkills(resolveComponentDirs(root, "skills", manifest.skills)),
+    loadHooks(root, manifest.hooks),
+  ])
 
   const mcpServers = await loadMcpServers(root, manifest)
 
@@ -57,66 +59,68 @@ async function resolveClaudeRoot(inputPath: string): Promise<string> {
 async function loadAgents(agentsDirs: string[]): Promise<ClaudeAgent[]> {
   const files = await collectMarkdownFiles(agentsDirs)
 
-  const agents: ClaudeAgent[] = []
-  for (const file of files) {
-    const raw = await readText(file)
-    const { data, body } = parseFrontmatter(raw)
-    const name = (data.name as string) ?? path.basename(file, ".md")
-    agents.push({
-      name,
-      description: data.description as string | undefined,
-      capabilities: data.capabilities as string[] | undefined,
-      model: data.model as string | undefined,
-      body: body.trim(),
-      sourcePath: file,
-    })
-  }
-  return agents
+  return await Promise.all(
+    files.map(async (file) => {
+      const raw = await readText(file)
+      const { data, body } = parseFrontmatter(raw)
+      const name = (data.name as string) ?? path.basename(file, ".md")
+      return {
+        name,
+        description: data.description as string | undefined,
+        capabilities: data.capabilities as string[] | undefined,
+        model: data.model as string | undefined,
+        body: body.trim(),
+        sourcePath: file,
+      }
+    }),
+  )
 }
 
 async function loadCommands(commandsDirs: string[]): Promise<ClaudeCommand[]> {
   const files = await collectMarkdownFiles(commandsDirs)
   const commandFiles = files.filter((file) => !isReferenceDoc(file))
 
-  const commands: ClaudeCommand[] = []
-  for (const file of commandFiles) {
-    const raw = await readText(file)
-    const { data, body } = parseFrontmatter(raw)
-    const name = (data.name as string) ?? path.basename(file, ".md")
-    const allowedTools = parseAllowedTools(data["allowed-tools"])
-    const disableModelInvocation = data["disable-model-invocation"] === true ? true : undefined
-    commands.push({
-      name,
-      description: data.description as string | undefined,
-      argumentHint: data["argument-hint"] as string | undefined,
-      model: data.model as string | undefined,
-      allowedTools,
-      disableModelInvocation,
-      body: body.trim(),
-      sourcePath: file,
-    })
-  }
-  return commands
+  return await Promise.all(
+    commandFiles.map(async (file) => {
+      const raw = await readText(file)
+      const { data, body } = parseFrontmatter(raw)
+      const name = (data.name as string) ?? path.basename(file, ".md")
+      const allowedTools = parseAllowedTools(data["allowed-tools"])
+      const disableModelInvocation = data["disable-model-invocation"] === true ? true : undefined
+      return {
+        name,
+        description: data.description as string | undefined,
+        argumentHint: data["argument-hint"] as string | undefined,
+        model: data.model as string | undefined,
+        allowedTools,
+        disableModelInvocation,
+        body: body.trim(),
+        sourcePath: file,
+      }
+    }),
+  )
 }
 
 async function loadSkills(skillsDirs: string[]): Promise<ClaudeSkill[]> {
   const entries = await collectFiles(skillsDirs)
   const skillFiles = entries.filter((file) => path.basename(file) === "SKILL.md")
-  const skills: ClaudeSkill[] = []
-  for (const file of skillFiles) {
-    const raw = await readText(file)
-    const { data } = parseFrontmatter(raw)
-    const name = (data.name as string) ?? path.basename(path.dirname(file))
-    const disableModelInvocation = data["disable-model-invocation"] === true ? true : undefined
-    skills.push({
-      name,
-      description: data.description as string | undefined,
-      disableModelInvocation,
-      sourceDir: path.dirname(file),
-      skillPath: file,
-    })
-  }
-  return skills
+  return await Promise.all(
+    skillFiles.map(async (file) => {
+      const raw = await readText(file)
+      const { data, body } = parseFrontmatter(raw)
+      const name = (data.name as string) ?? path.basename(path.dirname(file))
+      const disableModelInvocation = data["disable-model-invocation"] === true ? true : undefined
+      return {
+        name,
+        description: data.description as string | undefined,
+        model: data.model as string | undefined,
+        disableModelInvocation,
+        body: body.trim(),
+        sourceDir: path.dirname(file),
+        skillPath: file,
+      }
+    }),
+  )
 }
 
 async function loadHooks(root: string, hooksField?: ClaudeManifest["hooks"]): Promise<ClaudeHooks | undefined> {
@@ -207,13 +211,11 @@ function isReferenceDoc(filePath: string): boolean {
 }
 
 async function collectFiles(dirs: string[]): Promise<string[]> {
-  const files: string[] = []
-  for (const dir of dirs) {
-    if (!(await pathExists(dir))) continue
-    const entries = await walkFiles(dir)
-    files.push(...entries)
-  }
-  return files
+  const existingDirs = await Promise.all(
+    dirs.map(async (dir) => ((await pathExists(dir)) ? dir : undefined)),
+  )
+  const walkResults = await Promise.all(existingDirs.filter((dir): dir is string => Boolean(dir)).map(walkFiles))
+  return walkResults.flat()
 }
 
 function mergeHooks(hooksList: ClaudeHooks[]): ClaudeHooks {

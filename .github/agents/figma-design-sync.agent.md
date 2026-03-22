@@ -3,7 +3,7 @@ description: Detects and fixes visual differences between a web implementation a
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

@@ -1,7 +1,7 @@
 ---
 name: rabak-vue-reviewer
 description: Reviews Vue.js and Nuxt code for modern best practices, performance, accessibility, and security. Use after implementing frontend features or modifying Vue/Nuxt components.
-model: inherit
+model: claude-sonnet-4.6
 ---
 
 <examples>

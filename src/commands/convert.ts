@@ -1,7 +1,7 @@
 import { defineCommand } from "citty"
 import os from "os"
 import path from "path"
-import { loadClaudePlugin } from "../parsers/claude"
+import { loadPluginForTargetConversion } from "../parsers/conversion-source"
 import { targets } from "../targets"
 import type { PermissionMode } from "../converters/claude-to-opencode"
 import { ensureCodexAgentsFile } from "../utils/codex-agents"
@@ -76,7 +76,7 @@ export default defineCommand({
       throw new Error(`Unknown permissions mode: ${permissions}`)
     }
 
-    const plugin = await loadClaudePlugin(String(args.source))
+    const plugin = await loadPluginForTargetConversion(String(args.source))
     const outputRoot = resolveOutputRoot(args.output)
     const codexHome = resolveTargetHome(args.codexHome, path.join(os.homedir(), ".codex"))
     const piHome = resolveTargetHome(args.piHome, path.join(os.homedir(), ".pi", "agent"))

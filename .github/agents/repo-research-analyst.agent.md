@@ -3,7 +3,7 @@ description: Conducts thorough research on repository structure, documentation, 
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.4-mini
 ---
 
 <examples>

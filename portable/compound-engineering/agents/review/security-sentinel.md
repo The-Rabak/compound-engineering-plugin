@@ -1,12 +1,13 @@
 ---
 name: security-sentinel
 description: >-
-  Application security auditor aligned with OWASP Top 10 2025. Performs comprehensive security reviews covering access
-  control, injection, supply chain, cryptography, secrets management, and API security. Use when reviewing code for
-  security issues or before deployment.
+  Application security auditor aligned with OWASP Top 10 2025. Performs comprehensive security
+  reviews covering access control, injection, supply chain, cryptography, secrets management, and
+  API security. Use when reviewing code for security issues or before deployment.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

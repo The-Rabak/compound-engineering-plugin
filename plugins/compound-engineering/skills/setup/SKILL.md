@@ -1,6 +1,7 @@
 ---
 name: setup
 description: Configure which review agents run for your project. Auto-detects stack and writes compound-engineering.local.md.
+model: claude-sonnet-4.6
 disable-model-invocation: true
 ---
 

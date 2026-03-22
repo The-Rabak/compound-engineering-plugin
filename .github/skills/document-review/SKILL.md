@@ -1,8 +1,7 @@
 ---
 name: document-review
-description: >-
-  This skill should be used to refine brainstorm or plan documents before proceeding to the next workflow step. It
-  applies when a brainstorm or plan document exists and the user wants to improve it.
+description: This skill should be used to refine brainstorm or plan documents before proceeding to the next workflow step. It applies when a brainstorm or plan document exists and the user wants to improve it.
+model: gpt-5.3-codex
 ---
 
 # Document Review
@@ -38,7 +37,7 @@ Score the document against these criteria:
 | **Specificity** | Concrete enough for next step (brainstorm → can plan, plan → can implement) |
 | **YAGNI** | No hypothetical features, simplest approach chosen |
 
-If invoked within a workflow (after `/workflows:brainstorm` or `/workflows:plan`), also check:
+If invoked within a workflow (after `/workflows-brainstorm` or `/workflows-plan`), also check:
 - **User intent fidelity** — Document reflects what was discussed, assumptions validated
 
 ## Step 4: Identify the Critical Improvement

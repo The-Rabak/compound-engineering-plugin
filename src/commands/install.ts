@@ -2,7 +2,7 @@ import { defineCommand } from "citty"
 import { promises as fs } from "fs"
 import os from "os"
 import path from "path"
-import { loadClaudePlugin } from "../parsers/claude"
+import { loadPluginForTargetConversion } from "../parsers/conversion-source"
 import { targets } from "../targets"
 import { pathExists } from "../utils/files"
 import type { PermissionMode } from "../converters/claude-to-opencode"
@@ -80,7 +80,7 @@ export default defineCommand({
     const resolvedPlugin = await resolvePluginPath(String(args.plugin))
 
     try {
-      const plugin = await loadClaudePlugin(resolvedPlugin.path)
+      const plugin = await loadPluginForTargetConversion(resolvedPlugin.path)
       const outputRoot = resolveOutputRoot(args.output)
       const codexHome = resolveTargetHome(args.codexHome, path.join(os.homedir(), ".codex"))
       const piHome = resolveTargetHome(args.piHome, path.join(os.homedir(), ".pi", "agent"))

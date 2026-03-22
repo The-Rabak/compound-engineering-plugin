@@ -1,11 +1,15 @@
 ---
 name: skill-creator
 description: >-
-  Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an
-  existing skill) that extends Claude's capabilities with specialized knowledge, workflows, or tool integrations.
+  Guide for creating effective skills. This skill should be used when users want to create a new
+  skill (or update an existing skill) that extends Claude's capabilities with specialized knowledge,
+  workflows, or tool integrations.
+model: claude-sonnet-4.6
 platforms:
   claude:
     disable-model-invocation: true
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 # Skill Creator

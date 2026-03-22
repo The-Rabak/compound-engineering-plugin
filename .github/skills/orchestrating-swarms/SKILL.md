@@ -1,12 +1,7 @@
 ---
 name: orchestrating-swarms
-description: >-
-  This skill should be used when orchestrating multi-agent swarms using Claude Code's TeammateTool and Task system. It
-  applies when coordinating multiple agents, running parallel code reviews, creating pipeline workflows with
-  dependencies, building self-organizing task queues, or any task benefiting from divide-and-conquer patterns.
-platforms:
-  claude:
-    disable-model-invocation: true
+description: This skill should be used when orchestrating multi-agent swarms using Claude Code's TeammateTool and Task system. It applies when coordinating multiple agents, running parallel code reviews, creating pipeline workflows with dependencies, building self-organizing task queues, or any task benefiting from divide-and-conquer patterns.
+model: gpt-5.3-codex
 ---
 
 # Claude Code Swarm Orchestration
@@ -20,11 +15,11 @@ Master multi-agent orchestration using Claude Code's TeammateTool and Task syste
 | Primitive | What It Is | File Location |
 |-----------|-----------|---------------|
 | **Agent** | A Claude instance that can use tools. You are an agent. Subagents are agents you spawn. | N/A (process) |
-| **Team** | A named group of agents working together. One leader, multiple teammates. | `~/.claude/teams/{name}/config.json` |
+| **Team** | A named group of agents working together. One leader, multiple teammates. | `~/.copilot/teams/{name}/config.json` |
 | **Teammate** | An agent that joined a team. Has a name, color, inbox. Spawned via Task with `team_name` + `name`. | Listed in team config |
 | **Leader** | The agent that created the team. Receives teammate messages, approves plans/shutdowns. | First member in config |
-| **Task** | A work item with subject, description, status, owner, and dependencies. | `~/.claude/tasks/{team}/N.json` |
-| **Inbox** | JSON file where an agent receives messages from teammates. | `~/.claude/teams/{name}/inboxes/{agent}.json` |
+| **Task** | A work item with subject, description, status, owner, and dependencies. | `~/.copilot/tasks/{team}/n.json` |
+| **Inbox** | JSON file where an agent receives messages from teammates. | `~/.copilot/teams/{name}/inboxes/{agent}.json` |
 | **Message** | A JSON object sent between agents. Can be text or structured (shutdown_request, idle_notification, etc). | Stored in inbox files |
 | **Backend** | How teammates run. Auto-detected: `in-process` (same Node.js, invisible), `tmux` (separate panes, visible), `iterm2` (split panes in iTerm2). See [Spawn Backends](#spawn-backends). | Auto-detected based on environment |
 
@@ -129,14 +124,14 @@ A swarm consists of:
 ### File Structure
 
 ```
-~/.claude/teams/{team-name}/
+~/.copilot/teams/{team-name}/
 ├── config.json              # Team metadata and member list
 └── inboxes/
     ├── team-lead.json       # Leader's inbox
     ├── worker-1.json        # Worker 1's inbox
     └── worker-2.json        # Worker 2's inbox
 
-~/.claude/tasks/{team-name}/
+~/.copilot/tasks/{team-name}/
 ├── 1.json                   # Task #1
 ├── 2.json                   # Task #2
 └── 3.json                   # Task #3
@@ -163,7 +158,7 @@ A swarm consists of:
       "agentId": "worker-1@my-project",
       "name": "worker-1",
       "agentType": "Explore",
-      "model": "haiku",
+      "model": "claude-haiku-4.5",
       "prompt": "Analyze the codebase structure...",
       "color": "#D94A4A",
       "planModeRequired": false,
@@ -189,7 +184,7 @@ Task({
   subagent_type: "Explore",
   description: "Find auth files",
   prompt: "Find all authentication-related files in this codebase",
-  model: "haiku"  // Optional: haiku, sonnet, opus
+  model: "claude-haiku-4.5"  // Lightweight search/research; use sonnet/codex for reasoning-heavy workers
 })
 ```
 
@@ -258,7 +253,7 @@ Task({
   subagent_type: "Explore",
   description: "Find API endpoints",
   prompt: "Find all API endpoints in this codebase. Be very thorough.",
-  model: "haiku"  // Fast and cheap
+  model: "claude-haiku-4.5"  // Fast and cheap for basic exploration
 })
 ```
 - **Tools:** All read-only tools (no Edit, Write, NotebookEdit, Task)
@@ -438,8 +433,8 @@ Teammate({
 ```
 
 **Creates:**
-- `~/.claude/teams/feature-auth/config.json`
-- `~/.claude/tasks/feature-auth/` directory
+- `~/.copilot/teams/feature-auth/config.json`
+- `~/.copilot/tasks/feature-auth/` directory
 - You become the team leader
 
 ### 2. discoverTeams - List Available Teams
@@ -592,8 +587,8 @@ Teammate({ operation: "cleanup" })
 ```
 
 **Removes:**
-- `~/.claude/teams/{team-name}/` directory
-- `~/.claude/tasks/{team-name}/` directory
+- `~/.copilot/teams/{team-name}/` directory
+- `~/.copilot/tasks/{team-name}/` directory
 
 **IMPORTANT:** Will fail if teammates are still active. Use `requestShutdown` first.
 
@@ -671,7 +666,7 @@ TaskUpdate({ taskId: "4", addBlockedBy: ["3"] })   // #4 waits for #3
 
 ### Task File Structure
 
-`~/.claude/tasks/{team-name}/1.json`:
+`~/.copilot/tasks/{team-name}/1.json`:
 ```json
 {
   "id": "1",
@@ -826,7 +821,7 @@ Task({
 })
 
 // 3. Wait for results (check inbox)
-// cat ~/.claude/teams/code-review/inboxes/team-lead.json
+// cat ~/.copilot/teams/code-review/inboxes/team-lead.json
 
 // 4. Synthesize findings and cleanup
 Teammate({ operation: "requestShutdown", target_agent_id: "security" })
@@ -1345,7 +1340,7 @@ The backend type is recorded per-teammate in `config.json`:
 
 ```bash
 # See what backend was detected
-cat ~/.claude/teams/{team}/config.json | jq '.members[].backendType'
+cat ~/.copilot/teams/{team}/config.json | jq '.members[].backendType'
 
 # Check if inside tmux
 echo $TMUX
@@ -1388,7 +1383,7 @@ Teammate({ operation: "requestShutdown", target_agent_id: "worker-2" })
 // Check for {"type": "shutdown_approved", ...} messages
 
 // 3. Verify no active members
-// Read ~/.claude/teams/{team}/config.json
+// Read ~/.copilot/teams/{team}/config.json
 
 // 4. Only then cleanup
 Teammate({ operation: "cleanup" })
@@ -1407,19 +1402,19 @@ Teammates have a 5-minute heartbeat timeout. If a teammate crashes:
 
 ```bash
 # Check team config
-cat ~/.claude/teams/{team}/config.json | jq '.members[] | {name, agentType, backendType}'
+cat ~/.copilot/teams/{team}/config.json | jq '.members[] | {name, agentType, backendType}'
 
 # Check teammate inboxes
-cat ~/.claude/teams/{team}/inboxes/{agent}.json | jq '.'
+cat ~/.copilot/teams/{team}/inboxes/{agent}.json | jq '.'
 
 # List all teams
-ls ~/.claude/teams/
+ls ~/.copilot/teams/
 
 # Check task states
-cat ~/.claude/tasks/{team}/*.json | jq '{id, subject, status, owner, blockedBy}'
+cat ~/.copilot/tasks/{team}/*.json | jq '{id, subject, status, owner, blockedBy}'
 
 # Watch for new messages
-tail -f ~/.claude/teams/{team}/inboxes/team-lead.json
+tail -f ~/.copilot/teams/{team}/inboxes/team-lead.json
 ```
 
 ---
@@ -1485,7 +1480,7 @@ Task({
 
 // === STEP 3: Monitor and collect results ===
 // Poll inbox or wait for idle notifications
-// cat ~/.claude/teams/pr-review-123/inboxes/team-lead.json
+// cat ~/.copilot/teams/pr-review-123/inboxes/team-lead.json
 
 // === STEP 4: Synthesize findings ===
 // Combine all reviewer findings into a cohesive report
@@ -1668,7 +1663,7 @@ TaskUpdate({ taskId: "2", addBlockedBy: ["1"] })
 ### 5. Check Inboxes for Results
 Workers send results to your inbox. Check it:
 ```bash
-cat ~/.claude/teams/{team}/inboxes/team-lead.json | jq '.'
+cat ~/.copilot/teams/{team}/inboxes/team-lead.json | jq '.'
 ```
 
 ### 6. Handle Worker Failures

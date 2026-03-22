@@ -1,6 +1,7 @@
 ---
-name: resolve_pr_parallel
+name: resolve-pr-parallel
 description: Resolve all PR comments using parallel processing. Use when addressing PR review feedback, resolving review threads, or batch-fixing PR comments.
+model: claude-sonnet-4.6
 disable-model-invocation: true
 ---
 

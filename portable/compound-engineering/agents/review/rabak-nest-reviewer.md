@@ -1,11 +1,12 @@
 ---
 name: rabak-nest-reviewer
 description: >-
-  Reviews NestJS code enforcing simplicity, performance, and security standards. Use after implementing features,
-  modifying code, or creating new NestJS components.
+  Reviews NestJS code enforcing simplicity, performance, and security standards. Use after
+  implementing features, modifying code, or creating new NestJS components.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

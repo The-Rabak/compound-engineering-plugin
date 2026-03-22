@@ -1,6 +1,7 @@
 ---
 name: finishing-branch
 description: Use when completing development on a feature branch -- verifies quality, presents completion options, and cleans up
+model: gpt-5.3-codex
 ---
 
 # Finishing a Development Branch
@@ -172,7 +173,7 @@ git worktree prune
 
 **Update plan status** (if a plan file was used):
 - Change `status: active` to `status: completed` in the plan's YAML frontmatter
-- This marks the plan as done so it is not picked up by future `/workflows:work` sessions
+- This marks the plan as done so it is not picked up by future `/workflows-work` sessions
 
 **Update execution session** (if STATE.md exists):
 - Set `status: completed` in STATE.md

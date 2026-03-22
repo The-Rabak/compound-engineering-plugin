@@ -1,12 +1,13 @@
 ---
 name: rabak-rust-reviewer
 description: >-
-  Reviews Rust code with an extremely high quality bar for ownership correctness, idiomatic patterns, unsafe discipline,
-  and zero-cost abstraction design. Use after implementing features, modifying code, or creating new Rust
-  crates/modules.
+  Reviews Rust code with an extremely high quality bar for ownership correctness, idiomatic
+  patterns, unsafe discipline, and zero-cost abstraction design. Use after implementing features,
+  modifying code, or creating new Rust crates/modules.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

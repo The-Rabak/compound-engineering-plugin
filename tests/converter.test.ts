@@ -1,11 +1,14 @@
 import { describe, expect, test } from "bun:test"
 import path from "path"
 import { loadClaudePlugin } from "../src/parsers/claude"
+import { loadPortablePlugin } from "../src/parsers/portable"
+import { convertClaudeToCopilot } from "../src/converters/claude-to-copilot"
 import { convertClaudeToOpenCode } from "../src/converters/claude-to-opencode"
 import { parseFrontmatter } from "../src/utils/frontmatter"
 import type { ClaudePlugin } from "../src/types/claude"
 
 const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-plugin")
+const portableFixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
 
 describe("convertClaudeToOpenCode", () => {
   test("maps commands, permissions, and agents", async () => {
@@ -275,5 +278,89 @@ Run \`/compound-engineering-setup\` to create a settings file.`,
     expect(agentFile).toBeDefined()
     // Tool-agnostic path in project root — no rewriting needed
     expect(agentFile!.content).toContain("compound-engineering.local.md")
+  })
+})
+
+describe("convertClaudeToCopilot", () => {
+  test("prefers Copilot model overrides for generated skills", async () => {
+    const plugin = await loadPortablePlugin(portableFixtureRoot)
+    const bundle = convertClaudeToCopilot(plugin, {
+      agentMode: "subagent",
+      inferTemperature: true,
+      permissions: "none",
+    })
+
+    const generatedSkill = bundle.generatedSkills.find((skill) => skill.name === "workflows-plan")
+    expect(generatedSkill).toBeDefined()
+
+    const parsed = parseFrontmatter(generatedSkill!.content)
+    expect(parsed.data.model).toBe("gpt-5.4-mini")
+  })
+
+  test("uses the shared model when no Copilot override exists", () => {
+    const plugin: ClaudePlugin = {
+      root: "/tmp/plugin",
+      manifest: { name: "fixture", version: "1.0.0" },
+      agents: [],
+      commands: [
+        {
+          name: "shared-model",
+          description: "Shared model fallback",
+          body: "Reuse the shared model.",
+          model: "haiku",
+          sourcePath: "/tmp/plugin/commands/shared-model.md",
+        },
+      ],
+      skills: [],
+    }
+
+    const bundle = convertClaudeToCopilot(plugin, {
+      agentMode: "subagent",
+      inferTemperature: false,
+      permissions: "none",
+    })
+
+    const generatedSkill = bundle.generatedSkills.find((skill) => skill.name === "shared-model")
+    expect(generatedSkill).toBeDefined()
+
+    const parsed = parseFrontmatter(generatedSkill!.content)
+    expect(parsed.data.model).toBe("haiku")
+  })
+
+  test("converts MCP env vars using Copilot prefixes", () => {
+    const plugin: ClaudePlugin = {
+      root: "/tmp/plugin",
+      manifest: { name: "fixture", version: "1.0.0" },
+      agents: [],
+      commands: [],
+      skills: [],
+      mcpServers: {
+        local: {
+          command: "echo",
+          env: {
+            TOKEN: "secret",
+            COPILOT_MCP_READY: "set",
+          },
+        },
+      },
+    }
+
+    const bundle = convertClaudeToCopilot(plugin, {
+      agentMode: "subagent",
+      inferTemperature: false,
+      permissions: "none",
+    })
+
+    expect(bundle.mcpConfig).toEqual({
+      local: {
+        type: "local",
+        command: "echo",
+        tools: ["*"],
+        env: {
+          COPILOT_MCP_TOKEN: "secret",
+          COPILOT_MCP_READY: "set",
+        },
+      },
+    })
   })
 })

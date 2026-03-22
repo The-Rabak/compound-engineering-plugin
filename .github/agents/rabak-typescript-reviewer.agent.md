@@ -3,7 +3,7 @@ description: Reviews TypeScript code with an extremely high quality bar for type
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

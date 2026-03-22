@@ -1,11 +1,12 @@
 ---
 name: data-migration-expert
 description: >-
-  Validates data migrations, backfills, and production data transformations against reality. Use when PRs involve ID
-  mappings, column renames, enum conversions, or schema changes.
+  Validates data migrations, backfills, and production data transformations against reality. Use
+  when PRs involve ID mappings, column renames, enum conversions, or schema changes.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

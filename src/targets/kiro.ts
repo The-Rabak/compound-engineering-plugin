@@ -1,6 +1,7 @@
 import path from "path"
 import { backupFile, copyDir, ensureDir, pathExists, readJson, writeJson, writeText } from "../utils/files"
 import type { KiroBundle } from "../types/kiro"
+import { assertSafeOutputName } from "../utils/path-safety"
 
 export async function writeKiroBundle(outputRoot: string, bundle: KiroBundle): Promise<void> {
   const paths = resolveKiroPaths(outputRoot)
@@ -10,7 +11,7 @@ export async function writeKiroBundle(outputRoot: string, bundle: KiroBundle): P
   if (bundle.agents.length > 0) {
     for (const agent of bundle.agents) {
       // Validate name doesn't escape agents directory
-      validatePathSafe(agent.name, "agent")
+      assertSafeOutputName(agent.name, "agent")
 
       // Write agent JSON config
       await writeJson(
@@ -29,7 +30,7 @@ export async function writeKiroBundle(outputRoot: string, bundle: KiroBundle): P
   // Write generated skills (from commands)
   if (bundle.generatedSkills.length > 0) {
     for (const skill of bundle.generatedSkills) {
-      validatePathSafe(skill.name, "skill")
+      assertSafeOutputName(skill.name, "skill")
       await writeText(
         path.join(paths.skillsDir, skill.name, "SKILL.md"),
         skill.content + "\n",
@@ -40,7 +41,7 @@ export async function writeKiroBundle(outputRoot: string, bundle: KiroBundle): P
   // Copy skill directories (pass-through)
   if (bundle.skillDirs.length > 0) {
     for (const skill of bundle.skillDirs) {
-      validatePathSafe(skill.name, "skill directory")
+      assertSafeOutputName(skill.name, "skill directory")
       const destDir = path.join(paths.skillsDir, skill.name)
 
       // Validate destination doesn't escape skills directory
@@ -57,7 +58,7 @@ export async function writeKiroBundle(outputRoot: string, bundle: KiroBundle): P
   // Write steering files
   if (bundle.steeringFiles.length > 0) {
     for (const file of bundle.steeringFiles) {
-      validatePathSafe(file.name, "steering file")
+      assertSafeOutputName(file.name, "steering file")
       await writeText(
         path.join(paths.steeringDir, `${file.name}.md`),
         file.content + "\n",
@@ -112,11 +113,5 @@ function resolveKiroPaths(outputRoot: string) {
     skillsDir: path.join(kiroDir, "skills"),
     steeringDir: path.join(kiroDir, "steering"),
     settingsDir: path.join(kiroDir, "settings"),
-  }
-}
-
-function validatePathSafe(name: string, label: string): void {
-  if (name.includes("..") || name.includes("/") || name.includes("\\")) {
-    throw new Error(`${label} name contains unsafe path characters: ${name}`)
   }
 }

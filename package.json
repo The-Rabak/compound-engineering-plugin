@@ -12,9 +12,11 @@
   "scripts": {
     "dev": "bun run src/index.ts",
     "build:platforms": "bun run src/index.ts build portable/compound-engineering --output .",
+    "verify:generated": "bun run src/scripts/verify-generated.ts",
     "convert": "bun run src/index.ts convert",
     "list": "bun run src/index.ts list",
     "cli:install": "bun run src/index.ts install",
+    "sync:ov": "bun run src/index.ts sync-ov portable/compound-engineering",
     "test": "bun test"
   },
   "dependencies": {

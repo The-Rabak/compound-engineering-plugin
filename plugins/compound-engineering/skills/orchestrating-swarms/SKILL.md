@@ -1,6 +1,7 @@
 ---
 name: orchestrating-swarms
 description: This skill should be used when orchestrating multi-agent swarms using Claude Code's TeammateTool and Task system. It applies when coordinating multiple agents, running parallel code reviews, creating pipeline workflows with dependencies, building self-organizing task queues, or any task benefiting from divide-and-conquer patterns.
+model: claude-sonnet-4.6
 disable-model-invocation: true
 ---
 
@@ -158,7 +159,7 @@ A swarm consists of:
       "agentId": "worker-1@my-project",
       "name": "worker-1",
       "agentType": "Explore",
-      "model": "haiku",
+      "model": "claude-haiku-4.5",
       "prompt": "Analyze the codebase structure...",
       "color": "#D94A4A",
       "planModeRequired": false,
@@ -184,7 +185,7 @@ Task({
   subagent_type: "Explore",
   description: "Find auth files",
   prompt: "Find all authentication-related files in this codebase",
-  model: "haiku"  // Optional: haiku, sonnet, opus
+  model: "claude-haiku-4.5"  // Lightweight search/research; use sonnet/codex for reasoning-heavy workers
 })
 ```
 
@@ -253,7 +254,7 @@ Task({
   subagent_type: "Explore",
   description: "Find API endpoints",
   prompt: "Find all API endpoints in this codebase. Be very thorough.",
-  model: "haiku"  // Fast and cheap
+  model: "claude-haiku-4.5"  // Fast and cheap for basic exploration
 })
 ```
 - **Tools:** All read-only tools (no Edit, Write, NotebookEdit, Task)
