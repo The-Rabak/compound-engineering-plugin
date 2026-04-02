@@ -1,11 +1,11 @@
 import { formatFrontmatter } from "../utils/frontmatter"
-import type { ClaudeAgent, ClaudeCommand, ClaudeMcpServer, ClaudePlugin } from "../types/claude"
+import type { ClaudeAgent, ClaudeCommand, ClaudePlugin } from "../types/claude"
 import type {
   CopilotAgent,
   CopilotBundle,
   CopilotGeneratedSkill,
-  CopilotMcpServer,
 } from "../types/copilot"
+import { convertClaudeMcpServersForCopilot } from "../utils/copilot"
 import type { ClaudeToOpenCodeOptions } from "./claude-to-opencode"
 
 export type ClaudeToCopilotOptions = ClaudeToOpenCodeOptions
@@ -26,7 +26,10 @@ export function convertClaudeToCopilot(
     usedSkillNames.add(skill.name)
     return {
       name: skill.name,
+      description: skill.description,
+      model: skill.copilotModel ?? skill.model,
       sourceDir: skill.sourceDir,
+      skillPath: skill.skillPath,
     }
   })
 
@@ -34,7 +37,7 @@ export function convertClaudeToCopilot(
     convertCommandToSkill(command, usedSkillNames),
   )
 
-  const mcpConfig = convertMcpServers(plugin.mcpServers)
+  const mcpConfig = convertClaudeMcpServersForCopilot(plugin.mcpServers)
 
   if (plugin.hooks && Object.keys(plugin.hooks.hooks).length > 0) {
     console.warn("Warning: Copilot does not support hooks. Hooks were skipped during conversion.")
@@ -46,6 +49,7 @@ export function convertClaudeToCopilot(
 function convertAgent(agent: ClaudeAgent, usedNames: Set<string>): CopilotAgent {
   const name = uniqueName(normalizeName(agent.name), usedNames)
   const description = agent.description ?? `Converted from Claude agent ${agent.name}`
+  const model = agent.copilotModel ?? agent.model
 
   const frontmatter: Record<string, unknown> = {
     description,
@@ -53,8 +57,8 @@ function convertAgent(agent: ClaudeAgent, usedNames: Set<string>): CopilotAgent 
     infer: true,
   }
 
-  if (agent.model) {
-    frontmatter.model = agent.model
+  if (model) {
+    frontmatter.model = model
   }
 
   let body = transformContentForCopilot(agent.body.trim())
@@ -81,12 +85,16 @@ function convertCommandToSkill(
   usedNames: Set<string>,
 ): CopilotGeneratedSkill {
   const name = uniqueName(flattenCommandName(command.name), usedNames)
+  const model = command.copilotModel ?? command.model
 
   const frontmatter: Record<string, unknown> = {
     name,
   }
   if (command.description) {
     frontmatter.description = command.description
+  }
+  if (model) {
+    frontmatter.model = model
   }
 
   const sections: string[] = []
@@ -134,47 +142,6 @@ export function transformContentForCopilot(body: string): string {
     return `the ${normalizeName(agentName)} agent`
   })
 
-  return result
-}
-
-function convertMcpServers(
-  servers?: Record<string, ClaudeMcpServer>,
-): Record<string, CopilotMcpServer> | undefined {
-  if (!servers || Object.keys(servers).length === 0) return undefined
-
-  const result: Record<string, CopilotMcpServer> = {}
-  for (const [name, server] of Object.entries(servers)) {
-    const entry: CopilotMcpServer = {
-      type: server.command ? "local" : "sse",
-      tools: ["*"],
-    }
-
-    if (server.command) {
-      entry.command = server.command
-      if (server.args && server.args.length > 0) entry.args = server.args
-    } else if (server.url) {
-      entry.url = server.url
-      if (server.headers && Object.keys(server.headers).length > 0) entry.headers = server.headers
-    }
-
-    if (server.env && Object.keys(server.env).length > 0) {
-      entry.env = prefixEnvVars(server.env)
-    }
-
-    result[name] = entry
-  }
-  return result
-}
-
-function prefixEnvVars(env: Record<string, string>): Record<string, string> {
-  const result: Record<string, string> = {}
-  for (const [key, value] of Object.entries(env)) {
-    if (key.startsWith("COPILOT_MCP_")) {
-      result[key] = value
-    } else {
-      result[`COPILOT_MCP_${key}`] = value
-    }
-  }
   return result
 }
 

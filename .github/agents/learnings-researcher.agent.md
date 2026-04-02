@@ -3,7 +3,7 @@ description: Searches docs/solutions/ for relevant past solutions by frontmatter
 tools:
   - "*"
 infer: true
-model: haiku
+model: gpt-5.4-mini
 ---
 
 <examples>

@@ -1,11 +1,12 @@
 ---
 name: git-history-analyzer
 description: >-
-  Performs archaeological analysis of git history to trace code evolution, identify contributors, and understand why
-  code patterns exist. Use when you need historical context for code changes.
+  Performs archaeological analysis of git history to trace code evolution, identify contributors,
+  and understand why code patterns exist. Use when you need historical context for code changes.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

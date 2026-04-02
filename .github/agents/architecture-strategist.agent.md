@@ -3,7 +3,7 @@ description: Software architecture review specialist. Evaluates code for SOLID c
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

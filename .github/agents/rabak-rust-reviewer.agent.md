@@ -3,7 +3,7 @@ description: Reviews Rust code with an extremely high quality bar for ownership 
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

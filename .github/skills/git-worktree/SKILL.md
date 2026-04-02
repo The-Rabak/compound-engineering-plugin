@@ -1,8 +1,7 @@
 ---
 name: git-worktree
-description: >-
-  This skill manages Git worktrees for isolated parallel development. It handles creating, listing, switching, and
-  cleaning up worktrees with a simple interactive interface, following KISS principles.
+description: This skill manages Git worktrees for isolated parallel development. It handles creating, listing, switching, and cleaning up worktrees with a simple interactive interface, following KISS principles.
+model: gpt-5.3-codex
 ---
 
 # Git Worktree Manager
@@ -40,8 +39,8 @@ git worktree add .worktrees/feature-name -b feature-name main
 
 Use this skill in these scenarios:
 
-1. **Code Review (`/workflows:review`)**: If NOT already on the target branch (PR branch or requested branch), offer worktree for isolated review
-2. **Feature Work (`/workflows:work`)**: Always ask if user wants parallel worktree or live branch work
+1. **Code Review (`/workflows-review`)**: If NOT already on the target branch (PR branch or requested branch), offer worktree for isolated review
+2. **Feature Work (`/workflows-work`)**: Always ask if user wants parallel worktree or live branch work
 3. **Parallel Development**: When working on multiple features simultaneously
 4. **Cleanup**: After completing work in a worktree
 
@@ -49,7 +48,7 @@ Use this skill in these scenarios:
 
 ### In Claude Code Workflows
 
-The skill is automatically called from `/workflows:review` and `/workflows:work` commands:
+The skill is automatically called from `/workflows-review` and `/workflows-work` commands:
 
 ```
 # For review: offers worktree if not on PR branch
@@ -206,7 +205,7 @@ bash ${CLAUDE_PLUGIN_ROOT}/skills/git-worktree/scripts/worktree-manager.sh clean
 
 ## Integration with Workflows
 
-### `/workflows:review`
+### `/workflows-review`
 
 Instead of always creating a worktree:
 
@@ -219,7 +218,7 @@ Instead of always creating a worktree:
    - no → proceed with PR diff on current branch
 ```
 
-### `/workflows:work`
+### `/workflows-work`
 
 Always offer choice:
 

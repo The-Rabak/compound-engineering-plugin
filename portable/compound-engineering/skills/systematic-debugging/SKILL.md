@@ -1,8 +1,12 @@
 ---
 name: systematic-debugging
 description: >-
-  Use when debugging unexpected errors during implementation -- provides a structured 4-phase methodology instead of
-  trial-and-error
+  Use when debugging unexpected errors during implementation -- provides a structured 4-phase
+  methodology instead of trial-and-error
+model: claude-sonnet-4.6
+platforms:
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 # Systematic Debugging

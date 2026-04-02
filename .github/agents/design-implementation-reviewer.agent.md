@@ -3,7 +3,7 @@ description: Visually compares live UI implementation against Figma designs and 
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

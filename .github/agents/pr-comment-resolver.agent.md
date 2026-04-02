@@ -3,7 +3,7 @@ description: Addresses PR review comments by implementing requested changes and 
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

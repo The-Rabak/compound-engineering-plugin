@@ -3,7 +3,7 @@ description: Researches and synthesizes external best practices, documentation, 
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.4-mini
 ---
 
 <examples>

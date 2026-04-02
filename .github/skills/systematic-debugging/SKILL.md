@@ -1,8 +1,7 @@
 ---
 name: systematic-debugging
-description: >-
-  Use when debugging unexpected errors during implementation -- provides a structured 4-phase methodology instead of
-  trial-and-error
+description: Use when debugging unexpected errors during implementation -- provides a structured 4-phase methodology instead of trial-and-error
+model: gpt-5.3-codex
 ---
 
 # Systematic Debugging
@@ -117,7 +116,7 @@ Include in your execution report:
 - **Prevention:** [how to prevent this in the future]
 ```
 
-This information feeds into the learnings brief for subsequent tasks and can be captured in `docs/solutions/` via `/workflows:compound`.
+This information feeds into the learnings brief for subsequent tasks and can be captured in `docs/solutions/` via `/workflows-compound`.
 
 ### Feed Forward
 

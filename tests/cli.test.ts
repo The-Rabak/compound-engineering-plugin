@@ -274,6 +274,109 @@ describe("CLI", () => {
     expect(await exists(path.join(tempRoot, "opencode.json"))).toBe(true)
   })
 
+  test("convert prefers portable source when generating Copilot output", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-convert-copilot-"))
+    const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-convert-portable-source-"))
+    const portableFixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+    const generatedFixtureRoot = path.join(import.meta.dir, "fixtures", "sample-plugin")
+    const pluginRoot = path.join(repoRoot, "plugins", "compound-engineering")
+    const portableRoot = path.join(repoRoot, "portable", "compound-engineering")
+
+    await fs.mkdir(path.dirname(pluginRoot), { recursive: true })
+    await fs.mkdir(path.dirname(portableRoot), { recursive: true })
+    await fs.cp(generatedFixtureRoot, pluginRoot, { recursive: true })
+    await fs.cp(portableFixtureRoot, portableRoot, { recursive: true })
+
+    const proc = Bun.spawn([
+      "bun",
+      "run",
+      "src/index.ts",
+      "convert",
+      pluginRoot,
+      "--to",
+      "copilot",
+      "--output",
+      tempRoot,
+    ], {
+      cwd: path.join(import.meta.dir, ".."),
+      stdout: "pipe",
+      stderr: "pipe",
+    })
+
+    const exitCode = await proc.exited
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+
+    if (exitCode !== 0) {
+      throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
+    }
+
+    const skillContent = await fs.readFile(path.join(tempRoot, ".github", "skills", "skill-one", "SKILL.md"), "utf8")
+    expect(stdout).toContain("Converted compound-engineering to copilot")
+    expect(skillContent).toContain("model: gpt-5.4-mini")
+  })
+
+  test("install prefers portable source when cloning for Copilot output", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-install-copilot-"))
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-install-copilot-workspace-"))
+    const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-install-copilot-repo-"))
+    const portableFixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+    const generatedFixtureRoot = path.join(import.meta.dir, "fixtures", "sample-plugin")
+    const pluginRoot = path.join(repoRoot, "plugins", "compound-engineering")
+    const portableRoot = path.join(repoRoot, "portable", "compound-engineering")
+
+    await fs.mkdir(path.dirname(pluginRoot), { recursive: true })
+    await fs.mkdir(path.dirname(portableRoot), { recursive: true })
+    await fs.cp(generatedFixtureRoot, pluginRoot, { recursive: true })
+    await fs.cp(portableFixtureRoot, portableRoot, { recursive: true })
+
+    const gitEnv = {
+      ...process.env,
+      GIT_AUTHOR_NAME: "Test",
+      GIT_AUTHOR_EMAIL: "test@example.com",
+      GIT_COMMITTER_NAME: "Test",
+      GIT_COMMITTER_EMAIL: "test@example.com",
+    }
+
+    await runGit(["init"], repoRoot, gitEnv)
+    await runGit(["add", "."], repoRoot, gitEnv)
+    await runGit(["commit", "-m", "fixture"], repoRoot, gitEnv)
+
+    const projectRoot = path.join(import.meta.dir, "..")
+    const proc = Bun.spawn([
+      "bun",
+      "run",
+      path.join(projectRoot, "src", "index.ts"),
+      "install",
+      "compound-engineering",
+      "--to",
+      "copilot",
+      "--output",
+      tempRoot,
+    ], {
+      cwd: workspaceRoot,
+      stdout: "pipe",
+      stderr: "pipe",
+      env: {
+        ...process.env,
+        HOME: tempRoot,
+        COMPOUND_PLUGIN_GITHUB_SOURCE: repoRoot,
+      },
+    })
+
+    const exitCode = await proc.exited
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+
+    if (exitCode !== 0) {
+      throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
+    }
+
+    const skillContent = await fs.readFile(path.join(tempRoot, ".github", "skills", "skill-one", "SKILL.md"), "utf8")
+    expect(stdout).toContain("Installed compound-engineering")
+    expect(skillContent).toContain("model: gpt-5.4-mini")
+  })
+
   test("build writes Claude and Copilot outputs from portable source", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-build-"))
     const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
@@ -302,10 +405,181 @@ describe("CLI", () => {
 
     expect(stdout).toContain("Built Claude output")
     expect(stdout).toContain("Built Copilot output")
-    expect(await exists(path.join(tempRoot, "plugins", "compound-engineering", ".claude-plugin", "plugin.json"))).toBe(true)
+    const claudePluginRoot = path.join(tempRoot, "plugins", "compound-engineering")
+    const copilotSkillsRoot = path.join(tempRoot, ".github", "skills")
+    expect(await exists(path.join(claudePluginRoot, ".claude-plugin", "plugin.json"))).toBe(true)
     expect(await exists(path.join(tempRoot, ".claude-plugin", "marketplace.json"))).toBe(true)
     expect(await exists(path.join(tempRoot, ".github", "agents", "repo-research-analyst.agent.md"))).toBe(true)
-    expect(await exists(path.join(tempRoot, ".github", "skills", "workflows-plan", "SKILL.md"))).toBe(true)
+    const generatedSkillPath = path.join(copilotSkillsRoot, "workflows-plan", "SKILL.md")
+    expect(await exists(generatedSkillPath)).toBe(true)
+
+    const claudeSkillContent = await fs.readFile(path.join(claudePluginRoot, "skills", "skill-one", "SKILL.md"), "utf8")
+    expect(claudeSkillContent).toContain("model: haiku")
+
+    const generatedSkillContent = await fs.readFile(generatedSkillPath, "utf8")
+    expect(generatedSkillContent).toContain("model: gpt-5.4-mini")
+
+    const copiedSkillPath = path.join(copilotSkillsRoot, "skill-one", "SKILL.md")
+    expect(await exists(copiedSkillPath)).toBe(true)
+    const copiedSkillContent = await fs.readFile(copiedSkillPath, "utf8")
+    expect(copiedSkillContent).toContain("model: gpt-5.4-mini")
+    expect(copiedSkillContent).toContain("/workflows-plan")
+    expect(copiedSkillContent).toContain("~/.copilot/skills/skill-one/notes.md")
+  })
+
+  test("sync-ov registers portable agents, skills, and skill support files", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-sync-ov-"))
+    const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+    const fakeOvCore = path.join(import.meta.dir, "fixtures", "fake-ov-core.sh")
+    const fakeOvRoot = path.join(tempRoot, "ov-global")
+    const fakeOvLog = path.join(tempRoot, "ov.log")
+
+    const proc = Bun.spawn([
+      "bun",
+      "run",
+      "src/index.ts",
+      "sync-ov",
+      fixtureRoot,
+      "--ov-core",
+      fakeOvCore,
+    ], {
+      cwd: path.join(import.meta.dir, ".."),
+      stdout: "pipe",
+      stderr: "pipe",
+      env: {
+        ...process.env,
+        FAKE_OV_ROOT: fakeOvRoot,
+        FAKE_OV_LOG: fakeOvLog,
+      },
+    })
+
+    const exitCode = await proc.exited
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+
+    if (exitCode !== 0) {
+      throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
+    }
+
+    expect(stdout).toContain("Synced 1 agents, 1 skills, and 1 skill support files")
+    expect(await exists(path.join(fakeOvRoot, "agents", "repo-research-analyst.md"))).toBe(true)
+    expect(await exists(path.join(fakeOvRoot, "skills", "skill-one.md"))).toBe(true)
+    const mirroredSupportPath = path.join(fakeOvRoot, "skills", "skill-one", "references", "guide.txt")
+    expect(await exists(mirroredSupportPath)).toBe(true)
+    expect(await fs.readFile(mirroredSupportPath, "utf8")).toBe("Portable reference\n")
+
+    const log = await fs.readFile(fakeOvLog, "utf8")
+    expect(log).toContain(`resource\tviking://resources/_global/agents\t${path.join(fakeOvRoot, "agents", "repo-research-analyst.md")}`)
+    expect(log).toContain(`resource\tviking://resources/_global/skills\t${path.join(fakeOvRoot, "skills", "skill-one.md")}`)
+    expect(log).toContain("resource\tviking://resources/_global/skills/skill-one/references")
+    expect(log).toContain("rebuild\tglobal-manifest")
+  })
+
+  test("sync-ov rejects unsafe skill names before mirroring", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-sync-ov-invalid-skill-"))
+    const sourceFixture = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+    const fixtureRoot = path.join(tempRoot, "portable-plugin")
+    const fakeOvCore = path.join(import.meta.dir, "fixtures", "fake-ov-core.sh")
+    const fakeOvRoot = path.join(tempRoot, "ov-global")
+    const fakeOvLog = path.join(tempRoot, "ov.log")
+
+    await fs.cp(sourceFixture, fixtureRoot, { recursive: true })
+    const skillPath = path.join(fixtureRoot, "skills", "skill-one", "SKILL.md")
+    const rawSkill = await fs.readFile(skillPath, "utf8")
+    await fs.writeFile(skillPath, rawSkill.replace("name: skill-one", "name: .."))
+
+    const proc = Bun.spawn([
+      "bun",
+      "run",
+      "src/index.ts",
+      "sync-ov",
+      fixtureRoot,
+      "--ov-core",
+      fakeOvCore,
+    ], {
+      cwd: path.join(import.meta.dir, ".."),
+      stdout: "pipe",
+      stderr: "pipe",
+      env: {
+        ...process.env,
+        FAKE_OV_ROOT: fakeOvRoot,
+        FAKE_OV_LOG: fakeOvLog,
+      },
+    })
+
+    const exitCode = await proc.exited
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+    const combinedOutput = `${stdout}\n${stderr}`
+
+    expect(exitCode).not.toBe(0)
+    expect(combinedOutput).toContain("Invalid skill name for OpenViking sync: ..")
+    expect(await exists(fakeOvRoot)).toBe(false)
+  })
+
+  test("sync-ov sanitizes inherited shell startup hooks and PATH", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-sync-ov-bashenv-"))
+    const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+    const fakeOvCore = path.join(import.meta.dir, "fixtures", "fake-ov-core.sh")
+    const fakeOvRoot = path.join(tempRoot, "ov-global")
+    const fakeOvLog = path.join(tempRoot, "ov.log")
+    const envSnapshotPath = path.join(tempRoot, "env.txt")
+    const markerPath = path.join(tempRoot, "bash-env-marker.txt")
+    const bashEnvPath = path.join(tempRoot, "malicious-bashenv.sh")
+    const pathMarkerPath = path.join(tempRoot, "path-marker.txt")
+    const fakeBin = path.join(tempRoot, "bin")
+    const fakeCpPath = path.join(fakeBin, "cp")
+
+    await fs.writeFile(bashEnvPath, `printf 'unexpected' > ${JSON.stringify(markerPath)}\n`, "utf8")
+    await fs.mkdir(fakeBin, { recursive: true })
+    await fs.writeFile(
+      fakeCpPath,
+      `#!/usr/bin/env bash\nprintf 'unexpected' > ${JSON.stringify(pathMarkerPath)}\nexec /bin/cp \"$@\"\n`,
+      "utf8",
+    )
+    await fs.chmod(fakeCpPath, 0o755)
+
+    const proc = Bun.spawn([
+      "bun",
+      "run",
+      "src/index.ts",
+      "sync-ov",
+      fixtureRoot,
+      "--ov-core",
+      fakeOvCore,
+    ], {
+      cwd: path.join(import.meta.dir, ".."),
+      stdout: "pipe",
+      stderr: "pipe",
+      env: {
+        ...process.env,
+        BASH_ENV: bashEnvPath,
+        "BASH_FUNC_source%%": "() { printf 'unexpected' > " + JSON.stringify(markerPath) + "; }",
+        PATH: `${fakeBin}:${process.env.PATH ?? ""}`,
+        FAKE_OV_ROOT: fakeOvRoot,
+        FAKE_OV_LOG: fakeOvLog,
+        FAKE_OV_ENV_SNAPSHOT: envSnapshotPath,
+      },
+    })
+
+    const exitCode = await proc.exited
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+
+    if (exitCode !== 0) {
+      throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
+    }
+
+    expect(await exists(markerPath)).toBe(false)
+    expect(await exists(pathMarkerPath)).toBe(false)
+    expect(await exists(path.join(fakeOvRoot, "skills", "skill-one.md"))).toBe(true)
+
+    const envSnapshot = await fs.readFile(envSnapshotPath, "utf8")
+    expect(envSnapshot).not.toContain("BASH_ENV=")
+    expect(envSnapshot).not.toContain("BASH_FUNC_source")
+    expect(envSnapshot).not.toContain(`PATH=${fakeBin}`)
+    expect(envSnapshot).toContain(`PATH=${path.join(process.env.HOME ?? "", ".local", "bin")}`)
+    expect(envSnapshot).toContain("/usr/bin")
   })
 
   test("convert supports --codex-home for codex output", async () => {

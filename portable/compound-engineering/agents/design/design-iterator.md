@@ -1,11 +1,13 @@
 ---
 name: design-iterator
 description: >-
-  Iteratively refines UI design through N screenshot-analyze-improve cycles. Use PROACTIVELY when design changes aren't
-  coming together after 1-2 attempts, or when user requests iterative refinement.
+  Iteratively refines UI design through N screenshot-analyze-improve cycles. Use PROACTIVELY when
+  design changes aren't coming together after 1-2 attempts, or when user requests iterative
+  refinement.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

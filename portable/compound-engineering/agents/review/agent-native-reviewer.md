@@ -1,11 +1,12 @@
 ---
 name: agent-native-reviewer
 description: >-
-  Reviews code to ensure agent-native parity — any action a user can take, an agent can also take. Use after adding UI
-  features, agent tools, or system prompts.
+  Reviews code to ensure agent-native parity — any action a user can take, an agent can also take.
+  Use after adding UI features, agent tools, or system prompts.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

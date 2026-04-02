@@ -1,11 +1,12 @@
 ---
 name: data-integrity-guardian
 description: >-
-  Reviews database migrations, data models, and persistent data code for safety. Use when checking migration safety,
-  data constraints, transaction boundaries, or privacy compliance.
+  Reviews database migrations, data models, and persistent data code for safety. Use when checking
+  migration safety, data constraints, transaction boundaries, or privacy compliance.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

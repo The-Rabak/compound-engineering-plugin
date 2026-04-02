@@ -1,14 +1,12 @@
 ---
 name: setup
 description: Configure which review agents run for your project. Auto-detects stack and writes compound-engineering.local.md.
-platforms:
-  claude:
-    disable-model-invocation: true
+model: gpt-5.3-codex
 ---
 
 # Compound Engineering Setup
 
-Interactive setup for `compound-engineering.local.md` -- configures which agents run during `/workflows:review` and `/workflows:work`.
+Interactive setup for `compound-engineering.local.md` -- configures which agents run during `/workflows-review` and `/workflows-work`.
 
 ## Step 1: Check Existing Config
 
@@ -222,7 +220,7 @@ review_mode: bulk
 # Review Context
 
 Add project-specific review instructions here.
-These notes are passed to all review agents during /workflows:review and /workflows:work.
+These notes are passed to all review agents during /workflows-review and /workflows-work.
 
 Examples:
 - "We use Turbo Frames heavily -- check for frame-busting issues"

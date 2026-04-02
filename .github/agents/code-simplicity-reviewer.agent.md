@@ -3,7 +3,7 @@ description: Code complexity eliminator and readability champion. Measures cogni
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

@@ -3,7 +3,7 @@ description: Systematically reproduces and validates bug reports to confirm whet
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

@@ -46,7 +46,22 @@ describe("writeClaudeBundle", () => {
     expect(commandContent).toContain("disable-model-invocation: true")
 
     const skillContent = await fs.readFile(skillPath, "utf8")
+    expect(skillContent).toContain("model: haiku")
     expect(skillContent).toContain("disable-model-invocation: true")
     expect(skillContent).toContain("Use this skill when the user needs a shared portable workflow.")
+  })
+
+  test("uses parsed skill body without rereading from disk", async () => {
+    const plugin = await loadPortablePlugin(fixtureRoot)
+    plugin.skills[0]!.body = "Body provided by parser cache"
+
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "claude-writer-body-"))
+    const outputRoot = path.join(tempRoot, "plugins", plugin.manifest.name)
+
+    await writeClaudeBundle(outputRoot, plugin)
+
+    const skillPath = path.join(outputRoot, "skills", "skill-one", "SKILL.md")
+    const skillContent = await fs.readFile(skillPath, "utf8")
+    expect(skillContent).toContain("Body provided by parser cache")
   })
 })

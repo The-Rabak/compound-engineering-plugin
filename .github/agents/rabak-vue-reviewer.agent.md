@@ -3,7 +3,7 @@ description: Reviews Vue.js and Nuxt code for modern best practices, performance
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

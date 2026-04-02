@@ -1,11 +1,12 @@
 ---
 name: design-implementation-reviewer
 description: >-
-  Visually compares live UI implementation against Figma designs and provides detailed feedback on discrepancies. Use
-  after writing or modifying HTML/CSS/React components to verify design fidelity.
+  Visually compares live UI implementation against Figma designs and provides detailed feedback on
+  discrepancies. Use after writing or modifying HTML/CSS/React components to verify design fidelity.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

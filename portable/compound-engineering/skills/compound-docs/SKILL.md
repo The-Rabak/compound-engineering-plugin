@@ -1,6 +1,7 @@
 ---
 name: compound-docs
 description: Capture solved problems as categorized documentation with YAML frontmatter for fast lookup
+model: claude-sonnet-4.6
 platforms:
   claude:
     allowed-tools:
@@ -9,6 +10,8 @@ platforms:
       - Bash
       - Grep
     disable-model-invocation: true
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 # compound-docs Skill

@@ -1,11 +1,12 @@
 ---
 name: bug-reproduction-validator
 description: >-
-  Systematically reproduces and validates bug reports to confirm whether reported behavior is an actual bug. Use when
-  you receive a bug report or issue that needs verification.
+  Systematically reproduces and validates bug reports to confirm whether reported behavior is an
+  actual bug. Use when you receive a bug report or issue that needs verification.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

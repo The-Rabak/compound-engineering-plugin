@@ -3,7 +3,7 @@ description: Reviews code to ensure agent-native parity — any action a user ca
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

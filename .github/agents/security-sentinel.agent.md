@@ -3,7 +3,7 @@ description: Application security auditor aligned with OWASP Top 10 2025. Perfor
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

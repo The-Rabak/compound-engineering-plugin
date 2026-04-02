@@ -1,11 +1,12 @@
 ---
 name: figma-design-sync
 description: >-
-  Detects and fixes visual differences between a web implementation and its Figma design. Use iteratively when syncing
-  implementation to match Figma specs.
+  Detects and fixes visual differences between a web implementation and its Figma design. Use
+  iteratively when syncing implementation to match Figma specs.
+model: claude-sonnet-4.6
 platforms:
-  claude:
-    model: inherit
+  copilot:
+    model: gpt-5.3-codex
 ---
 
 <examples>

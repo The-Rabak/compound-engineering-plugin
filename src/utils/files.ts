@@ -48,15 +48,23 @@ export async function writeJson(filePath: string, data: unknown): Promise<void> 
 
 export async function walkFiles(root: string): Promise<string[]> {
   const entries = await fs.readdir(root, { withFileTypes: true })
+  const orderedEntries = [...entries].sort((left, right) => left.name.localeCompare(right.name))
+  const nestedResults = await Promise.all(
+    orderedEntries.map(async (entry) => {
+      const fullPath = path.join(root, entry.name)
+      if (entry.isDirectory()) {
+        return await walkFiles(fullPath)
+      }
+      if (entry.isFile()) {
+        return [fullPath]
+      }
+      return []
+    }),
+  )
+
   const results: string[] = []
-  for (const entry of entries) {
-    const fullPath = path.join(root, entry.name)
-    if (entry.isDirectory()) {
-      const nested = await walkFiles(fullPath)
-      results.push(...nested)
-    } else if (entry.isFile()) {
-      results.push(fullPath)
-    }
+  for (const nested of nestedResults) {
+    results.push(...nested)
   }
   return results
 }

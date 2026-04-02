@@ -76,6 +76,7 @@ function formatSkill(skill: ClaudeSkill, body: string): string {
     {
       name: skill.name,
       description: skill.description,
+      model: skill.model,
       "disable-model-invocation": skill.disableModelInvocation,
     },
     body,
@@ -83,6 +84,9 @@ function formatSkill(skill: ClaudeSkill, body: string): string {
 }
 
 async function readSkillBody(skill: ClaudeSkill): Promise<string> {
+  if (typeof skill.body === "string") {
+    return skill.body
+  }
   const raw = await readText(skill.skillPath)
   return parseFrontmatter(raw).body.trim()
 }

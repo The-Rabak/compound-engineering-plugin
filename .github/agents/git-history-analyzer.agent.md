@@ -3,7 +3,7 @@ description: Performs archaeological analysis of git history to trace code evolu
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

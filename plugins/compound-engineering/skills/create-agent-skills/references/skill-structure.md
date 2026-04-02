@@ -96,7 +96,7 @@ description: Helps with documents
 | `disable-model-invocation` | `true` to prevent auto-loading. Use for side-effect workflows. |
 | `user-invocable` | `false` to hide from `/` menu. Use for background knowledge. |
 | `allowed-tools` | Tools without permission prompts. Example: `Read, Bash(git *)` |
-| `model` | `haiku`, `sonnet`, or `opus` |
+| `model` | Explicit model IDs such as `claude-sonnet-4.6`, with platform-specific overrides like `platforms.copilot.model: gpt-5.3-codex` when needed |
 | `context` | `fork` for isolated subagent execution |
 | `agent` | Subagent type: `Explore`, `Plan`, `general-purpose`, or custom |
 

@@ -3,7 +3,7 @@ description: Gathers comprehensive documentation and best practices for framewor
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.4-mini
 ---
 
 <examples>

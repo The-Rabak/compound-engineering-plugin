@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 26 specialized agents, 22 commands, and 18 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 29 specialized agents, 24 commands, and 21 skills.
 
 This repository also ships generated Copilot assets under the repo root `.github/`, built from the canonical portable source in `portable/compound-engineering/`.
 
@@ -8,9 +8,9 @@ This repository also ships generated Copilot assets under the repo root `.github
 
 | Component | Count |
 |-----------|-------|
-| Agents | 26 |
-| Commands | 22 |
-| Skills | 18 |
+| Agents | 29 |
+| Commands | 24 |
+| Skills | 21 |
 | Hooks | 1 |
 | MCP Servers | 1 |
 
@@ -18,7 +18,7 @@ This repository also ships generated Copilot assets under the repo root `.github
 
 Agents are organized into categories for easier discovery.
 
-### Review (15)
+### Review (17)
 
 | Agent | Description |
 |-------|-------------|
@@ -28,6 +28,7 @@ Agents are organized into categories for easier discovery.
 | `data-integrity-guardian` | Database migrations and data integrity |
 | `data-migration-expert` | Validate data migrations and ID mappings |
 | `deployment-verification-agent` | Create Go/No-Go deployment checklists for risky data changes |
+| `rabak-frontend-races-reviewer` | Review React, Vue, and async UI code for race conditions and stale state bugs |
 | `rabak-laravel-reviewer` | Modern Laravel 11+ code review (architecture, Eloquent, testing) |
 | `rabak-nest-reviewer` | NestJS code review enforcing simplicity, performance, and security |
 | `rabak-python-reviewer` | Python code review with strict conventions |
@@ -36,15 +37,17 @@ Agents are organized into categories for easier discovery.
 | `rabak-vue-reviewer` | Vue 3 / Nuxt 3 code review (Composition API, TypeScript, Pinia) |
 | `pattern-recognition-specialist` | Analyze code for patterns and anti-patterns |
 | `performance-oracle` | Performance analysis and optimization |
+| `schema-drift-detector` | Detect unrelated schema dump and schema artifact drift in database PRs |
 | `security-sentinel` | Security audits and vulnerability assessments |
 
-### Research (5)
+### Research (6)
 
 | Agent | Description |
 |-------|-------------|
 | `best-practices-researcher` | Gather external best practices and examples |
 | `framework-docs-researcher` | Research framework documentation and best practices |
 | `git-history-analyzer` | Analyze git history and code evolution |
+| `issue-intelligence-analyst` | Analyze GitHub issues to surface recurring themes and pain patterns |
 | `learnings-researcher` | Search institutional learnings for relevant past solutions |
 | `repo-research-analyst` | Research repository structure and conventions |
 
@@ -72,11 +75,13 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 
 | Command | Description |
 |---------|-------------|
+| `/workflows:ideate` | Generate and rank grounded improvement ideas before selecting one to brainstorm |
 | `/workflows:brainstorm` | Explore requirements and approaches before planning |
 | `/workflows:plan` | Create implementation plans with structured project inputs (tickets, docs, designs) |
 | `/workflows:review` | Run comprehensive code reviews |
 | `/workflows:work` | Execute work items systematically |
 | `/workflows:compound` | Document solved problems to compound team knowledge |
+| `/workflows:compound-refresh` | Refresh stale learnings and pattern docs in `docs/solutions/` |
 
 ### Utility Commands
 
@@ -106,15 +111,18 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 
 | Skill | Description |
 |-------|-------------|
+| `agent-native-audit` | Run a scored audit of agent-native architecture principles |
 | `agent-native-architecture` | Build AI agents using prompt-native architecture |
 
 ### Development Tools
 
 | Skill | Description |
 |-------|-------------|
+| `compound-refresh` | Refresh stale learnings and pattern docs in `docs/solutions/` against the current codebase |
 | `compound-docs` | Capture solved problems as categorized documentation |
 | `create-agent-skills` | Expert guidance for creating Claude Code skills |
 | `frontend-design` | Create production-grade frontend interfaces |
+| `ideate` | Generate and critically evaluate grounded improvement ideas before selecting one to brainstorm |
 | `laravel-conventions` | Modern Laravel coding standards reference |
 | `skill-creator` | Guide for creating effective Claude Code skills |
 

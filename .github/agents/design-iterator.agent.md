@@ -3,7 +3,7 @@ description: Iteratively refines UI design through N screenshot-analyze-improve 
 tools:
   - "*"
 infer: true
-model: inherit
+model: gpt-5.3-codex
 ---
 
 <examples>

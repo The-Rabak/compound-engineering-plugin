@@ -2,7 +2,7 @@
 
 Development tools that compound. Every task you complete makes the next one faster -- not through magic, but through structured knowledge capture and reuse.
 
-26 specialized agents. 22 commands. 18 skills. One workflow that actually works.
+29 specialized agents. 24 commands. 21 skills. One workflow that actually works.
 
 ## Quick Start
 
@@ -31,6 +31,22 @@ That rebuilds:
 
 - `plugins/compound-engineering/` for Claude Code
 - `.github/` for Copilot
+
+To verify generated files are committed and in sync (same check run in CI):
+
+```bash
+bun run verify:generated
+```
+
+### Sync OpenViking globals
+
+```bash
+bun run sync:ov
+# or override the helper path when testing
+OV_CORE_PATH=/path/to/ov-core.sh bun run src/index.ts sync-ov portable/compound-engineering
+```
+
+This refreshes the global OV agent registry, the global OV skill registry, and mirrored skill support files from the portable source so future sessions in any project can reuse them.
 
 ---
 
@@ -105,6 +121,16 @@ No runaway processes. No infinite loops.
 
 ## Core Workflow Commands
 
+### `/workflows:ideate` -- Generate ideas before brainstorming
+
+Use this when you want the AI to suggest strong, grounded project improvements before you commit to one direction.
+
+```
+/workflows:ideate "developer experience quick wins"
+```
+
+Output lands in `docs/ideation/`, and the best survivors are intended to feed into `/workflows:brainstorm`.
+
 ### `/workflows:brainstorm` -- Explore before building
 
 For when the problem space is fuzzy. Produces a structured brainstorm document.
@@ -163,6 +189,10 @@ Findings are categorized P1 (blocks merge), P2 (should fix), P3 (nice-to-have).
 ### `/workflows:compound` -- Capture what you learned
 
 After solving a hard problem, run this to create a solution document in `docs/solutions/`. These get automatically surfaced during future plans and reviews by the `learnings-researcher` agent. This is how knowledge compounds.
+
+### `/workflows:compound-refresh` -- Keep learnings accurate over time
+
+Use this when `docs/solutions/` may have drifted after refactors, migrations, or architecture changes. It reviews learnings and pattern docs against the current codebase and recommends or applies Keep, Update, Replace, or Archive actions.
 
 ---
 
@@ -238,6 +268,8 @@ The review agents are the core of the plugin. Each one is a deep specialist -- n
 
 | Skill | What it does |
 |-------|-------------|
+| `ideate` | Generate and aggressively filter grounded improvement ideas before brainstorming |
+| `compound-refresh` | Refresh stale learnings and pattern docs in `docs/solutions/` |
 | `setup` | Configure review agents for your project |
 | `laravel-conventions` | Modern Laravel coding standards reference |
 | `frontend-design` | Production-grade frontend interfaces |
