@@ -55,4 +55,4 @@ All workflows write output to `{project_root}/docs/`:
 - `docs/plans/` -- implementation plans
 - `docs/brainstorms/` -- brainstorm documents
 - `docs/solutions/` -- compounded learnings (DO NOT gitignore)
-- `docs/execution-sessions/` -- work session logs
+- `docs/execution-sessions/` -- work session logs (local workflow artifacts; ignore them in this repo)
