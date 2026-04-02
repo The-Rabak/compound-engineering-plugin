@@ -21,6 +21,8 @@ Setup auto-detects your stack (Laravel, NestJS, Python, Vue, TypeScript, Rust, e
 
 The canonical source now lives in `portable/compound-engineering/`. This repository also ships generated Copilot assets under `.github/`, built from that same portable source.
 
+Generated platform outputs under `.github/`, `plugins/compound-engineering/`, and `.claude-plugin/marketplace.json` are intentionally committed in this repository. Local workflow artifacts such as `.copilot-instructions.md`, `compound-engineering.local.md`, `.worktrees/`, and `docs/execution-sessions/` are local-only and should stay ignored.
+
 ### Regenerate platform outputs
 
 ```bash
@@ -47,6 +49,8 @@ OV_CORE_PATH=/path/to/ov-core.sh bun run src/index.ts sync-ov portable/compound-
 ```
 
 This refreshes the global OV agent registry, the global OV skill registry, and mirrored skill support files from the portable source so future sessions in any project can reuse them.
+
+Reference OV bootstrap assets and instructions live under `src/ov_setup/`. They are sanitized examples copied from a local OV setup so contributors can bootstrap the same workflow without committing machine-specific state.
 
 ---
 

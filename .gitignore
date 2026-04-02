@@ -2,4 +2,12 @@
 *.log
 node_modules/
 .codex/
+.worktrees/
+compound-engineering.local.md
+.copilot-instructions.md
+docs/ideation/
+docs/plans/
+docs/brainstorms/
+docs/execution-sessions/
 todos/
+.worktrees

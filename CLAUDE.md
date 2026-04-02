@@ -61,6 +61,7 @@ Workflows create the `docs/` directory if it does not exist.
 docs/ideation/
 docs/plans/
 docs/brainstorms/
+docs/execution-sessions/
 # Do NOT ignore docs/solutions/ -- these are institutional knowledge
 ```
 
