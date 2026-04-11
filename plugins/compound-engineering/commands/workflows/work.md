@@ -1,16 +1,18 @@
 ---
 name: "workflows:work"
-description: Execute work plans efficiently while maintaining quality and finishing features
+description: Execute work plans while maintaining WHY tracing from problem narrative through user story to implementation. Grounds every subagent in purpose.
 argument-hint: "[plan file, specification, or todo file path] [--review-mode bulk|inline|both]"
 ---
 
 # Work Plan Execution Command
 
-Execute a work plan efficiently while maintaining quality and finishing features.
+Execute a work plan while maintaining WHY tracing from problem narrative through implementation.
 
 ## Introduction
 
-This command takes a work document (plan, specification, or todo file) and executes it systematically using a **subagent orchestration model**. The orchestrator (this conversation) decomposes the plan into scoped chunks and delegates each to a focused subagent. Each subagent follows a standardized 4-phase protocol (understand, implement, self-review, report) defined in the execution agent prompt template. Execution learnings accumulate across tasks via session files, compounding knowledge throughout the build.
+This command takes a work document (plan, specification, or todo file) and executes it systematically using a **subagent orchestration model**. The orchestrator (this conversation) decomposes the plan into scoped chunks and delegates each to a focused subagent. Each subagent follows a standardized 4-phase protocol (understand, implement, self-review, report) defined in the execution agent prompt template.
+
+**WHY-grounded execution:** Every subagent receives the plan's WHY context -- the problem narrative, user story, architectural context, and which success criterion their specific task serves. This prevents implementation drift where technically correct code fails to deliver the user's actual need. The orchestrator is the guardian of WHY: it extracts purpose from the plan, threads it through every task prompt, and validates that the combined output delivers the stated user story.
 
 ### Review Mode
 
@@ -30,10 +32,18 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
 
 ### Phase 1: Quick Start
 
-1. **Read Plan and Clarify**
+1. **Read Plan and Extract WHY Context**
 
    - Read the work document completely
-   - Review any references or links provided in the plan
+   - **Extract WHY artifacts** from the plan (these ground everything that follows):
+     - **Problem Narrative** -- why this work exists, what pain it solves
+     - **User Story** -- who benefits and what outcome they get
+     - **Architectural Context** -- how the solution fits in the system
+     - **Success Criteria** -- measurable conditions that define "done"
+     - **Phase-to-story tracing** -- each phase's "Serves:" line showing what user story aspect it delivers
+   - Check for `handoff:` frontmatter in the plan. If present, verify all flags are `true` (problem_narrative, user_story, architectural_context, success_criteria). If any are `false`, warn the user that WHY context is incomplete and suggest running `/workflows:brainstorm` or `/workflows:plan` first.
+   - If the plan has a `brainstorm_ref:` path, read that brainstorm document too for richer WHY context
+   - Review any other references or links provided in the plan
    - If anything is unclear or ambiguous, ask clarifying questions now
    - Get user approval to proceed
    - **Do not skip this** - better to ask questions now than build the wrong thing
@@ -94,7 +104,9 @@ Phase 2 is where the orchestrator (this conversation) decomposes the plan into s
 
 #### Step 1: Validate Plan Readiness
 
-Before executing, validate that the plan has granular, testable chunks. Each implementation task should have:
+Before executing, validate two things: **structural readiness** (tasks are granular and testable) and **WHY readiness** (the plan carries purpose context).
+
+**Structural readiness** -- each implementation task should have:
 
 - **Task description** -- what needs to be done
 - **Files to create/modify** -- specific file paths
@@ -102,7 +114,21 @@ Before executing, validate that the plan has granular, testable chunks. Each imp
 - **Test command** -- how to verify the task works
 - **Dependencies** -- which other tasks must complete first
 
-If the plan lacks these details, refuse to proceed and suggest running `/deepen-plan` or manually breaking down the plan into well-defined tasks before continuing.
+**WHY readiness** -- the plan should have:
+
+- **Problem Narrative** -- present and non-empty
+- **User Story** -- present with clear "As a... I want... So that..."
+- **Architectural Context** -- present, describing system fit
+- **Success Criteria** -- present at plan level (not just task level)
+- **Phase tracing** -- each phase has a "Serves:" line connecting it to the user story
+
+If the plan lacks structural details, refuse to proceed and suggest running `/deepen-plan` or manually breaking down the plan.
+
+If the plan lacks WHY artifacts, the orchestrator should **construct minimal WHY context** before proceeding:
+1. Ask the user: "This plan doesn't include a problem narrative or user story. In one sentence, what problem are we solving and for whom?"
+2. Infer success criteria from the task-level criteria
+3. Infer architectural context from the file paths and technologies mentioned
+4. Record these in STATE.md (see Step 3) so they're available for all tasks
 
 #### Step 2: Check for Resumable Session
 
@@ -115,7 +141,7 @@ ls docs/execution-sessions/work-*/STATE.md 2>/dev/null
 If a previous session exists for the same plan file and has `status: in_progress`:
 
 - Ask the user: "Found incomplete session `[session_id]` for this plan. Resume where you left off, or start fresh?"
-- **If resume**: Read STATE.md, skip completed tasks, load the learnings brief, and continue from `current_task`
+- **If resume**: Read STATE.md, load the WHY Context section (problem narrative, user story, criteria), skip completed tasks, load the learnings brief, and continue from `current_task`
 - **If fresh**: Archive the old session directory (rename with `-archived` suffix), then start a new session
 
 If no resumable session exists, proceed to Step 3.
@@ -134,6 +160,7 @@ Create a `STATE.md` file in the session directory:
 ```markdown
 ---
 plan_file: [path to plan]
+brainstorm_ref: [path to brainstorm, if available]
 started: [ISO timestamp]
 status: in_progress
 current_task: 0
@@ -141,11 +168,25 @@ total_tasks: [count]
 session_id: [SESSION_ID]
 ---
 
+## WHY Context
+
+### Problem Narrative
+[Extracted from plan -- why this work exists]
+
+### User Story
+[Extracted from plan -- who benefits and what outcome]
+
+### Architectural Context
+[Extracted from plan -- how this fits in the system]
+
+### Success Criteria
+[Extracted from plan -- measurable conditions for "done"]
+
 ## Task Status
-| # | Task | Status | Attempts | Session File |
-|---|------|--------|----------|--------------|
-| 1 | [task name] | pending | -- | -- |
-| 2 | [task name] | pending | -- | -- |
+| # | Task | Serves | Status | Attempts | Session File |
+|---|------|--------|--------|----------|--------------|
+| 1 | [task name] | [which user story aspect] | pending | -- | -- |
+| 2 | [task name] | [which user story aspect] | pending | -- | -- |
 ...
 
 ## Learnings Brief
@@ -157,9 +198,11 @@ _No learnings yet._
 The orchestrator parses the plan and creates a list of execution chunks. Each chunk is a self-contained unit of work. The orchestrator does the heavy lifting here:
 
 - **Break large phases** into smaller tasks if needed (each task should be completable in one subagent session)
+- **Preserve WHY tracing** -- when splitting a phase, each resulting task inherits the parent phase's "Serves:" line. Never create an orphan task with no connection to the user story.
 - **Identify file dependencies** between tasks (Task B modifies a file created by Task A)
 - **Determine parallelizable tasks** -- tasks with non-overlapping file sets can run simultaneously
 - **Ensure each chunk has clear success criteria** -- if the plan already defines them, use them directly; otherwise, the orchestrator must create them
+- **Map each task to its purpose** -- record which success criterion or user story aspect each task delivers (this goes in STATE.md's "Serves" column)
 
 If the plan already has well-defined tasks with success criteria, use them directly. If not, the orchestrator must create them before proceeding.
 
@@ -176,7 +219,15 @@ For each task, the orchestrator constructs a focused prompt by reading the **exe
 - **{{SUCCESS_CRITERIA}}** -- checkboxes that define "done"
 - **{{TEST_COMMAND}}** -- how to verify the task works
 - **{{COMPLETED_DEPENDENCIES}}** -- list of already-completed tasks this depends on
-- **{{ARCHITECTURAL_CONTEXT}}** -- where this task fits in the larger feature
+- **{{WHY_CONTEXT}}** -- the purpose grounding block (constructed by orchestrator):
+  ```
+  ## Why This Task Exists
+  **Problem:** [problem narrative from plan -- 1-2 sentences]
+  **User Story:** [user story from plan]
+  **This task serves:** [the "Serves:" line from this task's parent phase -- which user story aspect or success criterion this delivers]
+  **Overall success criteria:** [plan-level success criteria list]
+  ```
+- **{{ARCHITECTURAL_CONTEXT}}** -- from the plan's Architectural Context section, filtered to what's relevant for this task's files and domain
 - **{{LEARNINGS_BRIEF}}** -- from previous tasks, filtered by domain relevance (only include backend learnings for backend tasks, frontend learnings for frontend tasks, etc.)
 - **{{PROJECT_CONVENTIONS}}** -- from CLAUDE.md
 - **{{TDD_SECTION}}** -- if `tdd_enabled: true` in `compound-engineering.local.md`, include the TDD Implementation Section from the template; otherwise include the Standard Implementation Section
@@ -217,6 +268,15 @@ The subagent prompt is constructed from the execution agent template (`commands/
 ```
 You are implementing Task 3 of a feature plan. Here is your scoped context:
 
+## Why This Task Exists
+**Problem:** Users currently cannot authenticate, forcing manual session management that's error-prone and insecure.
+**User Story:** As a user, I want to log in with my credentials so that I can access my personalized dashboard securely.
+**This task serves:** "Secure authentication flow" -- implementing the core token generation that enables the login experience.
+**Overall success criteria:**
+- Users can log in and receive a JWT token
+- Invalid credentials are rejected with clear error messages
+- Tokens expire after the configured TTL
+
 ## Task
 Create the UserAuthService with JWT token generation and validation.
 
@@ -233,6 +293,9 @@ Create the UserAuthService with JWT token generation and validation.
 
 ## Test Command
 npm test -- --filter UserAuthService
+
+## Architectural Context
+JWT-based stateless auth. Tokens issued by UserAuthService, validated by middleware (Task 4). No server-side session storage.
 
 ## Conventions
 - Use dependency injection pattern
@@ -263,6 +326,7 @@ When the subagent returns, the orchestrator processes the results:
 ---
 task: "[task name]"
 task_number: [n]
+serves: "[which user story aspect / success criterion this task delivers]"
 status: [completed|failed]
 attempt_count: [n]
 domains: [backend, frontend, testing, database, etc.]
@@ -304,11 +368,14 @@ session_id: [SESSION_ID]
    - `{{TASK_REQUIREMENTS}}` -- the task description and success criteria
    - `{{SUCCESS_CRITERIA}}` -- the success criteria checkboxes
    - `{{IMPLEMENTER_REPORT}}` -- the execution report from the subagent
+   - `{{TASK_SERVES}}` -- what user story aspect this task delivers (from the task's "Serves:" line)
 
    Spawn a spec reviewer subagent:
    ```
    Task(general-purpose, prompt=filled_spec_review_prompt)
    ```
+
+   The spec reviewer should check not just checkbox compliance but whether the implementation actually delivers on the purpose stated in "Serves:". A task can pass all checkboxes but miss the intent.
 
    - If **PASS**: proceed to Stage 2
    - If **FAIL**: spawn a new execution subagent with the specific issues to fix, then re-run the spec reviewer (max 2 fix-review cycles). If still failing after 2 cycles, log the issues and ask the user how to proceed.
@@ -386,17 +453,28 @@ If a subagent fails after its internal retries:
    # Use project-specific linter: eslint, ruff, clippy, pint, etc.
    ```
 
-2. **Consider Reviewer Agents** (Optional)
+2. **Purpose Validation** (REQUIRED)
+
+   Before mechanical quality checks, validate that the combined work delivers on the WHY:
+
+   - **User story delivered?** -- Review the user story from STATE.md. Can a user actually achieve the stated outcome with what was built? If any success criterion is unmet or any task was skipped, note the gap.
+   - **Architectural integrity?** -- Does the implementation match the architectural context from the plan? Flag any deviations (e.g., plan said "stateless JWT" but implementation uses server sessions).
+   - **No orphan code** -- Is there any implemented code that doesn't trace back to the user story or success criteria? This may indicate scope creep during execution.
+
+   If purpose validation reveals gaps, present them to the user before proceeding to PR.
+
+3. **Consider Reviewer Agents** (Optional)
 
    Use for complex, risky, or large changes. Read agents from `compound-engineering.local.md` frontmatter (`review_agents`). If no settings file, invoke the `setup` skill to create one.
 
-   Run configured agents in parallel with Task tool. Present findings and address critical issues.
+   Run configured agents in parallel with Task tool. **Pass the WHY context (problem narrative, user story, success criteria) to reviewer agents** so they can evaluate fitness for purpose, not just code quality. Present findings and address critical issues.
 
-3. **Final Validation**
+4. **Final Validation**
    - All tasks in STATE.md marked `completed` (or explicitly `skipped` with user approval)
    - All tests pass (including regression tests from every completed task)
    - Linting passes
    - Code follows existing patterns
+   - Purpose validation passed (user story deliverable, architecture intact)
    - Figma designs match (if applicable)
    - No console errors or warnings
 
@@ -481,9 +559,15 @@ If the `finishing-branch` skill is not available, follow the manual steps below:
 
    ```markdown
    ## Summary
-   - What was built
-   - Why it was needed
-   - Key decisions made
+   - **Problem:** [from plan's Problem Narrative]
+   - **User Story:** [from plan's User Story]
+   - **What was built:** [concrete description of implementation]
+   - **Key decisions made:** [architectural or design choices]
+
+   ## Success Criteria Status
+   - [x] [criterion 1 from plan] -- delivered by Task N
+   - [x] [criterion 2 from plan] -- delivered by Task N
+   - [ ] [criterion 3 if skipped] -- skipped: [reason]
 
    ## Testing
    - Tests added/modified
@@ -622,6 +706,13 @@ See the `orchestrating-swarms` skill for detailed swarm patterns and best practi
 
 ## Key Principles
 
+### WHY Grounds Everything
+
+- Every subagent knows why its task exists, not just what to build
+- The orchestrator is the guardian of WHY: it extracts, threads, and validates purpose
+- Purpose drift is caught by inline reviews and Phase 3 validation, not just at the end
+- If the combined work doesn't deliver the user story, passing tests don't matter
+
 ### Orchestrator is Lean, Subagents are Focused
 
 - The orchestrator decomposes, delegates, records, and routes. It does NOT implement code itself.
@@ -673,6 +764,9 @@ Before creating PR, verify:
 
 - [ ] All clarifying questions asked and answered
 - [ ] All tasks in STATE.md marked completed (or explicitly skipped with user approval)
+- [ ] **User story deliverable** -- the combined work enables the stated user outcome
+- [ ] **Success criteria met** -- every plan-level success criterion addressed (or gap documented)
+- [ ] **Architecture intact** -- implementation matches the plan's architectural context
 - [ ] Tests pass (run project's test command)
 - [ ] Regression tests from all completed tasks pass
 - [ ] Linting passes (use linting-agent)
@@ -699,6 +793,8 @@ For most features: tests + linting + following patterns is sufficient.
 
 ## Common Pitfalls to Avoid
 
+- **Losing the WHY** - Subagents build what's specified but miss the intent. Always pass WHY context.
+- **Purpose drift** - Tasks individually pass but combined output doesn't deliver the user story. Validate at Phase 3.
 - **Analysis paralysis** - Don't overthink, read the plan and execute
 - **Skipping clarifying questions** - Ask now, not after building wrong thing
 - **Ignoring plan references** - The plan has links for a reason
