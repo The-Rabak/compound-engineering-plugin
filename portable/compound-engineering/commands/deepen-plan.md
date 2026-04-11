@@ -1,6 +1,7 @@
 ---
 name: deepen-plan
-description: Enhance a plan with parallel research agents for each section to add depth, best practices, and implementation details
+description: >-
+  Enhance a plan with parallel research agents grounded in user story, architectural context, and success criteria to add depth without losing purpose
 argument-hint: '[path to plan file]'
 ---
 
@@ -10,14 +11,16 @@ argument-hint: '[path to plan file]'
 
 **Note: The current year is 2026.** Use this when searching for recent documentation and best practices.
 
-This command takes an existing plan (from `/workflows:plan`) and enhances each section with parallel research agents. Each major element gets its own dedicated research sub-agent to find:
-- Best practices and industry patterns
-- Performance optimizations
-- UI/UX improvements (if applicable)
-- Quality enhancements and edge cases
-- Real-world implementation examples
+This command takes an existing plan (from `/workflows:plan`) and enhances each section with parallel research agents. Every enhancement is **grounded in the plan's WHY artifacts** -- the problem narrative, user story, architectural context, and success criteria -- so that deepening adds purpose-aligned depth, not generic complexity.
 
-The result is a deeply grounded, production-ready plan with concrete implementation details.
+Each major element gets its own dedicated research sub-agent to find:
+- Best practices and industry patterns **relevant to the user story**
+- Performance optimizations **that matter for the stated success criteria**
+- UI/UX improvements (if applicable) **aligned with the user's needs**
+- Quality enhancements and edge cases **that could threaten success criteria**
+- Real-world implementation examples **in similar architectural contexts**
+
+The result is a deeply grounded, production-ready plan that remains tightly coupled to WHY we're building it.
 
 ## Plan File
 
@@ -34,31 +37,51 @@ Do not proceed until you have a valid plan file path.
 ### 1. Parse and Analyze Plan Structure
 
 <thinking>
-First, read and parse the plan to identify each major section that can be enhanced with research.
+First, read and parse the plan to extract the WHY artifacts (problem narrative, user story, architectural context, success criteria) and identify each major section that can be enhanced with research. The WHY artifacts are the lens through which all deepening is filtered.
 </thinking>
 
-**Read the plan file and extract:**
-- [ ] Overview/Problem Statement
-- [ ] Proposed Solution sections
+**Read the plan file and extract WHY artifacts first:**
+
+- [ ] **Problem Narrative** -- the synthesized WHY (who has the problem, what triggers it, impact)
+- [ ] **User Story** -- the north star (As a [persona], I need to [action] so that [outcome])
+- [ ] **Architectural Context** -- the WHERE map (lives in, interacts with, entry point, data, dependencies)
+- [ ] **Success Criteria** -- the DONE definition (measurable outcomes tied to user story)
+- [ ] **`handoff` frontmatter** -- check all fields are `true`; if any are `false` or missing, flag: "Plan is missing [X]. Deepening may add technically correct but purpose-misaligned enhancements. Consider running `/workflows:plan` to fill gaps first."
+
+**Check for brainstorm reference:**
+
+- [ ] Read `brainstorm_ref` from plan frontmatter
+- [ ] If a brainstorm path exists, read it and extract additional context:
+  - Stakeholder Impact (who is affected and how)
+  - Key Decisions and rationale
+  - Approaches Considered and why they were rejected
+  - Resolved Questions (context that informed decisions)
+- [ ] This additional context helps research agents make purpose-aligned recommendations
+
+**Then extract plan structure:**
+
+- [ ] Overview/Proposed Solution sections
 - [ ] Technical Approach/Architecture
-- [ ] Implementation phases/steps
+- [ ] Implementation phases/steps (noting which user story aspect each phase serves)
 - [ ] Code examples and file references
 - [ ] Acceptance criteria
 - [ ] Any UI/UX components mentioned
 - [ ] Technologies/frameworks mentioned (Laravel, Vue.js, Nuxt, Python, TypeScript, etc.)
 - [ ] Domain areas (data models, APIs, UI, security, performance, etc.)
 
-**Create a section manifest:**
+**Create a section manifest with WHY linkage:**
 ```
-Section 1: [Title] - [Brief description of what to research]
-Section 2: [Title] - [Brief description of what to research]
+Section 1: [Title] - [Brief description of what to research] - Serves: [user story aspect / success criterion]
+Section 2: [Title] - [Brief description of what to research] - Serves: [user story aspect / success criterion]
 ...
 ```
+
+The "Serves" column ensures every deepening activity traces back to WHY we're building this.
 
 ### 1.1 Validate Execution Readiness
 
 <thinking>
-Check if the plan has sufficiently structured execution chunks for the subagent orchestration model in /workflows:work. Plans need per-task success criteria, test commands, and file lists.
+Check if the plan has sufficiently structured execution chunks for the subagent orchestration model in /workflows:work. Plans need per-task success criteria, test commands, and file lists. Also validate that phases trace to the user story.
 </thinking>
 
 **Scan each implementation task/phase for these required fields:**
@@ -67,6 +90,12 @@ Check if the plan has sufficiently structured execution chunks for the subagent 
 - [ ] **Depends on:** Dependencies on other tasks
 - [ ] **Success criteria:** Testable checkboxes defining "done"
 - [ ] **Test command:** Exact command to verify completion
+
+**Validate WHY tracing:**
+
+- [ ] **Each phase has a "Serves:" line** stating which user story aspect or success criterion it delivers
+- [ ] **Success criteria trace to plan-level success criteria** -- task criteria should be decomposed from the plan's success criteria, not invented independently
+- [ ] **No orphan phases** -- every phase should trace to at least one success criterion. If a phase doesn't serve any success criterion, flag it: "Phase [X] doesn't trace to any success criterion. Is it necessary, or is a success criterion missing?"
 
 **Expected task format:**
 
@@ -133,7 +162,7 @@ Task 3.2: "Build dashboard UI" -- mixes backend API + frontend component
   Suggestion: Split into "Create dashboard API endpoint" and "Build dashboard component"
 ```
 
-Suggest splits that create self-contained tasks with non-overlapping file sets. Each split task should be completable by one subagent in a single session.
+Suggest splits that create self-contained tasks with non-overlapping file sets. Each split task should be completable by one subagent in a single session. **When splitting, ensure each new task retains its "Serves:" tracing to the user story -- a split should never orphan a task from its purpose.**
 
 **This validation ensures the plan is ready for `/workflows:work`'s subagent orchestration model**, where each task is delegated to a focused subagent with clear scope and termination criteria.
 
@@ -162,11 +191,12 @@ Focus on extracting:
 - Technical constraints not captured in the summary
 - Dependencies and integration points
 - Any updates since the plan was created (check timestamps)
+- Any user story or problem context that was missed or summarized too aggressively in the plan
 
 Return the FULL content, not a summary. This will be used to ground the plan in source-of-truth documents."
 ```
 
-Feed the full document contents to all subsequent deepening agents as additional context.
+Feed the full document contents to all subsequent deepening agents as additional context, alongside the WHY artifacts extracted in Step 1.
 
 ### 2. Discover and Apply Available Skills
 
@@ -225,7 +255,12 @@ YOUR JOB: Use this skill on the plan.
 
 [relevant plan section or full plan]
 
-4. Return the skill's full output
+WHY CONTEXT (use this to ground the skill's recommendations):
+- Problem: [problem narrative]
+- User Story: [user story]
+- Success Criteria: [success criteria]
+
+4. Return the skill's full output. Filter recommendations that don't serve the user story.
 
 The skill tells you what to do - follow it. Execute the skill completely."
 ```
@@ -316,11 +351,12 @@ head -20 docs/solutions/**/*.md
 
 **Step 3: Filter - only spawn sub-agents for LIKELY relevant learnings**
 
-Compare each learning's frontmatter against the plan:
+Compare each learning's frontmatter against the plan (both technical content AND WHY artifacts):
 - `tags:` - Do any tags match technologies/patterns in the plan?
 - `category:` - Is this category relevant? (e.g., skip deployment-issues if plan is UI-only)
 - `module:` - Does the plan touch this module?
 - `symptom:` / `root_cause:` - Could this problem occur with the plan?
+- **WHY match** - Does the learning's domain relate to the user story or architectural context? (e.g., a caching learning is relevant if the user story involves performance even if the plan doesn't explicitly mention caching yet)
 
 **SKIP learnings that are clearly not applicable:**
 - Plan is frontend-only → skip `database-migrations/` learnings
@@ -345,6 +381,10 @@ LEARNING FILE: [full path to .md file]
 
 Check if this learning applies to this plan:
 
+USER STORY: [user story]
+SUCCESS CRITERIA: [success criteria]
+
+PLAN:
 ---
 [full plan content]
 ---
@@ -352,6 +392,7 @@ Check if this learning applies to this plan:
 If relevant:
 - Explain specifically how it applies
 - Quote the key insight or solution
+- Note which success criterion or user story aspect it protects
 - Suggest where/how to incorporate it
 
 If NOT relevant after deeper analysis:
@@ -381,19 +422,26 @@ docs/solutions/authentication-issues/jwt-expiry.md           # plan has no auth
 ### 4. Launch Per-Section Research Agents
 
 <thinking>
-For each major section in the plan, spawn dedicated sub-agents to research improvements. Use the Explore agent type for open-ended research.
+For each major section in the plan, spawn dedicated sub-agents to research improvements. Ground each agent in the plan's WHY artifacts so research stays purpose-aligned.
 </thinking>
 
-**For each identified section, launch parallel research:**
+**For each identified section, launch parallel research with WHY context:**
 
 ```
 Task Explore: "Research best practices, patterns, and real-world examples for: [section topic].
+
+CONTEXT -- WHY we're building this:
+- Problem: [problem narrative summary]
+- User Story: [user story]
+- This section serves: [which success criterion / user story aspect]
+- Architectural context: [relevant arch context for this section]
+
 Find:
-- Industry standards and conventions
-- Performance considerations
-- Common pitfalls and how to avoid them
-- Documentation and tutorials
-Return concrete, actionable recommendations."
+- Industry standards and conventions relevant to this user's problem
+- Performance considerations that could affect the stated success criteria
+- Common pitfalls that could threaten the user story outcome
+- Documentation and tutorials for this architectural context
+Return concrete, actionable recommendations. Filter out recommendations that don't serve the user story or success criteria."
 ```
 
 **Also use Context7 MCP for framework documentation:**
@@ -411,7 +459,7 @@ Search for recent (2024-2026) articles, blog posts, and documentation on topics 
 ### 5. Discover and Run ALL Review Agents
 
 <thinking>
-Dynamically discover every available agent and run them ALL against the plan. Don't filter, don't skip, don't assume relevance. 40+ parallel agents is fine. Use everything available.
+Dynamically discover every available agent and run them ALL against the plan. Don't filter, don't skip, don't assume relevance. 40+ parallel agents is fine. Use everything available. But give each agent the WHY context so their reviews are grounded.
 </thinking>
 
 **Step 1: Discover ALL available agents from ALL sources**
@@ -456,10 +504,18 @@ Read the first few lines of each agent file to understand what it reviews/analyz
 
 **Step 3: Launch ALL agents in parallel**
 
-For EVERY agent discovered, launch a Task in parallel:
+For EVERY agent discovered, launch a Task in parallel with WHY context:
 
 ```
-Task [agent-name]: "Review this plan using your expertise. Apply all your checks and patterns. Plan content: [full plan content]"
+Task [agent-name]: "Review this plan using your expertise.
+
+WHY CONTEXT (use this to evaluate whether the plan solves the right problem):
+- Problem Narrative: [problem narrative]
+- User Story: [user story]
+- Success Criteria: [success criteria list]
+- Architectural Context: [arch context summary]
+
+Apply all your checks and patterns. Flag anything that could prevent the user story from being achieved. Plan content: [full plan content]"
 ```
 
 **CRITICAL RULES:**
@@ -477,7 +533,7 @@ Research agents (like `best-practices-researcher`, `framework-docs-researcher`, 
 ### 6. Wait for ALL Agents and Synthesize Everything
 
 <thinking>
-Wait for ALL parallel agents to complete - skills, research agents, review agents, everything. Then synthesize all findings into a comprehensive enhancement.
+Wait for ALL parallel agents to complete - skills, research agents, review agents, everything. Then synthesize all findings through the lens of the plan's WHY artifacts. Prioritize enhancements that serve the user story and success criteria.
 </thinking>
 
 **Collect outputs from ALL sources:**
@@ -489,7 +545,16 @@ Wait for ALL parallel agents to complete - skills, research agents, review agent
 5. **Context7 queries** - Framework documentation and patterns
 6. **Web searches** - Current best practices and articles
 
-**For each agent's findings, extract:**
+**For each agent's findings, extract and classify by WHY alignment:**
+
+- [ ] **Directly serves user story** -- enhancements that improve delivery of the stated user outcome (HIGH priority)
+- [ ] **Protects success criteria** -- edge cases, security issues, performance concerns that could prevent success criteria from being met (HIGH priority)
+- [ ] **Strengthens architecture** -- improvements aligned with the architectural context that make the implementation more robust (MEDIUM priority)
+- [ ] **General best practices** -- technically sound improvements that don't directly trace to user story but improve overall quality (LOWER priority)
+- [ ] **Scope warning** -- recommendations that would expand scope beyond the user story; flag these explicitly: "This enhancement is valuable but extends beyond the current user story. Consider adding to Future Considerations."
+
+**For each finding also extract:**
+
 - [ ] Concrete recommendations (actionable items)
 - [ ] Code patterns and examples (copy-paste ready)
 - [ ] Anti-patterns to avoid (warnings)
@@ -500,32 +565,43 @@ Wait for ALL parallel agents to complete - skills, research agents, review agent
 - [ ] Skill-specific patterns (from matched skills)
 - [ ] Relevant learnings (past solutions that apply - prevent repeating mistakes)
 
-**Deduplicate and prioritize:**
+**Deduplicate, prioritize, and trace:**
 - Merge similar recommendations from multiple agents
-- Prioritize by impact (high-value improvements first)
+- Prioritize by WHY alignment (user story > success criteria > architecture > general)
 - Flag conflicting advice for human review
 - Group by plan section
+- **For each recommendation, note which success criterion it serves or which risk it mitigates**
 
 ### 7. Enhance Plan Sections
 
 <thinking>
-Merge research findings back into the plan, adding depth without changing the original structure.
+Merge research findings back into the plan, adding depth without changing the original structure. Critically: preserve all WHY sections untouched and ensure enhancements strengthen rather than dilute the connection to user story and success criteria.
 </thinking>
+
+**RULE: Never modify these WHY sections** (they are the contract from planning):
+- Problem Narrative
+- User Story
+- Architectural Context
+- Success Criteria
+- Phase "Serves:" lines
+- Handoff frontmatter
+
+If research suggests changes to these, add a `### WHY Reassessment` note at the end of the plan for the user to review manually. Do not edit the originals.
 
 **Enhancement format for each section:**
 
 ```markdown
 ## [Original Section Title]
 
-[Original content preserved]
+[Original content preserved -- including any "Serves:" lines]
 
 ### Research Insights
 
-**Best Practices:**
+**Best Practices** (serves: [which success criterion]):
 - [Concrete recommendation 1]
 - [Concrete recommendation 2]
 
-**Performance Considerations:**
+**Performance Considerations** (serves: [which success criterion]):
 - [Optimization opportunity]
 - [Benchmark or metric to target]
 
@@ -534,7 +610,7 @@ Merge research findings back into the plan, adding depth without changing the or
 // Concrete code example from research
 ```
 
-**Edge Cases:**
+**Edge Cases** (risk to: [which user story aspect]):
 - [Edge case 1 and how to handle]
 - [Edge case 2 and how to handle]
 
@@ -554,14 +630,24 @@ At the top of the plan, add a summary section:
 **Sections enhanced:** [Count]
 **Research agents used:** [List]
 
+### WHY Integrity Check
+- Problem Narrative: [preserved / flagged for reassessment]
+- User Story: [preserved / flagged for reassessment]
+- Architectural Context: [preserved / expanded / flagged for reassessment]
+- Success Criteria: [preserved / flagged for reassessment]
+- Phase tracing: [all phases still trace to user story: yes/no]
+
 ### Key Improvements
-1. [Major improvement 1]
-2. [Major improvement 2]
-3. [Major improvement 3]
+1. [Major improvement 1] (serves: [success criterion])
+2. [Major improvement 2] (serves: [success criterion])
+3. [Major improvement 3] (serves: [success criterion])
 
 ### New Considerations Discovered
 - [Important finding 1]
 - [Important finding 2]
+
+### Scope Warnings (if any)
+- [Enhancement that was flagged as beyond current user story]
 ```
 
 ### 9. Update Plan File
@@ -578,6 +664,8 @@ Update the plan file in place (or if user requests a separate file, append `-dee
 ## Quality Checks
 
 Before finalizing:
+
+**Content integrity:**
 - [ ] All original content preserved
 - [ ] Research insights clearly marked and attributed
 - [ ] Code examples are syntactically correct
@@ -585,6 +673,15 @@ Before finalizing:
 - [ ] No contradictions between sections
 - [ ] Enhancement summary accurately reflects changes
 - [ ] Implementation tasks have execution-ready structure (files, success criteria, test commands, dependencies)
+
+**WHY integrity:**
+- [ ] Problem Narrative, User Story, Success Criteria, and Architectural Context are unmodified from the original plan
+- [ ] Handoff frontmatter is intact and still accurate
+- [ ] Every phase still has its "Serves:" tracing line
+- [ ] No new phases added without a "Serves:" line connecting them to the user story
+- [ ] Enhancements tagged with which success criterion they serve
+- [ ] Scope-expanding recommendations flagged in "Scope Warnings" rather than silently added to phases
+- [ ] If WHY reassessment was needed, it's in a clearly marked section at the end (not inline edits)
 
 ## Post-Enhancement Options
 
