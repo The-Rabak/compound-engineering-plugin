@@ -95,12 +95,14 @@ async function loadPortableAgents(root: string): Promise<ClaudeAgent[]> {
       const { data, body } = parseFrontmatter(raw)
       const claude = getPlatformConfig(data, "claude")
       const copilot = getPlatformConfig(data, "copilot")
+      const opencode = getPlatformConfig(data, "opencode")
       return {
         name: asString(data.name) ?? path.basename(file, ".md"),
         description: asString(data.description),
         capabilities: asStringArray(data.capabilities),
         model: asString(claude?.model ?? data.model),
         copilotModel: asString(copilot?.model ?? data.model),
+        opencodeModel: asString(opencode?.model ?? data.model),
         body: body.trim(),
         sourcePath: file,
       }
@@ -118,12 +120,14 @@ async function loadPortableCommands(root: string): Promise<ClaudeCommand[]> {
       const { data, body } = parseFrontmatter(raw)
       const claude = getPlatformConfig(data, "claude")
       const copilot = getPlatformConfig(data, "copilot")
+      const opencode = getPlatformConfig(data, "opencode")
       return {
         name: asString(data.name) ?? path.basename(file, ".md"),
         description: asString(data.description),
         argumentHint: asString(data["argument-hint"] ?? data.arguments),
         model: asString(claude?.model ?? data.model),
         copilotModel: asString(copilot?.model ?? data.model),
+        opencodeModel: asString(opencode?.model ?? data.model),
         allowedTools: parseAllowedTools(claude?.["allowed-tools"] ?? data["allowed-tools"]),
         disableModelInvocation: toOptionalBoolean(
           claude?.["disable-model-invocation"] ?? data["disable-model-invocation"],
@@ -148,11 +152,13 @@ async function loadPortableSkills(root: string): Promise<ClaudeSkill[]> {
       const { data, body } = parseFrontmatter(raw)
       const claude = getPlatformConfig(data, "claude")
       const copilot = getPlatformConfig(data, "copilot")
+      const opencode = getPlatformConfig(data, "opencode")
       return {
         name: asString(data.name) ?? path.basename(path.dirname(file)),
         description: asString(data.description),
         model: asString(claude?.model ?? data.model),
         copilotModel: asString(copilot?.model ?? data.model),
+        opencodeModel: asString(opencode?.model ?? data.model),
         disableModelInvocation: toOptionalBoolean(
           claude?.["disable-model-invocation"] ?? data["disable-model-invocation"],
         ),
@@ -182,7 +188,7 @@ function isReferenceDoc(filePath: string): boolean {
 
 function getPlatformConfig(
   data: Record<string, unknown>,
-  platform: "claude" | "copilot",
+  platform: "claude" | "copilot" | "opencode",
 ): Record<string, unknown> | undefined {
   const platforms = data.platforms
   if (!platforms || typeof platforms !== "object" || Array.isArray(platforms)) {

@@ -8,6 +8,8 @@ model: claude-sonnet-4.6
 platforms:
   copilot:
     model: gpt-5.3-codex
+  opencode:
+    model: xiaomi/mimo-v2-pro
 ---
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.

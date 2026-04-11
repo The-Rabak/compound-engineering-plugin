@@ -8,6 +8,8 @@ model: claude-sonnet-4.6
 platforms:
   copilot:
     model: gpt-5.3-codex
+  opencode:
+    model: xiaomi/mimo-v2-pro
 ---
 
 # Git Worktree Manager

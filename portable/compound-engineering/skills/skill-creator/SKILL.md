@@ -10,6 +10,8 @@ platforms:
     disable-model-invocation: true
   copilot:
     model: gpt-5.3-codex
+  opencode:
+    model: xiaomi/mimo-v2-pro
 ---
 
 # Skill Creator

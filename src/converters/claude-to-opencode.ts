@@ -82,7 +82,13 @@ export function convertClaudeToOpenCode(
     agents: agentFiles,
     commandFiles: cmdFiles,
     plugins,
-    skillDirs: plugin.skills.map((skill) => ({ sourceDir: skill.sourceDir, name: skill.name })),
+    skillDirs: plugin.skills.map((skill) => ({
+      sourceDir: skill.sourceDir,
+      name: skill.name,
+      description: skill.description,
+      model: skill.opencodeModel ?? skill.model,
+      skillPath: skill.skillPath,
+    })),
   }
 }
 
@@ -92,8 +98,9 @@ function convertAgent(agent: ClaudeAgent, options: ClaudeToOpenCodeOptions) {
     mode: options.agentMode,
   }
 
-  if (agent.model && agent.model !== "inherit") {
-    frontmatter.model = normalizeModel(agent.model)
+  const model = agent.opencodeModel ?? agent.model
+  if (model && model !== "inherit") {
+    frontmatter.model = normalizeModel(model)
   }
 
   if (options.inferTemperature) {
@@ -120,8 +127,9 @@ function convertCommands(commands: ClaudeCommand[]): OpenCodeCommandFile[] {
     const frontmatter: Record<string, unknown> = {
       description: command.description,
     }
-    if (command.model && command.model !== "inherit") {
-      frontmatter.model = normalizeModel(command.model)
+    const model = command.opencodeModel ?? command.model
+    if (model && model !== "inherit") {
+      frontmatter.model = normalizeModel(model)
     }
     const content = formatFrontmatter(frontmatter, rewriteClaudePaths(command.body))
     files.push({ name: command.name, content })
