@@ -62,6 +62,8 @@ function formatYamlValue(value: unknown): string {
     raw.includes(":") ||
     raw.startsWith("[") ||
     raw.startsWith("{") ||
+    raw.startsWith('"') ||
+    raw.includes('"') ||
     raw === "*" ||
     raw.includes(" #") ||
     raw.startsWith("#")
