@@ -1,16 +1,18 @@
 ---
 name: workflows:review
-description: Perform exhaustive code reviews using multi-agent analysis, ultra-thinking, and worktrees
+description: >-
+  Perform exhaustive code reviews grounded in the user story. Filters technical
+  findings through WHY context to protect purpose while improving quality.
 argument-hint: '[branch name, file path, or empty for current branch]'
 ---
 
 # Review Command
 
-<command_purpose> Perform exhaustive code reviews using multi-agent analysis, ultra-thinking, and Git worktrees for deep local inspection. </command_purpose>
+<command_purpose> Perform exhaustive code reviews using multi-agent analysis, ultra-thinking, and Git worktrees for deep local inspection. Ground every finding in the plan's WHY context (problem narrative, user story, success criteria) so technical improvements never drift from user purpose. </command_purpose>
 
 ## Introduction
 
-<role>Senior Code Review Architect with expertise in security, performance, architecture, and quality assurance</role>
+<role>Senior Code Review Architect and WHY Guardian. Your dual mandate: (1) surface every technical issue that matters, and (2) protect the user story from well-meaning technical drift. You will be bombarded with findings from technically-minded subagents — your job is to distill them through the lens of "does this serve the user's actual need?" A technically superior suggestion that doesn't deliver the user story is a regression, not an improvement.</role>
 
 ## Prerequisites
 
@@ -63,6 +65,61 @@ Ensure that the code is ready for analysis (either in worktree or on current bra
 
 </task_list>
 
+#### Load WHY Context (BEFORE running any agents)
+
+<thinking>
+Before any review agent runs, I need to understand WHY this code was built. Without this, I'm reviewing HOW code works without knowing WHAT it's supposed to achieve for users. Technical reviewers will suggest changes that are "better" in isolation but could drift the implementation from its purpose.
+</thinking>
+
+**Step 1: Find the plan file.** Check these locations in order:
+
+```bash
+# Check commit messages for plan references
+git log --oneline ${default_branch}..HEAD | grep -i "plan\|docs/plans"
+
+# Check for execution session that references a plan
+ls docs/execution-sessions/work-*/STATE.md 2>/dev/null
+
+#check for recent plan files
+ls -t docs/plans/*-plan*.md 2>/dev/null | head -5
+
+# Check for architecture files
+ls -t docs/architecture/*.md 2>/dev/null | head -5
+
+# Check for readme files
+ls -t README.md 2>/dev/null | head -5
+```
+
+If a plan file is found, read it and extract:
+- **Problem Narrative** — why this work exists, what pain it solves
+- **User Story** — who benefits and what outcome they get
+- **Architectural Context** — how the solution fits in the system
+- **Success Criteria** — measurable conditions that define "done"
+- **brainstorm_ref** — path to brainstorm document, if available
+
+ALWAYS READ ARCHITECTURE AND README FILES FOR CONTEXT — they often contain critical information about architectural intent, constraints, and domain knowledge that is not in the plan.
+
+If a STATE.md execution session exists, also read its WHY Context section.
+
+**Step 2: If no plan exists**, construct minimal WHY from available signals:
+
+- Read commit messages for intent ("feat: add user auth", "fix: email validation")
+- Look at the files changed to infer domain and scope
+- Check PR description if available
+- **Ask the user**: "I couldn't find a plan file for this branch. In one sentence, what problem does this code solve and for whom?" — this grounds the entire review.
+
+**Step 3: Summarize the WHY context** that will be passed to every agent:
+
+```
+WHY CONTEXT FOR REVIEWERS:
+- Problem: [problem narrative]
+- User Story: [user story]  
+- Success Criteria: [list]
+- Architectural Intent: [arch context summary]
+```
+
+This context is passed to EVERY review agent below. It is not optional.
+
 #### Protected Artifacts
 
 <protected_artifacts>
@@ -87,12 +144,32 @@ If no settings file exists, invoke the `setup` skill to create one. Then read th
 Run all configured review agents in parallel using Task tool. For each agent in the `review_agents` list:
 
 ```
-Task {agent-name}(branch diff content + review context from settings body)
+Task {agent-name}(branch diff content + review context from settings body + WHY context block)
+```
+
+**Every agent prompt MUST include the WHY context block** from the step above. This ensures agents evaluate fitness-for-purpose, not just technical quality. Example:
+
+```
+Task security-sentinel: "Review this branch diff for security issues.
+
+WHY CONTEXT FOR REVIEWERS:
+- Problem: [problem narrative]
+- User Story: [user story]
+- Success Criteria: [criteria list]
+- Architectural Intent: [arch context]
+
+When reporting findings, note whether each finding:
+(a) THREATENS the user story or success criteria (highest priority)
+(b) Is a general security concern independent of the user story
+(c) Would require changes that ALTER the user's intended outcome (flag as DRIFT RISK)
+
+Branch diff:
+[diff content]"
 ```
 
 Additionally, always run these regardless of settings:
-- Task agent-native-reviewer(branch diff content) - Verify new features are agent-accessible
-- Task learnings-researcher(branch diff content) - Search docs/solutions/ for past issues related to this PR's modules and patterns
+- Task agent-native-reviewer(branch diff content + WHY context) - Verify new features are agent-accessible
+- Task learnings-researcher(branch diff content + WHY context) - Search docs/solutions/ for past issues related to this PR's modules and patterns
 
 </parallel_tasks>
 
@@ -100,7 +177,7 @@ Additionally, always run these regardless of settings:
 
 <conditional_agents>
 
-These agents are run ONLY when the branch changes match specific criteria. Check the changed files list to determine if they apply:
+These agents are run ONLY when the branch changes match specific criteria. Check the changed files list to determine if they apply. **Pass the WHY context block to all conditional agents as well.**
 
 **MIGRATIONS: If PR contains database migrations or data backfills:**
 
@@ -132,43 +209,44 @@ Complete system context map with component interactions
 
 #### Phase 3: Stakeholder Perspective Analysis
 
-<thinking_prompt> ULTRA-THINK: Put yourself in each stakeholder's shoes. What matters to them? What are their pain points? </thinking_prompt>
+<thinking_prompt> ULTRA-THINK: Put yourself in each stakeholder's shoes. Use the WHY context to ground each perspective in the ACTUAL problem being solved, not generic questions. </thinking_prompt>
 
 <stakeholder_perspectives>
 
-1. **Developer Perspective** <questions>
+1. **The User from the User Story** <questions>
+
+   Using the actual user story extracted above:
+   - Can this user achieve the stated outcome with the code as implemented?
+   - Are the success criteria from the plan actually met by this code?
+   - What could prevent the user from getting the value they were promised?
+   - Are error states handled in a way that helps THIS user recover? </questions>
+
+2. **Developer Perspective** <questions>
 
    - How easy is this to understand and modify?
    - Are the APIs intuitive?
    - Is debugging straightforward?
    - Can I test this easily? </questions>
 
-2. **Operations Perspective** <questions>
+3. **Operations Perspective** <questions>
 
    - How do I deploy this safely?
    - What metrics and logs are available?
    - How do I troubleshoot issues?
    - What are the resource requirements? </questions>
 
-3. **End User Perspective** <questions>
-
-   - Is the feature intuitive?
-   - Are error messages helpful?
-   - Is performance acceptable?
-   - Does it solve my problem? </questions>
-
 4. **Security Team Perspective** <questions>
 
-   - What's the attack surface?
-   - Are there compliance requirements?
-   - How is data protected?
+   - What's the attack surface introduced by this specific feature?
+   - Are there compliance requirements for the data this feature handles?
+   - How is user data protected in the context of this user story?
    - What are the audit capabilities? </questions>
 
 5. **Business Perspective** <questions>
-   - What's the ROI?
-   - Are there legal/compliance risks?
-   - How does this affect time-to-market?
-   - What's the total cost of ownership? </questions> </stakeholder_perspectives>
+   - Does this code actually solve the stated problem? (from the Problem Narrative)
+   - Are there legal/compliance risks specific to this feature?
+   - Does the implementation match the architectural intent, or has it drifted?
+   - Is the scope contained — did implementation creep beyond the user story? </questions> </stakeholder_perspectives>
 
 #### Phase 4: Scenario Exploration
 
@@ -196,19 +274,20 @@ Complete system context map with component interactions
 - Technical documentation quality
 - Tooling and automation assessment
 
-#### Business Value Angle
+#### Purpose Delivery Angle
 
-- Feature completeness validation
-- Performance impact on users
-- Cost-benefit analysis
-- Time-to-market considerations
+- **User story delivery**: Does the code enable the stated user outcome?
+- **Success criteria coverage**: Which criteria are met, partially met, or unmet?
+- **Scope containment**: Was anything built beyond what the user story requires?
+- **Architectural fidelity**: Does implementation match the planned architecture, or has it drifted?
 
 #### Risk Management Angle
 
-- Security risk assessment
+- Security risk assessment (grounded in what data/flows THIS feature handles)
 - Operational risk evaluation
 - Compliance risk verification
 - Technical debt accumulation
+- **User story risk**: What could prevent the user from achieving their stated outcome?
 
 #### Team Dynamics Angle
 
@@ -225,11 +304,10 @@ Run the Task code-simplicity-reviewer() to see if we can simplify the code.
 
 <critical_requirement> ALL findings MUST be stored in the todos/ directory using the file-todos skill. Create todo files immediately after synthesis - do NOT present findings for user approval first. Use the skill for structured todo management. </critical_requirement>
 
-#### Step 1: Synthesize All Findings
+#### Step 1: Synthesize All Findings Through WHY Filter
 
 <thinking>
-Consolidate all agent reports into a categorized list of findings.
-Remove duplicates, prioritize by severity and impact.
+I am about to be hit with a firehose of technical findings from technically-minded agents. My job is NOT to pass them all through — it's to DISTILL them. Every finding must be evaluated: does acting on this finding serve or harm the user story? Technically superior suggestions that don't deliver the user story are regressions, not improvements.
 </thinking>
 
 <synthesis_tasks>
@@ -237,10 +315,25 @@ Remove duplicates, prioritize by severity and impact.
 - [ ] Collect findings from all parallel agents
 - [ ] Surface learnings-researcher results: if past solutions are relevant, flag them as "Known Pattern" with links to docs/solutions/ files
 - [ ] Discard any findings that recommend deleting or gitignoring files in `docs/plans/` or `docs/solutions/` (see Protected Artifacts above)
+
+**WHY-grounded classification (apply to EVERY finding before severity):**
+
+For each finding, ask: "If we act on this finding, what happens to the user story?"
+
+- **🎯 PROTECTS USER STORY** — Finding addresses something that could prevent the user from achieving the stated outcome. (e.g., security hole in the auth flow when the user story is about secure login). These get elevated priority.
+- **⚠️ DRIFT RISK** — Finding suggests a change that is technically valid but would ALTER the user's intended outcome or expand scope beyond the user story. (e.g., "refactor to microservices" when the plan says monolith, or "add OAuth support" when the story only mentions password login). **These must be flagged prominently and NEVER auto-applied.** Present to user with: "This suggestion is technically sound but would change what the feature delivers."
+- **🔧 QUALITY IMPROVEMENT** — Finding improves code quality without affecting the user story positively or negatively. Standard review finding. Keep severity as-is.
+- **📦 SCOPE EXPANSION** — Finding suggests adding functionality not in the user story or success criteria. Automatically downgrade to P3 regardless of agent-assigned severity, and tag as "Beyond current scope."
+
 - [ ] Categorize by type: security, performance, architecture, quality, etc.
 - [ ] Assign severity levels: 🔴 CRITICAL (P1), 🟡 IMPORTANT (P2), 🔵 NICE-TO-HAVE (P3)
+  - **Override rule**: Findings classified as PROTECTS USER STORY get +1 severity bump (P3→P2, P2→P1)
+  - **Override rule**: Findings classified as SCOPE EXPANSION get capped at P3
 - [ ] Remove duplicate or overlapping findings
 - [ ] Estimate effort for each finding (Small/Medium/Large)
+- [ ] **User Story Delivery Assessment**: After classifying all findings, state:
+  - "Does the implementation, AS REVIEWED, deliver the user story? YES / PARTIALLY / NO"
+  - If PARTIALLY or NO, list which success criteria are unmet and why
 
 </synthesis_tasks>
 
@@ -288,8 +381,11 @@ Sub-agents can:
 
 1. For each finding:
 
-   - Determine severity (P1/P2/P3)
+   - Determine severity (P1/P2/P3), applying the WHY override rules from synthesis
+   - **Tag with WHY classification**: 🎯 PROTECTS USER STORY / ⚠️ DRIFT RISK / 🔧 QUALITY IMPROVEMENT / 📦 SCOPE EXPANSION
+   - **Note which success criterion** this finding affects (or "None — general quality")
    - Write detailed Problem Statement and Findings
+   - For DRIFT RISK findings: explicitly state what would change about the user's outcome if the suggestion is followed
    - Create 2-3 Proposed Solutions with pros/cons/effort/risk
    - Estimate effort (Small/Medium/Large)
    - Add acceptance criteria and work log
@@ -372,9 +468,26 @@ After creating all todo files, present comprehensive summary:
 
 **Review Target:** Branch `[branch-name]` (vs `[default-branch]`)
 
-### Findings Summary:
+### User Story Delivery Assessment
+
+**User Story:** [user story from plan]
+**Delivery Status:** ✅ DELIVERS / ⚠️ PARTIALLY DELIVERS / ❌ DOES NOT DELIVER
+
+[If PARTIALLY or NO:]
+**Gaps:**
+- [Success criterion X]: not met because [reason]
+- [Success criterion Y]: partially met — [what's missing]
+
+### WHY-Grounded Findings Summary:
 
 - **Total Findings:** [X]
+- **🎯 Protects User Story:** [count] — findings that address threats to the user's outcome
+- **⚠️ Drift Risk:** [count] — suggestions that would ALTER what the feature delivers (review carefully)
+- **🔧 Quality Improvements:** [count] — standard technical improvements
+- **📦 Scope Expansion:** [count] — suggestions beyond current user story (consider for future work)
+
+### Severity Breakdown:
+
 - **🔴 CRITICAL (P1):** [count] - BLOCKS MERGE
 - **🟡 IMPORTANT (P2):** [count] - Should Fix
 - **🔵 NICE-TO-HAVE (P3):** [count] - Enhancements
@@ -413,46 +526,25 @@ After creating all todo files, present comprehensive summary:
    - Implement fixes or request exemption
    - Verify fixes before merging PR
 
-2. **Triage All Todos**:
+2. **Review Drift Risk Findings**: These require your decision — they suggest changes that would alter what the feature delivers. Accept, reject, or modify each one.
+
+3. **Triage All Todos**:
    ```bash
    ls todos/*-pending-*.md  # View all pending todos
    /triage                  # Use slash command for interactive triage
    ```
 ````
 
-3. **Work on Approved Todos**:
+4. **Work on Approved Todos**:
 
    ```bash
    /resolve_todo_parallel  # Fix all approved items efficiently
    ```
 
-4. **Track Progress**:
+5. **Track Progress**:
    - Rename file when status changes: pending → ready → complete
    - Update Work Log as you work
    - Commit todos: `git add todos/ && git commit -m "refactor: add code review findings"`
-
-### Severity Breakdown:
-
-**🔴 P1 (Critical - Blocks Merge):**
-
-- Security vulnerabilities
-- Data corruption risks
-- Breaking changes
-- Critical architectural issues
-
-**🟡 P2 (Important - Should Fix):**
-
-- Performance issues
-- Significant architectural concerns
-- Major code quality problems
-- Reliability issues
-
-**🔵 P3 (Nice-to-Have):**
-
-- Minor improvements
-- Code cleanup
-- Optimization opportunities
-- Documentation updates
 
 ```
 
@@ -489,7 +581,9 @@ The subagent will:
 
 **Standalone:** `/test-browser`
 
-### Important: P1 Findings Block Merge
+### Important: P1 Findings and User Story Delivery Block Merge
 
-Any **🔴 P1 (CRITICAL)** findings must be addressed before merging. Present these prominently and ensure they're resolved before the MR is accepted.
+Any **🔴 P1 (CRITICAL)** findings must be addressed before merging. Additionally, if the User Story Delivery Assessment is **❌ DOES NOT DELIVER**, the branch should not be merged regardless of P1 count — the code doesn't solve the stated problem.
+
+Any **⚠️ DRIFT RISK** findings must be explicitly reviewed by the user before acting on them. Never auto-resolve drift risk findings — they require a human decision about whether the user story should change.
 ```

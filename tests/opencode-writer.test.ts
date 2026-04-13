@@ -25,6 +25,7 @@ describe("writeOpenCodeBundle", () => {
         {
           name: "skill-one",
           sourceDir: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one"),
+          skillPath: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one", "SKILL.md"),
         },
       ],
     }
@@ -48,6 +49,7 @@ describe("writeOpenCodeBundle", () => {
         {
           name: "skill-one",
           sourceDir: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one"),
+          skillPath: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one", "SKILL.md"),
         },
       ],
     }
@@ -72,6 +74,7 @@ describe("writeOpenCodeBundle", () => {
         {
           name: "skill-one",
           sourceDir: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one"),
+          skillPath: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one", "SKILL.md"),
         },
       ],
     }

@@ -1,7 +1,7 @@
 ---
 name: ralph-loop
 description: Start a self-referential loop that continues until a completion promise is met
-argument-hint: "<prompt>" --completion-promise "<text>" --max-iterations <n>
+argument-hint: "\"<prompt>\" --completion-promise \"<text>\" --max-iterations <n>"
 disable-model-invocation: true
 ---
 

@@ -11,6 +11,8 @@ platforms:
     disable-model-invocation: true
   copilot:
     model: gpt-5.3-codex
+  opencode:
+    model: openrouter/xiaomi/mimo-v2-pro
 ---
 
 # Claude Code Swarm Orchestration

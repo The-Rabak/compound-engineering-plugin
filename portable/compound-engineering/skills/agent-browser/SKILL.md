@@ -9,6 +9,8 @@ model: claude-sonnet-4.6
 platforms:
   copilot:
     model: gpt-5.3-codex
+  opencode:
+    model: openrouter/xiaomi/mimo-v2-pro
 ---
 
 # agent-browser: CLI Browser Automation

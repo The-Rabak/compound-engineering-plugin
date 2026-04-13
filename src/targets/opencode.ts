@@ -1,5 +1,6 @@
 import path from "path"
-import { backupFile, copyDir, ensureDir, pathExists, readJson, writeJson, writeText } from "../utils/files"
+import { backupFile, copyDir, ensureDir, pathExists, readJson, readText, writeJson, writeText } from "../utils/files"
+import { formatFrontmatter, parseFrontmatter } from "../utils/frontmatter"
 import type { OpenCodeBundle, OpenCodeConfig } from "../types/opencode"
 
 // Merges plugin config into existing opencode.json. User keys win on conflict. See ADR-002.
@@ -89,7 +90,21 @@ export async function writeOpenCodeBundle(outputRoot: string, bundle: OpenCodeBu
   if (bundle.skillDirs.length > 0) {
     const skillsRoot = openCodePaths.skillsDir
     for (const skill of bundle.skillDirs) {
-      await copyDir(skill.sourceDir, path.join(skillsRoot, skill.name))
+      const targetDir = path.join(skillsRoot, skill.name)
+      await copyDir(skill.sourceDir, targetDir)
+
+      // Rewrite SKILL.md with platform-specific model
+      const raw = await readText(skill.skillPath)
+      const parsed = parseFrontmatter(raw)
+      const fm: Record<string, unknown> = {
+        name: skill.name,
+        description: skill.description,
+      }
+      if (skill.model) {
+        fm.model = skill.model
+      }
+      const content = formatFrontmatter(fm, parsed.body.trim())
+      await writeText(path.join(targetDir, "SKILL.md"), content + "\n")
     }
   }
 }

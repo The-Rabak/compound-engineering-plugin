@@ -49,5 +49,5 @@ export type OpenCodeBundle = {
   // Commands are written as individual .md files, not in opencode.json. See ADR-001.
   commandFiles: OpenCodeCommandFile[]
   plugins: OpenCodePluginFile[]
-  skillDirs: { sourceDir: string; name: string }[]
+  skillDirs: { sourceDir: string; name: string; description?: string; model?: string; skillPath: string }[]
 }
