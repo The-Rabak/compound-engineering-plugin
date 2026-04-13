@@ -10,7 +10,7 @@ platforms:
   copilot:
     model: gpt-5.3-codex
   opencode:
-    model: xiaomi/mimo-v2-pro
+    model: openrouter/xiaomi/mimo-v2-pro
 ---
 
 # Compound Engineering Setup

@@ -80,8 +80,14 @@ git log --oneline ${default_branch}..HEAD | grep -i "plan\|docs/plans"
 # Check for execution session that references a plan
 ls docs/execution-sessions/work-*/STATE.md 2>/dev/null
 
-# Check for recent plan files
+#check for recent plan files
 ls -t docs/plans/*-plan*.md 2>/dev/null | head -5
+
+# Check for architecture files
+ls -t docs/architecture/*.md 2>/dev/null | head -5
+
+# Check for readme files
+ls -t README.md 2>/dev/null | head -5
 ```
 
 If a plan file is found, read it and extract:
@@ -90,6 +96,8 @@ If a plan file is found, read it and extract:
 - **Architectural Context** — how the solution fits in the system
 - **Success Criteria** — measurable conditions that define "done"
 - **brainstorm_ref** — path to brainstorm document, if available
+
+ALWAYS READ ARCHITECTURE AND README FILES FOR CONTEXT — they often contain critical information about architectural intent, constraints, and domain knowledge that is not in the plan.
 
 If a STATE.md execution session exists, also read its WHY Context section.
 

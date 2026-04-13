@@ -8,7 +8,7 @@ platforms:
   copilot:
     model: gpt-5.4-mini
   opencode:
-    model: minimax/minimax-m2.7
+    model: openrouter/minimax/minimax-m2.7
 ---
 
 <examples>

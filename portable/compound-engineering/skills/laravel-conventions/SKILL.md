@@ -8,7 +8,7 @@ platforms:
   copilot:
     model: gpt-5.3-codex
   opencode:
-    model: xiaomi/mimo-v2-pro
+    model: openrouter/xiaomi/mimo-v2-pro
 ---
 
 # Laravel Coding Conventions (Laravel 11+ / PHP 8.3+)
