@@ -78,9 +78,8 @@ git log --oneline ${default_branch}..HEAD | grep -i "plan\|docs/plans"
 # Check for execution session that references a plan
 ls docs/execution-sessions/work-*/STATE.md 2>/dev/null
 
-# Check for recent plan files
+#check for recent plan files
 ls -t docs/plans/*-plan*.md 2>/dev/null | head -5
-
 
 # Check for architecture files
 ls -t docs/architecture/*.md 2>/dev/null | head -5
