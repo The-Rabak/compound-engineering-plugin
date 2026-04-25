@@ -299,7 +299,7 @@ describe("convertClaudeToOpenCode", () => {
 
   test("rewrites Task tool pseudocode to explicit OpenCode task-tool instructions", () => {
     const result = transformContentForOpenCode(
-      'Task security-sentinel(branch diff content + WHY context block)\nTask {agent-name}(branch diff content)\n- Task repo-research-analyst("Understand this area. Report: (1) existing patterns, (2) touched modules.")',
+      'Task security-sentinel(branch diff content + WHY context block)\nTask {agent-name}(branch diff content)\n- Task repo-research-analyst("Understand this area. Report: (1) existing patterns, (2) touched modules.")\n- Task read-and-extract(plan_file_paths) -> Read each `.md` file, extract structure (title, problem statement, approach).',
     )
 
     expect(result).toContain(
@@ -310,6 +310,9 @@ describe("convertClaudeToOpenCode", () => {
     )
     expect(result).toContain(
       '- Use the Task tool to invoke the repo-research-analyst subagent with this prompt: "Understand this area. Report: (1) existing patterns, (2) touched modules."',
+    )
+    expect(result).toContain(
+      "- Use the Task tool to invoke the read-and-extract subagent with this prompt: plan_file_paths -> Read each `.md` file, extract structure (title, problem statement, approach).",
     )
     expect(result).not.toContain("Task security-sentinel(")
   })

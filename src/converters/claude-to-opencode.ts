@@ -297,14 +297,50 @@ function transformTaskCallsForOpenCode(body: string): string {
 
       const agentName = match[1]
       const argsStart = match.index + match[0].length
-      const closingParen = line.lastIndexOf(")")
-      if (closingParen <= argsStart) return line
+      const closingParen = findClosingParen(line, argsStart - 1)
+      if (closingParen === -1) return line
 
       const args = line.slice(argsStart, closingParen).trim()
       const replacement = `Use the Task tool to invoke the ${agentName} subagent with this prompt: ${args}`
       return line.slice(0, match.index) + replacement + line.slice(closingParen + 1)
     })
     .join("\n")
+}
+
+function findClosingParen(line: string, openingParenIndex: number): number {
+  let depth = 0
+  let quote: '"' | "'" | null = null
+
+  for (let index = openingParenIndex; index < line.length; index += 1) {
+    const char = line[index]
+    const previous = index > 0 ? line[index - 1] : ""
+
+    if (quote) {
+      if (char === quote && previous !== "\\") {
+        quote = null
+      }
+      continue
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char
+      continue
+    }
+
+    if (char === "(") {
+      depth += 1
+      continue
+    }
+
+    if (char === ")") {
+      depth -= 1
+      if (depth === 0) {
+        return index
+      }
+    }
+  }
+
+  return -1
 }
 
 // Bare Claude family aliases used in Claude Code (e.g. `model: haiku`).
