@@ -104,12 +104,15 @@ Read the local guidance files in this order before ideating:
 1. `AGENTS.md`
 2. `CLAUDE.md` (if present)
 3. `README.md`
+4. `docs/constitution.md` (if present)
 
-Use them to preserve the repository's workflow language, OpenViking guidance, docs conventions, and artifact locations.
+Use them to preserve the repository's workflow language, OpenViking guidance, docs conventions, artifact locations, and any repo-wide principles or boundaries already ratified in the constitution.
 
 #### 1.2 Gather Grounding in Parallel
 
 Run these in parallel in the foreground:
+
+**Named-agent dispatch rule:** Before dispatching any named specialist agent below (for example `learnings-researcher` or `issue-intelligence-analyst`), first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent is supplied from OpenViking/global context instead, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
 
 1. **Quick context scan** - dispatch a general-purpose or explore-style sub-agent to do a shallow repository scan.
 
@@ -137,6 +140,7 @@ Consolidate the results into a short grounding summary with distinct sections:
 - **Past learnings**
 - **Issue intelligence** (when present)
 - **OpenViking context** (when present)
+- **Constitution context** (when `docs/constitution.md` exists)
 
 Do not do external research in this workflow.
 
@@ -205,12 +209,14 @@ Use rejection criteria such as:
 - not actionable
 - duplicates a stronger idea
 - not grounded in the current codebase
+- conflicts with the constitution without a compelling amendment case
 - too expensive relative to likely value
 - already covered by existing workflows or docs
 - better handled as a brainstorm variant, not a product improvement
 
 Use a consistent survivor rubric that weighs:
 - groundedness in the current repo
+- constitution fit
 - expected value
 - novelty
 - pragmatism

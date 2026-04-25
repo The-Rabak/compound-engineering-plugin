@@ -1,6 +1,6 @@
 ---
 name: "workflows:plan"
-description: Transform feature descriptions into well-structured project plans following conventions
+description: Transform feature descriptions into structured project plans anchored to user story, architectural context, and success criteria from brainstorm (or constructed fresh when no brainstorm exists)
 argument-hint: "[feature description, bug report, or improvement idea]"
 ---
 
@@ -10,7 +10,14 @@ argument-hint: "[feature description, bug report, or improvement idea]"
 
 **Note: The current year is 2026.** Use this when dating plans and searching for recent documentation.
 
-Transform feature descriptions, bug reports, or improvement ideas into well-structured markdown files issues that follow project conventions and best practices. This command provides flexible detail levels to match your needs.
+Transform feature descriptions, bug reports, or improvement ideas into well-structured, execution-ready plans that:
+1. **Anchor to WHY** -- every plan traces back to a user story and problem narrative
+2. **Map WHERE** -- architectural context grounds task decomposition in the system's structure
+3. **Define DONE** -- success criteria tied to user outcomes, not just technical checkboxes
+4. **Honor project guardrails** -- constitution principles, baselines, and approval rules are made explicit
+5. **Enable downstream execution** -- `/workflows:work` can delegate tasks with full context; `/workflows:review` evaluates against the stated purpose
+
+Plans consume the project constitution from `/workflows:constitution` when available, plus lynchpin artifacts from `/workflows:brainstorm` when available, or construct feature context fresh when running standalone. Either way, the plan document carries forward the WHY, WHERE, DONE, and GUARDRAIL contract that all downstream phases depend on.
 
 ## Feature Description
 
@@ -20,7 +27,26 @@ Transform feature descriptions, bug reports, or improvement ideas into well-stru
 
 Do not proceed until you have a clear feature description from the user.
 
-### 0. Idea Refinement
+### 0. Idea Refinement & WHY Anchoring
+
+This step establishes the plan's WHY anchor -- whether from a brainstorm, a spec file, or fresh dialogue. Every path must produce or inherit: **problem narrative**, **user story**, **architectural context**, and **success criteria**. When `docs/constitution.md` exists, every path must also inherit or explicitly waive the relevant project guardrails.
+
+#### Constitution Baseline (Runs Before Path A/B/C)
+
+If `docs/constitution.md` exists:
+
+1. Read it completely before planning.
+2. Extract:
+   - constitution version
+   - relevant core principles
+   - applicable engineering baselines
+   - approval and exception rules
+3. Treat these as non-negotiables unless the plan records an explicit waiver.
+4. If the feature appears to conflict with the constitution, ask the user whether this should be:
+   - a plan waiver for this feature
+   - a constitution amendment to be handled by `/workflows:constitution`
+
+#### Path A: Spec/Plan File Provided
 
 **Check if arguments contain a plan or spec file:**
 
@@ -29,10 +55,20 @@ If the feature description (`#$ARGUMENTS`) is or contains a path to a `.md` file
 1. Read the file
 2. Announce: "Found existing plan/spec: `[file path]`. Using as foundation."
 3. Extract: title, problem statement, proposed approach, acceptance criteria, implementation phases, and any existing tasks
-4. **Skip idea refinement questions** — the plan already defines WHAT to build
-5. **Skip brainstorm check** — an explicit plan supersedes brainstorm discovery
-6. Proceed to Step 0.5 to gather any additional project inputs, then to research to validate and enrich the existing plan
-7. In Step 2 (Issue Planning), **build upon the existing plan structure** — preserve its sections, fill gaps, add execution-readiness fields (Files, Depends on, Success criteria, Test command) to any tasks that lack them, and enrich with research findings. Do NOT discard or rewrite sections that are already well-defined.
+4. **Check for brainstorm reference** -- look for a `brainstorm_ref` field in frontmatter, or search `docs/brainstorms/` for a matching topic. If found, read and extract lynchpin artifacts (see Path B).
+5. **Extract or construct WHY artifacts from the spec:**
+   - If the spec has a Problem Narrative / User Story / Architectural Context -- use them directly
+   - If the spec only has a "Problem Statement" -- synthesize a user story from it:
+     - Who has this problem? (infer from context or ask)
+     - What do they need? (from the spec's proposed solution)
+     - Why does it matter? (from the spec's motivation)
+   - If the spec lacks architectural context -- note it for research phase (Step 1 will fill it in)
+6. **Skip free-form idea refinement** -- the spec defines WHAT to build
+7. Proceed to Step 0.5 to gather any additional project inputs, then to research
+
+In Step 2 (Issue Planning), **build upon the existing plan structure** -- preserve its sections, fill gaps, add execution-readiness fields (Files, Depends on, Success criteria, Test command) to any tasks that lack them, and enrich with research findings. Do NOT discard or rewrite sections that are already well-defined.
+
+#### Path B: Brainstorm Document Found
 
 **If arguments are NOT a file path, check for brainstorm output:**
 
@@ -49,15 +85,29 @@ ls -la docs/brainstorms/*.md 2>/dev/null | head -10
 
 **If a relevant brainstorm exists:**
 1. Read the brainstorm document
-2. Announce: "Found brainstorm from [date]: [topic]. Using as context for planning."
-3. Extract key decisions, chosen approach, and open questions
-4. **Skip the idea refinement questions below** - the brainstorm already answered WHAT to build
-5. Use brainstorm decisions as input to the research phase
+2. **Parse handoff frontmatter** -- check for `handoff.problem_narrative`, `handoff.user_story`, `handoff.architectural_context`, `handoff.success_criteria`
+3. Announce: "Found brainstorm from [date]: [topic]. Consuming lynchpin artifacts."
+4. **Extract and surface all lynchpin sections:**
+   - **Problem Narrative** -- the synthesized WHY (carry forward verbatim into plan)
+   - **User Story** -- the north star (carry forward, plan tasks must trace to this)
+   - **Architectural Context** -- the WHERE map (feeds `{{ARCHITECTURAL_CONTEXT}}` in work.md)
+   - **Success Criteria** -- the DONE definition (plan acceptance criteria must include these)
+   - **Stakeholder Impact** -- who is affected (informs stakeholder analysis)
+   - **Chosen Approach** and **Key Decisions** -- the WHAT (informs task decomposition)
+   - **Open Questions** -- must be resolved before planning proceeds
+5. **If any handoff fields are `false` or sections are empty**, flag them: "Brainstorm is missing [X]. I'll construct this during planning."
+6. **Resolve open questions** -- if the brainstorm has unresolved questions, use **AskUserQuestion tool** to resolve each one before proceeding
+7. **Skip free-form idea refinement** -- the brainstorm already established WHY and WHAT
+8. Use brainstorm decisions as input to the research phase
 
 **If multiple brainstorms could match:**
 Use **AskUserQuestion tool** to ask which brainstorm to use, or whether to proceed without one.
 
-**If no brainstorm found (or not relevant), run idea refinement:**
+#### Path C: No Brainstorm (Standalone Planning)
+
+**If no brainstorm found (or not relevant), construct WHY artifacts from scratch:**
+
+**Phase C.1: Idea Refinement Dialogue**
 
 Refine the idea through collaborative dialogue using the **AskUserQuestion tool**:
 
@@ -74,7 +124,39 @@ Refine the idea through collaborative dialogue using the **AskUserQuestion tool*
 - **Uncertainty level**: Is the approach clear or open-ended?
 
 **Skip option:** If the feature description is already detailed, offer:
-"Your description is clear. Should I proceed with research, or would you like to refine it further?"
+"Your description is detailed. Should I proceed with research, or would you like to refine it further?"
+
+**Phase C.2: Synthesize WHY Artifacts (mandatory before research)**
+
+After idea refinement, before proceeding to research, synthesize the plan's WHY anchor. This is lighter than a full brainstorm but still establishes the foundation that all downstream phases need:
+
+**Problem Narrative** (2-4 sentences):
+Synthesize: who has the problem, what triggers it, what the impact is. Not a restatement of the feature request -- a narrative about why this matters.
+
+**User Story:**
+```
+As a [persona],
+I need to [action]
+so that [outcome],
+because currently [pain point]
+which causes [impact].
+```
+
+If the feature has multiple personas or use cases, construct the primary user story plus brief secondary stories.
+
+**Architectural Context** (rough -- research will refine):
+- **Likely lives in:** [best guess of service/module/layer]
+- **Likely interacts with:** [neighboring systems]
+- **Entry point:** [UI/API/CLI/event]
+
+This is a hypothesis -- the research phase (Step 1) will validate or correct it.
+
+**Success Criteria** (3-5 measurable outcomes):
+Tied to the user story's "so that" clause, not just technical correctness. How will a real user know this works?
+
+Use **AskUserQuestion tool** to present the synthesized WHY artifacts and ask: "Here's my understanding of WHY we're building this. Does this capture it correctly, or should I adjust anything?"
+
+Revise based on feedback before proceeding.
 
 ### 0.5 Gather Project Inputs
 
@@ -99,6 +181,8 @@ Use the **AskUserQuestion tool** to collect structured project inputs. Ask these
 **Processing inputs:**
 
 For any non-empty inputs, launch **parallel subagents** to fetch and summarize each document:
+
+- For helper subagents in this step (`fetch-and-summarize`, `read-and-extract`), define the full extraction contract in the prompt itself. Do not rely on implicit behavior, hidden defaults, or platform-specific assumptions.
 
 - Task fetch-and-summarize(ticket_urls) → Extract ticket title, description, acceptance criteria, status
 - Task fetch-and-summarize(doc_urls) → Extract key decisions, requirements, technical context
@@ -151,6 +235,8 @@ First, I need to understand the project's conventions, existing patterns, and an
 
 Run these agents **in parallel** to gather local context:
 
+Before dispatching any named agent below, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+
 - Task repo-research-analyst(feature_description)
 - Task learnings-researcher(feature_description)
 
@@ -182,26 +268,53 @@ Examples:
 
 Run these agents in parallel:
 
+Before dispatching any named research agent below, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+
 - Task best-practices-researcher(feature_description)
 - Task framework-docs-researcher(feature_description)
 
-### 1.6. Consolidate Research
+### 1.6. Consolidate Research & Validate WHY Artifacts
 
-After all research steps complete, consolidate findings:
+After all research steps complete, consolidate findings and validate/refine the WHY artifacts:
+
+**Research findings consolidation:**
 
 - Document relevant file paths from repo research (e.g., `app/Services/ExampleService.php:42`)
 - **Include relevant institutional learnings** from `docs/solutions/` (key insights, gotchas to avoid)
 - **Include project context** from structured inputs (project tickets, documentation, Figma designs)
+- **Include constitution context** from `docs/constitution.md` when present (relevant principles, required approvals, waiver needs)
 - Note external documentation URLs and best practices (if external research was done)
 - List related issues or PRs discovered
 - Capture CLAUDE.md conventions
 
-**Optional validation:** Briefly summarize findings and ask if anything looks off or missing before proceeding to planning.
+**Validate and refine WHY artifacts against research:**
+
+Now that we have concrete codebase knowledge, refine the WHY artifacts established in Step 0:
+
+1. **Architectural Context** -- the repo research likely revealed the actual module structure, neighboring services, and data flow patterns. Update the architectural context from hypothesis to grounded fact:
+   - Confirm or correct "Lives in" with actual file paths and module structure
+   - Confirm or correct "Interacts with" based on discovered dependencies
+   - Add data flow specifics from codebase patterns
+   - Note any conventions from CLAUDE.md that constrain architecture
+
+2. **Success Criteria** -- check if research uncovered edge cases, existing test patterns, or quality gates that should be added to success criteria
+
+3. **User Story** -- rarely changes from research, but if learnings reveal the problem is different than assumed, flag it: "Research suggests the user story may need adjustment because [finding]."
+
+**Research implications for approach:**
+
+Explicitly state how research findings confirm, challenge, or refine the planned approach relative to the user story. Examples:
+- "Codebase already has a similar pattern in `app/Services/AuthService.php` -- we should follow it for consistency, which aligns with the user story because..."
+- "Learnings doc warns about [gotcha] -- this affects our approach because..."
+- "No existing patterns found for this -- higher risk, may need more tasks for validation."
+- "Constitution requires [baseline] -- the plan must make that visible in acceptance criteria or approvals."
+
+**Optional validation:** Briefly summarize the refined WHY artifacts and key research findings, then ask if anything looks off or missing before proceeding to planning.
 
 ### 2. Issue Planning & Structure
 
 <thinking>
-Think like a product manager - what would make this issue clear and actionable? Consider multiple perspectives
+Think like a product manager -- what would make this issue clear, actionable, and traceable to user outcomes? Every section should connect back to the WHY.
 </thinking>
 
 **Title & Categorization:**
@@ -212,10 +325,14 @@ Think like a product manager - what would make this issue clear and actionable? 
   - Example: `feat: Add User Authentication` → `2026-01-21-feat-add-user-authentication-plan.md`
   - Keep it descriptive (3-5 words after prefix) so plans are findable by context
 
-**Stakeholder Analysis:**
+**Stakeholder Analysis (grounded in WHY artifacts):**
 
-- [ ] Identify who will be affected by this issue (end users, developers, operations)
-- [ ] Consider implementation complexity and required expertise
+- [ ] Identify stakeholders from the user story and brainstorm's stakeholder impact (if available)
+- [ ] For each stakeholder group, state how this plan addresses their needs:
+  - End users: How does this solve the problem stated in the user story?
+  - Developers: How does this fit the architectural context? What patterns does it establish?
+  - Operations: What are the deployment/monitoring implications?
+- [ ] Flag any stakeholder concerns not addressed by the current approach
 
 **Content Planning:**
 
@@ -223,6 +340,17 @@ Think like a product manager - what would make this issue clear and actionable? 
 - [ ] List all necessary sections for the chosen template
 - [ ] Gather supporting materials (error logs, screenshots, design mockups)
 - [ ] Prepare code examples or reproduction steps if applicable, name the mock filenames in the lists
+
+**Phase Decomposition (traced to user story):**
+
+Each implementation phase must state **what aspect of the user story it serves**. This creates a traceable chain:
+- User Story → Phase → Tasks → Files
+
+When decomposing into phases:
+- **Group by user-facing capability**, not by technical layer. "User can log in" is a phase; "Create database tables" is a task within a phase.
+- **Each phase should deliver a testable slice** of the user story where possible
+- **Cross-reference success criteria** -- map each success criterion to the phase(s) that deliver it
+- **Architectural context informs boundaries** -- use the WHERE map to identify natural phase boundaries (e.g., service boundaries, module boundaries)
 
 **Execution Readiness:**
 
@@ -234,21 +362,32 @@ For plans that will be executed via `/workflows:work`, ensure each implementatio
 
 This structured format enables the `/workflows:work` orchestrator to delegate each task to a focused subagent with clear scope and termination criteria. Plans without this structure will be flagged for refinement before execution begins.
 
-### 3. SpecFlow Analysis
+### 3. SpecFlow Analysis (grounded in user story)
 
-After planning the issue structure, run SpecFlow Analyzer to validate and refine the feature specification:
+After planning the issue structure, run SpecFlow Analyzer to validate the feature specification **against the user story and success criteria**:
 
-- Task spec-flow-analyzer(feature_description, research_findings)
+Before dispatching `spec-flow-analyzer`, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "spec-flow-analyzer"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+
+- Task spec-flow-analyzer(feature_description, user_story, success_criteria, research_findings)
+
+The SpecFlow Analyzer should evaluate:
+- Do the planned phases cover all aspects of the user story?
+- Are there user flows implied by the user story that the plan doesn't address?
+- Do edge cases threaten any of the success criteria?
+- Are there gaps between what the user needs (story) and what the plan delivers (tasks)?
 
 **SpecFlow Analyzer Output:**
 
 - [ ] Review SpecFlow analysis results
 - [ ] Incorporate any identified gaps or edge cases into the issue
 - [ ] Update acceptance criteria based on SpecFlow findings
+- [ ] **Flag any flows that don't trace back to the user story** -- these may be scope creep or may reveal a gap in the user story itself
 
 ### 4. Choose Implementation Detail Level
 
 **Important for `/workflows:work` compatibility:** All detail levels can be executed, but the MORE and A LOT levels produce plans with structured execution chunks (per-task success criteria, test commands, file lists) that enable the subagent orchestration model in `/workflows:work`. MINIMAL plans work but may require the orchestrator to decompose tasks further before delegating to subagents.
+
+**All detail levels include WHY sections.** The Problem Narrative, User Story, Architectural Context, and Success Criteria are mandatory at every level -- they are the contract that downstream phases depend on. The difference between levels is how much implementation detail surrounds them.
 
 Select how comprehensive you want the issue to be, simpler is mostly better.
 
@@ -258,7 +397,7 @@ Select how comprehensive you want the issue to be, simpler is mostly better.
 
 **Includes:**
 
-- Problem statement or feature description
+- WHY anchor (problem narrative, user story, arch context, success criteria) -- brief
 - Basic acceptance criteria
 - Essential context only
 
@@ -272,40 +411,56 @@ title: [Issue Title]
 type: [feat|fix|refactor]
 status: active
 date: YYYY-MM-DD
+constitution_version: [version from docs/constitution.md, or null]
+constitution_waivers: []
+brainstorm_ref: [path to brainstorm doc, or null]
 source_docs:
   tickets: []
   docs: []
   figma: []
   plans: []
+handoff:
+  problem_narrative: true
+  user_story: true
+  architectural_context: true
+  success_criteria: true
 ---
 
 # [Issue Title]
 
-[Brief problem/feature description]
+## Problem Narrative
 
-## Acceptance Criteria
+[2-4 sentences: who has the problem, what triggers it, what the impact is.
+Carried forward from brainstorm or constructed in Step 0.]
 
-- [ ] Core requirement 1
-- [ ] Core requirement 2
+## User Story
 
-## Context
+As a [persona],
+I need to [action]
+so that [outcome],
+because currently [pain point]
+which causes [impact].
 
-[Any critical information]
+## Architectural Context
 
-## MVP
+- **Lives in:** [service/module/layer -- with actual file paths from research]
+- **Interacts with:** [neighboring systems/modules]
+- **Entry point:** [UI/API/CLI/event]
 
-### ExampleController.php
+## Success Criteria
 
-```php
-// app/Http/Controllers/ExampleController.php
-class ExampleController extends Controller
-{
-    public function __construct()
-    {
-        $this->name = 'example';
-    }
-}
-```
+- [ ] [Measurable outcome tied to user story's "so that"]
+- [ ] [Observable behavior proving the problem is solved]
+
+## Constitution Alignment
+
+- **Relevant principles:** [Project rules that apply to this work]
+- **Required approvals:** [Any approvals mandated by the constitution]
+- **Waivers:** [None, or explicit approved exceptions]
+
+## Implementation
+
+[Brief description of what to build and how]
 
 ## References
 
@@ -321,9 +476,9 @@ class ExampleController extends Controller
 
 - Detailed background and motivation
 - Technical considerations
+- Phased implementation with story tracing
 - Success metrics
 - Dependencies and risks
-- Basic implementation suggestions
 
 **Structure:**
 
@@ -333,26 +488,61 @@ title: [Issue Title]
 type: [feat|fix|refactor]
 status: active
 date: YYYY-MM-DD
+constitution_version: [version from docs/constitution.md, or null]
+constitution_waivers: []
+brainstorm_ref: [path to brainstorm doc, or null]
 source_docs:
   tickets: []
   docs: []
   figma: []
   plans: []
+handoff:
+  problem_narrative: true
+  user_story: true
+  architectural_context: true
+  success_criteria: true
 ---
 
 # [Issue Title]
 
+## Problem Narrative
+
+[The synthesized problem statement. WHY we're building this.
+2-4 sentences: who has the problem, what triggers it, what the impact is.]
+
+## User Story
+
+As a [persona],
+I need to [action]
+so that [outcome],
+because currently [pain point]
+which causes [impact].
+
+## Architectural Context
+
+- **Lives in:** [service/module/layer -- grounded in repo research]
+- **Interacts with:** [neighboring systems/modules with file paths]
+- **Entry point:** [UI/API/CLI/event]
+- **Data:** [what data flows, where it lives]
+- **Dependencies:** [what this depends on, what may depend on it]
+- **Conventions:** [relevant CLAUDE.md or project conventions]
+
+## Success Criteria
+
+- [ ] [Measurable outcome 1 -- tied to user story's "so that"]
+- [ ] [Measurable outcome 2 -- observable behavior]
+- [ ] [Measurable outcome 3 -- proving the problem is solved]
+
+## Constitution Alignment
+
+- **Relevant principles:** [Project rules that apply to this work]
+- **Applicable baselines:** [Testing, security, docs, operations, portability, etc.]
+- **Required approvals:** [Any approvals mandated by the constitution]
+- **Waivers:** [None, or explicit approved exceptions]
+
 ## Overview
 
-[Comprehensive description]
-
-## Problem Statement / Motivation
-
-[Why this matters]
-
-## Proposed Solution
-
-[High-level approach]
+[Comprehensive description of what we're building and the chosen approach]
 
 ## Technical Considerations
 
@@ -363,6 +553,7 @@ source_docs:
 ## Implementation Phases
 
 #### Phase 1: [Phase Name]
+**Serves:** [Which aspect of the user story / which success criterion this phase delivers]
 
 ##### Task 1.1: [Task Name]
 **Files:** `path/to/file1.php`, `path/to/file2.php`
@@ -381,6 +572,7 @@ source_docs:
 **Test command:** `<project-appropriate test command>`
 
 #### Phase 2: [Phase Name]
+**Serves:** [Which aspect of the user story / which success criterion this phase delivers]
 
 ##### Task 2.1: [Task Name]
 **Files:** `path/to/file4.php`
@@ -398,7 +590,7 @@ source_docs:
 
 ## Success Metrics
 
-[How we measure success]
+[How we measure success -- tied to the user story and problem narrative]
 
 ## Dependencies & Risks
 
@@ -418,7 +610,7 @@ source_docs:
 **Includes everything from MORE plus:**
 
 - Detailed implementation plan with phases
-- Alternative approaches considered
+- Alternative approaches considered (traced to user story)
 - Extensive technical specifications
 - Resource requirements and timeline
 - Future considerations and extensibility
@@ -433,22 +625,75 @@ title: [Issue Title]
 type: [feat|fix|refactor]
 status: active
 date: YYYY-MM-DD
+constitution_version: [version from docs/constitution.md, or null]
+constitution_waivers: []
+brainstorm_ref: [path to brainstorm doc, or null]
 source_docs:
   tickets: []
   docs: []
   figma: []
   plans: []
+handoff:
+  problem_narrative: true
+  user_story: true
+  architectural_context: true
+  success_criteria: true
 ---
 
 # [Issue Title]
 
+## Problem Narrative
+
+[Detailed problem analysis. WHY we're building this.
+Who has the problem, what triggers it, what the impact is, and what happens if we don't solve it.]
+
+## User Story
+
+As a [persona],
+I need to [action]
+so that [outcome],
+because currently [pain point]
+which causes [impact].
+
+### Secondary Stories (if applicable)
+
+As a [persona 2], I need to [action] so that [outcome].
+
+## Architectural Context
+
+- **Lives in:** [service/module/layer -- grounded in repo research with file paths]
+- **Interacts with:** [neighboring systems/modules with specific integration points]
+- **Entry point:** [UI/API/CLI/event -- specific routes, components, or endpoints]
+- **Data:** [what data flows, where it lives, schema implications]
+- **Dependencies:** [what this depends on, what may depend on it]
+- **Conventions:** [relevant CLAUDE.md or project conventions]
+- **Boundary constraints:** [what this should NOT touch or change]
+
+## Success Criteria
+
+- [ ] [Measurable outcome 1 -- tied to user story]
+- [ ] [Measurable outcome 2 -- observable behavior]
+- [ ] [Measurable outcome 3 -- proving the problem is solved]
+- [ ] [Non-functional: performance target]
+- [ ] [Non-functional: security requirement]
+
+## Constitution Alignment
+
+- **Relevant principles:** [Project rules that apply to this work]
+- **Applicable baselines:** [Testing, security, docs, operations, portability, etc.]
+- **Required approvals:** [Any approvals mandated by the constitution]
+- **Waivers:** [None, or explicit approved exceptions]
+
+## Stakeholder Impact
+
+- **End users:** [How their experience changes -- from user story]
+- **Developers:** [How this affects the codebase -- from architectural context]
+- **Operations:** [Deployment, monitoring, infrastructure impact]
+- **Business:** [Revenue, cost, compliance, timeline impact]
+
 ## Overview
 
-[Executive summary]
-
-## Problem Statement
-
-[Detailed problem analysis]
+[Executive summary of what we're building, the chosen approach, and why this approach best serves the user story]
 
 ## Proposed Solution
 
@@ -458,11 +703,13 @@ source_docs:
 
 ### Architecture
 
-[Detailed technical design]
+[Detailed technical design, grounded in the architectural context map]
 
 ### Implementation Phases
 
 #### Phase 1: [Foundation]
+**Serves:** [Which aspect of the user story / which success criteria this phase delivers]
+**Rationale:** [Why this phase comes first -- what it enables for subsequent phases]
 
 ##### Task 1.1: [Task Name]
 **Files:** `path/to/file1.php`, `path/to/file2.php`
@@ -481,6 +728,8 @@ source_docs:
 **Test command:** `<project-appropriate test command>`
 
 #### Phase 2: [Core Implementation]
+**Serves:** [Which aspect of the user story / which success criteria this phase delivers]
+**Rationale:** [Why this phase order -- what it builds on from Phase 1]
 
 ##### Task 2.1: [Task Name]
 **Files:** `path/to/file4.php`, `path/to/file5.php`
@@ -499,6 +748,7 @@ source_docs:
 **Test command:** `<project-appropriate test command>`
 
 #### Phase 3: [Polish & Optimization]
+**Serves:** [Which success criteria / quality aspects this phase delivers]
 
 ##### Task 3.1: [Task Name]
 **Files:** `path/to/file7.php`
@@ -508,9 +758,16 @@ source_docs:
 - [ ] Criterion 2
 **Test command:** `<project-appropriate test command>`
 
+### Phase-to-Story Traceability
+
+| Success Criterion | Delivered by Phase(s) | Key Tasks |
+|---|---|---|
+| [Criterion 1 from Success Criteria] | Phase 1, Phase 2 | Task 1.1, Task 2.1 |
+| [Criterion 2 from Success Criteria] | Phase 2 | Task 2.1, Task 2.2 |
+
 ## Alternative Approaches Considered
 
-[Other solutions evaluated and why rejected]
+[Other solutions evaluated and why rejected -- **relative to the user story and success criteria**, not just technical tradeoffs]
 
 ## Acceptance Criteria
 
@@ -532,7 +789,7 @@ source_docs:
 
 ## Success Metrics
 
-[Detailed KPIs and measurement methods]
+[Detailed KPIs and measurement methods -- tied to user story outcomes]
 
 ## Dependencies & Prerequisites
 
@@ -540,7 +797,7 @@ source_docs:
 
 ## Risk Analysis & Mitigation
 
-[Comprehensive risk assessment]
+[Comprehensive risk assessment -- including risks to delivering the user story, not just technical risks]
 
 ## Resource Requirements
 
@@ -634,6 +891,18 @@ public function processUser(User $user): array
 
 **Pre-submission Checklist:**
 
+**WHY Integrity:**
+
+- [ ] Problem Narrative accurately captures who has the problem and why it matters
+- [ ] User Story is complete (persona, action, outcome, pain point, impact)
+- [ ] Architectural Context is grounded in actual repo research (not hypothetical)
+- [ ] Success Criteria are tied to user outcomes, not just technical checkboxes
+- [ ] If `docs/constitution.md` exists, Constitution Alignment names the applicable rules, approvals, and any waivers explicitly
+- [ ] Every implementation phase states which user story aspect / success criterion it serves
+- [ ] `handoff` frontmatter fields are all `true`
+
+**Content Quality:**
+
 - [ ] Title is searchable and descriptive
 - [ ] Labels accurately categorize the issue
 - [ ] All template sections are complete
@@ -641,6 +910,13 @@ public function processUser(User $user): array
 - [ ] Acceptance criteria are measurable
 - [ ] Add names of files in pseudo code examples and todo lists
 - [ ] Add an ERD mermaid diagram if applicable for new model changes
+
+**Execution Readiness (for `/workflows:work`):**
+
+- [ ] Each task has: Files, Depends on, Success criteria, Test command
+- [ ] Task success criteria are testable (not vague)
+- [ ] Dependencies between tasks are explicit
+- [ ] Architectural context is specific enough to fill `{{ARCHITECTURAL_CONTEXT}}` in execution agent prompts
 
 ## Directory Setup & Gitignore
 
@@ -719,5 +995,30 @@ When user selects "Create Issue":
 
 2. **After creation:**
    - Ask if they want to proceed to `/workflows:work` or `/technical_review`
+
+## Downstream Phase Integration
+
+The plan document is a structured contract consumed by all downstream phases. Here's how each phase uses it:
+
+**`/deepen-plan`** reads:
+- Implementation phases and tasks -- enriches each with parallel research (best practices, performance, UI patterns)
+- Success criteria -- validates they are testable and complete
+- Architectural context -- uses it to ground research in the right part of the system
+- **Must preserve**: Problem Narrative, User Story, and handoff contract unchanged
+
+**`/workflows:work`** reads:
+- **Problem Narrative & User Story** -- the orchestrator uses these to validate task outcomes make sense in context, not just pass tests
+- **Architectural Context** -- feeds directly into `{{ARCHITECTURAL_CONTEXT}}` in each execution agent's prompt. This is WHY grounded arch context matters -- every subagent gets system-level awareness
+- **Implementation phases & tasks** -- the execution chunk structure (Files, Depends on, Success criteria, Test command)
+- **Success Criteria** -- the orchestrator checks final outcomes against these, not just individual task passes
+- **`constitution_version` / `constitution_waivers` / Constitution Alignment** -- the execution phase enforces repo-wide guardrails and knows which exceptions were approved
+- **`brainstorm_ref`** -- if present, the orchestrator can read the original brainstorm for additional context
+
+**`/workflows:review`** reads:
+- **Problem Narrative & User Story** -- the frame for evaluating whether the implementation solves the right problem
+- **Success Criteria** -- the measurable outcomes that the review should verify
+- **Architectural Context** -- used to evaluate whether the implementation respects system boundaries and integration points
+- **Constitution Alignment and waivers** -- used to distinguish approved exceptions from blocking constitution violations
+- **Stakeholder Impact** (A LOT level) -- informs stakeholder-perspective review
 
 NEVER CODE! Just research and write the plan.

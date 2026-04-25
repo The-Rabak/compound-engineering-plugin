@@ -1,344 +1,142 @@
 # Compound Engineering Plugin
 
-Development tools that compound. Every task you complete makes the next one faster -- not through magic, but through structured knowledge capture and reuse.
+Portable source-of-truth and release repository for the `compound-engineering` plugin.
 
-29 specialized agents. 24 commands. 21 skills. One workflow that actually works.
+The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **29 specialized agents, 25 commands, and 21 skills** built from one portable definition set and emitted into multiple agent harnesses.
 
-## Quick Start
+## What this repository ships
+
+- `portable/compound-engineering/` -- canonical hand-edited source
+- `plugins/compound-engineering/` -- generated Claude Code plugin
+- `.github/` -- generated GitHub Copilot agents, skills, and MCP config
+- converter/install tooling for OpenCode, Codex, Pi, Droid, Gemini, Kiro, and Copilot
+- OpenViking sync tooling for global agent and skill registration
+
+For the exhaustive generated component catalog, see `plugins/compound-engineering/README.md`.
+
+## Core methodology
+
+This repo now treats delivery as a layered spec system instead of letting workflow documents drift into overlapping roles:
+
+1. **`/workflows:constitution`** -- create or amend the repo-level constitution in `docs/constitution.md`
+2. **`/workflows:ideate`** -- generate grounded candidate directions
+3. **`/workflows:brainstorm`** -- produce the feature-level spec and handoff contract
+4. **`/workflows:plan`** -- translate that direction into an implementation plan
+5. **`/deepen-plan`** -- deepen the plan with parallel research and review
+6. **`/workflows:work`** -- execute through orchestrated subagents
+7. **`/workflows:review`** -- review against the code diff, user story, and constitution
+8. **`/workflows:compound` / `/workflows:compound-refresh`** -- preserve and refresh learnings
+
+### Spec-driven layers
+
+- **Project constitution** -- repo-wide principles, guardrails, waivers, and amendment rules
+- **Brainstorm artifact** -- feature-level WHY / WHAT / WHERE handoff contract
+- **Plan artifact** -- execution-ready HOW, task decomposition, dependencies, and validation
+- **Work and review** -- enforce both the feature contract and the project constitution
+- **Compounded learnings** -- keep the system alive as the project evolves
+
+### Subagent dispatch rule
+
+Orchestrators should not dispatch named specialist agents by name alone. They should first load the bundled agent template from `portable/compound-engineering/agents/` when present, or load the global definition via OpenViking:
 
 ```bash
-# 1. Add the marketplace
+source ~/.copilot-skills/ov-core.sh
+AGENT_TEMPLATE=$(ov_load_global_agent "<agent-name>")
+```
+
+Then include that template in the spawned task prompt.
+
+## Repository layout
+
+```text
+compound-engineering-plugin/
+├── portable/compound-engineering/    # Canonical source
+├── plugins/compound-engineering/     # Generated Claude Code plugin
+├── .claude-plugin/marketplace.json   # Generated Claude marketplace entry
+├── .github/                          # Generated Copilot assets
+├── docs/                             # Workflow outputs and institutional knowledge
+├── src/                              # Converter, writer, and sync tooling
+└── tests/                            # Converter and generator coverage
+```
+
+## Quick start
+
+### Use the Claude plugin
+
+```bash
 claude /plugin marketplace add https://github.com/The-Rabak/compound-engineering-plugin
-
-# 2. Install the plugin
 claude /plugin install compound-engineering
-
-# 3. Navigate to your project and run setup
 /compound-engineering:setup
 ```
 
-Setup auto-detects your stack (Laravel, NestJS, Python, Vue, TypeScript, Rust, etc.) and configures the right review agents for your project.
-
-The canonical source now lives in `portable/compound-engineering/`. This repository also ships generated Copilot assets under `.github/`, built from that same portable source.
-
-Generated platform outputs under `.github/`, `plugins/compound-engineering/`, and `.claude-plugin/marketplace.json` are intentionally committed in this repository. Local workflow artifacts such as `.copilot-instructions.md`, `compound-engineering.local.md`, `.worktrees/`, and `docs/execution-sessions/` are local-only and should stay ignored.
-
-### Regenerate platform outputs
+### Build generated repo outputs
 
 ```bash
 bun run build:platforms
 ```
 
-That rebuilds:
+This regenerates:
 
 - `plugins/compound-engineering/` for Claude Code
-- `.github/` for Copilot
+- `.github/` for GitHub Copilot
 
-To verify generated files are committed and in sync (same check run in CI):
+### Verify committed outputs
 
 ```bash
 bun run verify:generated
+bun test
 ```
 
-### Sync OpenViking globals
+## Export and sync targets
+
+### Install to OpenCode
+
+```bash
+bun run cli:install ./portable/compound-engineering --to opencode
+```
+
+That writes into `~/.config/opencode` by default. Claude-specific paths in commands, agents, and copied skill bodies are rewritten to OpenCode paths such as `~/.config/opencode/agents/`.
+
+### Sync to OpenViking globals
 
 ```bash
 bun run sync:ov
-# or override the helper path when testing
-OV_CORE_PATH=/path/to/ov-core.sh bun run src/index.ts sync-ov portable/compound-engineering
 ```
 
-This refreshes the global OV agent registry, the global OV skill registry, and mirrored skill support files from the portable source so future sessions in any project can reuse them.
+This registers portable agents and skills into the OpenViking global index and mirrors skill support files so future sessions can load them by name.
 
-Reference OV bootstrap assets and instructions live under `src/ov_setup/`. They are sanitized examples copied from a local OV setup so contributors can bootstrap the same workflow without committing machine-specific state.
+### Convert to other targets
 
----
-
-## How It Works
-
-The plugin is built around a **plan → build → review → learn** cycle. Each phase is a standalone command, and learnings from every cycle persist and feed into the next one. The `learnings-researcher` agent surfaces past solutions during planning and review, so you don't solve the same problem twice.
-
-```
-  ┌──────────┐      ┌───────────────┐
-  │  PLAN    │─────▶│  DEEPEN PLAN  │
-  └────┬─────┘      └───────┬───────┘
-       │                    │
-       ▼                    ▼
-  ┌──────────────────────────────────────────┐
-  │              WORK                        │
-  │                                          │
-  │  Orchestrator decomposes plan into tasks │
-  │                                          │
-  │    ┌────────────┐  ┌────────────┐        │
-  │    │ subagent 1 │  │ subagent 2 │  ...   │──▶ commits
-  │    └────────────┘  └────────────┘        │
-  │           │              │               │
-  │           ▼              ▼               │
-  │    ┌─────────────────────────────┐       │
-  │    │  learnings brief (shared)   │       │    ◀── Ralph Loop
-  │    └─────────────────────────────┘       │    variation:
-  │           │                              │    iterate until
-  │           ▼                              │    all tasks pass
-  │    regression guard ──▶ next task        │
-  └──────────────────────────────────────────┘
-       │
-       ▼
-  ┌──────────────────────┐
-  │       REVIEW         │
-  │  (parallel agents)   │──▶ findings
-  └──────┬───────────────┘
-         │
-         ▼
-  ┌──────────────────────┐
-  │      COMPOUND        │
-  │  (capture learnings) │──▶ docs/solutions/
-  └──────────────────────┘
+```bash
+bun run convert ./portable/compound-engineering --to codex --output ./tmp/codex
+bun run convert ./portable/compound-engineering --to copilot --output ./tmp/copilot
 ```
 
-The **work phase** is where the heavy lifting happens. It implements a variation of the [Ralph Loop](#the-ralph-loop) -- an iterative execution engine that decomposes a plan into scoped chunks, delegates each to a focused subagent, accumulates learnings across tasks, and runs regression guards after every chunk. The orchestrator never writes code itself; it decomposes, delegates, records, and routes. Each subagent gets a scoped prompt with only the context it needs plus a learnings brief filtered by domain relevance.
+## Docs conventions
 
----
+Workflow artifacts live under `docs/`:
 
-## The Ralph Loop
+- `docs/constitution.md` -- repo-level constitution
+- `docs/ideation/` -- ideation artifacts
+- `docs/brainstorms/` -- feature-level spec and handoff docs
+- `docs/plans/` -- implementation plans
+- `docs/solutions/` -- compounded learnings that should remain committed
+- `docs/execution-sessions/` -- local execution logs and resumability artifacts
 
-The Ralph Loop is a self-referential iteration mechanism built on Claude Code's hook system. A stop hook intercepts the session exit, checks whether a completion promise has been met, and if not, feeds the original task back into the conversation with updated iteration state. This creates persistent, goal-directed execution with a guaranteed termination condition.
+## Development notes
 
-The `/workflows:work` command uses a variation of this pattern for its internal task loop: the orchestrator iterates over execution chunks, spawning subagents, collecting learnings, running regression guards, and advancing to the next task -- repeating until every chunk in the plan passes or the pipeline is explicitly halted.
+- Edit **portable** source first
+- Rebuild generated outputs after portable changes
+- Keep root README repo-focused and `plugins/compound-engineering/README.md` catalog-focused
+- Validate generated files before committing
+- Prefer constitution updates for repo-wide policy changes instead of burying them in a single feature brainstorm
 
-The loop terminates when:
-- All tasks complete successfully (work phase variation), or
-- The agent outputs the agreed-upon completion promise (raw Ralph Loop), or
-- The maximum iteration count is reached (default: 10)
+## Validation commands
 
-No runaway processes. No infinite loops.
-
-**Commands that use the Ralph Loop:**
-
-| Command | What it does |
-|---------|-------------|
-| `/lrj "feature"` | Full autonomous cycle: plan → deepen → work → review → test → video |
-| `/slrj "feature"` | Same as `/lrj` but uses swarm mode for parallel execution |
-| `/ralph-loop "task"` | Raw loop -- wrap any prompt in the iteration engine |
-| `/cancel-ralph` | Emergency stop for an active loop |
-
----
-
-## Core Workflow Commands
-
-### `/workflows:ideate` -- Generate ideas before brainstorming
-
-Use this when you want the AI to suggest strong, grounded project improvements before you commit to one direction.
-
+```bash
+bun run build:platforms
+bun run verify:generated
+bun test
+cat .claude-plugin/marketplace.json | jq .
+cat plugins/compound-engineering/.claude-plugin/plugin.json | jq .
 ```
-/workflows:ideate "developer experience quick wins"
-```
-
-Output lands in `docs/ideation/`, and the best survivors are intended to feed into `/workflows:brainstorm`.
-
-### `/workflows:brainstorm` -- Explore before building
-
-For when the problem space is fuzzy. Produces a structured brainstorm document.
-
-```
-/workflows:brainstorm "how should we handle user notifications?"
-```
-
-Output lands in `docs/brainstorms/`.
-
-### `/workflows:plan` -- Turn ideas into implementation plans
-
-Takes a feature description and produces a structured plan with acceptance criteria and code examples. Checks for existing brainstorms, fetches any linked documents, runs local research against your repo patterns and past learnings.
-
-```
-/workflows:plan "add a search feature to the dashboard"
-```
-
-Output lands in `docs/plans/`. Follow up with `/deepen-plan` to enhance it or `/workflows:work` to start building.
-
-### `/deepen-plan` -- Add depth with parallel research
-
-Takes an existing plan and runs per-section research agents in parallel. Re-fetches linked source docs, checks `docs/solutions/` for relevant past learnings, runs every configured review agent against the plan.
-
-```
-/deepen-plan docs/plans/2026-02-17-feat-dashboard-search-plan.md
-```
-
-### `/workflows:work` -- Build it
-
-The workhorse, and where the Ralph Loop variation lives. Takes a plan file and executes it through orchestrated subagent delegation:
-
-1. Reads the plan, resolves ambiguity upfront
-2. Sets up a feature branch (or worktree for parallel dev)
-3. Decomposes into execution chunks with success criteria
-4. Iterates through the task loop:
-   - Builds a scoped prompt for each chunk (task + relevant files + learnings brief filtered by domain)
-   - Spawns a focused subagent that implements, tests, and retries independently
-   - Processes results: writes session files, updates learnings brief, checks off plan items
-   - Runs regression guards against all previously completed tasks
-   - Commits incrementally when a logical unit passes
-5. Repeats until every chunk completes or the pipeline is explicitly halted
-6. Pushes the branch with a PR description template
-
-### `/workflows:review` -- Multi-agent code review
-
-Reviews your branch diff against main using every configured review agent in parallel. If migrations are present, it also runs the data integrity, migration, and deployment verification agents.
-
-```
-/workflows:review                    # current branch vs main
-/workflows:review feat/my-branch     # specific branch
-```
-
-Findings are categorized P1 (blocks merge), P2 (should fix), P3 (nice-to-have).
-
-### `/workflows:compound` -- Capture what you learned
-
-After solving a hard problem, run this to create a solution document in `docs/solutions/`. These get automatically surfaced during future plans and reviews by the `learnings-researcher` agent. This is how knowledge compounds.
-
-### `/workflows:compound-refresh` -- Keep learnings accurate over time
-
-Use this when `docs/solutions/` may have drifted after refactors, migrations, or architecture changes. It reviews learnings and pattern docs against the current codebase and recommends or applies Keep, Update, Replace, or Archive actions.
-
----
-
-## Utility Commands
-
-| Command | Purpose |
-|---------|---------|
-| `/deepen-plan` | Research-enhance an existing plan |
-| `/test-browser` | Browser tests on PR-affected pages (uses agent-browser) |
-| `/triage` | Interactive triage of pending todos |
-| `/resolve_todo_parallel` | Fix approved todos in parallel |
-| `/resolve_parallel` | Fix TODO comments in code |
-| `/changelog` | Generate a changelog from recent merges |
-| `/feature-video` | Record a video walkthrough and add to PR |
-| `/reproduce-bug 123` | Investigate and reproduce a reported bug |
-| `/report-bug` | File a bug against the plugin itself |
-
----
-
-## Agents
-
-### Review (15 agents)
-
-The review agents are the core of the plugin. Each one is a deep specialist -- not a generalist with bullet points, but an agent that knows the current best practices, common pitfalls, and real-world tradeoffs in its domain.
-
-| Agent | Focus |
-|-------|-------|
-| `rabak-laravel-reviewer` | Laravel 11+, Eloquent, Pest testing, modern PHP 8.3+ |
-| `rabak-vue-reviewer` | Vue 3 Composition API, Nuxt 3, Pinia, TypeScript |
-| `rabak-nest-reviewer` | NestJS architecture, validation, auth, performance, security |
-| `rabak-python-reviewer` | Python conventions, type hints, testing patterns |
-| `rabak-rust-reviewer` | Ownership, safety, idiomatic patterns, zero-cost abstractions |
-| `rabak-typescript-reviewer` | Strict TypeScript, type safety, module patterns |
-| `code-simplicity-reviewer` | Cognitive complexity, YAGNI, dead code, over-engineering |
-| `architecture-strategist` | SOLID, Clean Architecture, DDD, architectural anti-patterns |
-| `security-sentinel` | OWASP Top 10 2025, supply chain, secrets, API security |
-| `performance-oracle` | Big O, DB optimization, caching, Web Vitals, benchmarks |
-| `data-integrity-guardian` | Database migrations, referential integrity, rollback safety |
-| `data-migration-expert` | Data migration validation, ID mappings, transformation logic |
-| `deployment-verification-agent` | Go/No-Go deployment checklists for risky changes |
-| `agent-native-reviewer` | Agent-native architecture verification |
-| `pattern-recognition-specialist` | Code pattern and anti-pattern analysis |
-
-### Research (5 agents)
-
-| Agent | Focus |
-|-------|-------|
-| `best-practices-researcher` | External best practices and examples |
-| `framework-docs-researcher` | Framework documentation deep dives |
-| `git-history-analyzer` | Git history and code evolution analysis |
-| `learnings-researcher` | Past solutions from `docs/solutions/` |
-| `repo-research-analyst` | Repository structure and convention analysis |
-
-### Design (3 agents)
-
-| Agent | Focus |
-|-------|-------|
-| `design-implementation-reviewer` | UI vs. design verification |
-| `design-iterator` | Iterative UI refinement |
-| `figma-design-sync` | Figma-to-code synchronization |
-
-### Workflow (3 agents)
-
-| Agent | Focus |
-|-------|-------|
-| `bug-reproduction-validator` | Systematic bug reproduction |
-| `pr-comment-resolver` | PR comment resolution and implementation |
-| `spec-flow-analyzer` | User flow analysis and gap identification |
-
----
-
-## Skills
-
-| Skill | What it does |
-|-------|-------------|
-| `ideate` | Generate and aggressively filter grounded improvement ideas before brainstorming |
-| `compound-refresh` | Refresh stale learnings and pattern docs in `docs/solutions/` |
-| `setup` | Configure review agents for your project |
-| `laravel-conventions` | Modern Laravel coding standards reference |
-| `frontend-design` | Production-grade frontend interfaces |
-| `resolve-pr-parallel` | Resolve PR review comments in parallel |
-| `brainstorming` | Structured collaborative dialogue |
-| `compound-docs` | Capture solved problems as documentation |
-| `create-agent-skills` | Guide for creating Claude Code skills |
-| `skill-creator` | Skill creation templates and patterns |
-| `document-review` | Structured document review |
-| `file-todos` | File-based todo tracking |
-| `git-worktree` | Git worktree management for parallel dev |
-| `orchestrating-swarms` | Multi-agent swarm orchestration |
-| `agent-native-architecture` | Prompt-native architecture patterns |
-| `agent-browser` | CLI-based browser automation |
-| `gemini-imagegen` | Image generation via Google Gemini API |
-| `rclone` | Cloud storage uploads (S3, R2, B2) |
-
----
-
-## Configuration
-
-Run `/compound-engineering:setup` in your project root. It creates `compound-engineering.local.md`:
-
-```markdown
----
-review_agents: [rabak-laravel-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]
-plan_review_agents: [code-simplicity-reviewer, architecture-strategist]
----
-
-# Review Context
-
-Project-specific notes for review agents:
-- "We use Redis heavily -- check cache invalidation patterns"
-- "Performance-critical: API serves 10k req/s"
-- "All database IDs must use UUIDs"
-```
-
-Edit this file to tune which agents run and what context they receive.
-
----
-
-## Tips
-
-- **Start with review.** Run `/workflows:review` on your next PR before trying the full cycle.
-- **Compound early.** Run `/workflows:compound` after solving hard bugs. It pays dividends on future work.
-- **Feed the planner.** Paste ticket URLs, doc links, and design references into `/workflows:plan`. Better inputs, better plans.
-- **Go autonomous.** Use `/lrj "feature"` when you want the full cycle hands-free -- plan, build, review, test, all driven by the Ralph Loop.
-
----
-
-## Troubleshooting
-
-**Context7 MCP not loading** -- Add to `.claude/settings.json`:
-```json
-{ "mcpServers": { "context7": { "type": "http", "url": "https://mcp.context7.com/mcp" } } }
-```
-
-**Review agents not running** -- Make sure `compound-engineering.local.md` exists. Run `/compound-engineering:setup`.
-
-**agent-browser not installed** -- `npm install -g agent-browser && agent-browser install`. Required for `/test-browser` and `/feature-video`.
-
----
-
-## License
-
-MIT -- see [LICENSE](LICENSE) for details.
-
-Originally forked from [Every Inc's compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin). Dual copyright (c) 2025 Every Inc, (c) 2025 The Rabak.

@@ -24,7 +24,8 @@ describe("writeOpenCodeBundle", () => {
       skillDirs: [
         {
           name: "skill-one",
-          sourceDir: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one"),
+          sourceDir: path.join(import.meta.dir, "fixtures", "sample-portable-plugin", "skills", "skill-one"),
+          skillPath: path.join(import.meta.dir, "fixtures", "sample-portable-plugin", "skills", "skill-one", "SKILL.md"),
         },
       ],
     }
@@ -35,6 +36,12 @@ describe("writeOpenCodeBundle", () => {
     expect(await exists(path.join(tempRoot, ".opencode", "agents", "agent-one.md"))).toBe(true)
     expect(await exists(path.join(tempRoot, ".opencode", "plugins", "hook.ts"))).toBe(true)
     expect(await exists(path.join(tempRoot, ".opencode", "skills", "skill-one", "SKILL.md"))).toBe(true)
+    const skillBody = await fs.readFile(
+      path.join(tempRoot, ".opencode", "skills", "skill-one", "SKILL.md"),
+      "utf8",
+    )
+    expect(skillBody).toContain("~/.config/opencode/skills/skill-one/notes.md")
+    expect(skillBody).not.toContain("~/.claude/")
   })
 
   test("writes directly into a .opencode output root", async () => {
@@ -48,6 +55,7 @@ describe("writeOpenCodeBundle", () => {
         {
           name: "skill-one",
           sourceDir: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one"),
+          skillPath: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one", "SKILL.md"),
         },
       ],
     }
@@ -72,6 +80,7 @@ describe("writeOpenCodeBundle", () => {
         {
           name: "skill-one",
           sourceDir: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one"),
+          skillPath: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one", "SKILL.md"),
         },
       ],
     }
