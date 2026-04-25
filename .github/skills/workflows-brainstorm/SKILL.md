@@ -47,7 +47,7 @@ Use **AskUserQuestion tool** to suggest: "Your requirements seem detailed enough
 
 Run a quick repo scan to understand existing patterns, system topology, and any existing constitution:
 
-Before spawning `repo-research-analyst`, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent is coming from OpenViking/global context, load it with `ov_load_global_agent "repo-research-analyst"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+Before spawning `repo-research-analyst`, first read `portable/compound-engineering/agents/repo-research-analyst.md` when present. If the agent is coming from OpenViking/global context, load it with `ov_load_global_agent "repo-research-analyst"`. Include the loaded template's rules in the Task prompt, record which template source you used, and stop with an explicit error if no template can be loaded. Never dispatch a named agent by name alone.
 
 - Use the repo-research-analyst skill to: "Understand existing patterns, system architecture, and component boundaries related to: <feature_description>. Report: (1 similar features and their structure, (2) services/modules this would touch or neighbor, (3) CLAUDE.md guidance, (4) data flow relevant to this area, (5) whether docs/constitution.md exists and which repo-wide principles or boundaries matter here.")
 

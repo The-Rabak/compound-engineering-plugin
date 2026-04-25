@@ -508,7 +508,7 @@ Read the first few lines of each agent file to understand what it reviews/analyz
 
 For EVERY agent discovered, launch a Task in parallel with WHY context:
 
-Before dispatching any named agent discovered in this step, first read the matching bundled agent template from the discovered agent file path. If the agent is resolved from OpenViking/global context instead, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+Before dispatching any named agent discovered in this step, first read the matching bundled agent template from the discovered agent file path. If the agent is resolved from OpenViking/global context instead, load it with `ov_load_global_agent "<agent-name>"`. Include the loaded template's rules in the Task prompt, record which template source you used, and stop with an explicit error if no template can be loaded. Never dispatch a named agent by name alone.
 
 ```
 Task [agent-name]: "Review this plan using your expertise.

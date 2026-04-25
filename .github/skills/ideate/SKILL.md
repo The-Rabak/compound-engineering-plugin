@@ -107,7 +107,7 @@ Use them to preserve the repository's workflow language, OpenViking guidance, do
 
 Run these in parallel in the foreground:
 
-**Named-agent dispatch rule:** Before dispatching any named specialist agent below (for example `learnings-researcher` or `issue-intelligence-analyst`), first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent is supplied from OpenViking/global context instead, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+**Named-agent dispatch rule:** Before dispatching any named specialist agent below (for example `learnings-researcher` or `issue-intelligence-analyst`), first read its bundled template from `portable/compound-engineering/agents/<agent-name>.md` when present. If the agent is supplied from OpenViking/global context instead, load it with `ov_load_global_agent "<agent-name>"`. Include the loaded template's rules in the Task prompt, record which template source you used, and stop with an explicit error if no template can be loaded. Never dispatch a named agent by name alone.
 
 1. **Quick context scan** - dispatch a general-purpose or explore-style sub-agent to do a shallow repository scan.
 

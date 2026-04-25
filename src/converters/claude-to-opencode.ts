@@ -255,17 +255,56 @@ function renderHookStatements(
 }
 
 export function transformContentForOpenCode(body: string): string {
+  return transformTaskCallsForOpenCode(
+    body
+      .replace(
+        /Read its bundled template from `portable\/compound-engineering\/agents\/<agent-name>\.md` when present\./g,
+        "Check for a project override at `.opencode/agents/<agent-name>.md` first, then read the installed global template at `~/.config/opencode/agents/<agent-name>.md`.",
+      )
+      .replace(
+        /first read `portable\/compound-engineering\/agents\/([a-z0-9-]+)\.md` when present\./g,
+        (_match, agentName: string) =>
+          `first check for a project override at \`.opencode/agents/${agentName}.md\`, then read the installed global template at \`~/.config/opencode/agents/${agentName}.md\`.`,
+      )
+      .replace(
+        /from `portable\/compound-engineering\/agents\/([a-z0-9-]+)\.md`/g,
+        (_match, agentName: string) =>
+          `from \`.opencode/agents/${agentName}.md\` (project override) or \`~/.config/opencode/agents/${agentName}.md\` (global install)`,
+      )
+      .replace(
+        /portable\/compound-engineering\/agents\/<agent-name>\.md/g,
+        ".opencode/agents/<agent-name>.md or ~/.config/opencode/agents/<agent-name>.md",
+      )
+      .replace(/~\/\.claude\/agents\//g, "~/.config/opencode/agents/")
+      .replace(/~\/\.claude\/commands\//g, "~/.config/opencode/commands/")
+      .replace(/~\/\.claude\/skills\//g, "~/.config/opencode/skills/")
+      .replace(/~\/\.claude\/plugins\//g, "~/.config/opencode/plugins/")
+      .replace(/~\/\.claude\//g, "~/.config/opencode/")
+      .replace(/\.claude\/agents\//g, ".opencode/agents/")
+      .replace(/\.claude\/commands\//g, ".opencode/commands/")
+      .replace(/\.claude\/skills\//g, ".opencode/skills/")
+      .replace(/\.claude\/plugins\//g, ".opencode/plugins/")
+      .replace(/\.claude\//g, ".opencode/"),
+  )
+}
+
+function transformTaskCallsForOpenCode(body: string): string {
   return body
-    .replace(/~\/\.claude\/agents\//g, "~/.config/opencode/agents/")
-    .replace(/~\/\.claude\/commands\//g, "~/.config/opencode/commands/")
-    .replace(/~\/\.claude\/skills\//g, "~/.config/opencode/skills/")
-    .replace(/~\/\.claude\/plugins\//g, "~/.config/opencode/plugins/")
-    .replace(/~\/\.claude\//g, "~/.config/opencode/")
-    .replace(/\.claude\/agents\//g, ".opencode/agents/")
-    .replace(/\.claude\/commands\//g, ".opencode/commands/")
-    .replace(/\.claude\/skills\//g, ".opencode/skills/")
-    .replace(/\.claude\/plugins\//g, ".opencode/plugins/")
-    .replace(/\.claude\//g, ".opencode/")
+    .split("\n")
+    .map((line) => {
+      const match = line.match(/Task\s+([a-z{][a-z0-9{}_-]*)\(/)
+      if (!match || match.index === undefined) return line
+
+      const agentName = match[1]
+      const argsStart = match.index + match[0].length
+      const closingParen = line.lastIndexOf(")")
+      if (closingParen <= argsStart) return line
+
+      const args = line.slice(argsStart, closingParen).trim()
+      const replacement = `Use the Task tool to invoke the ${agentName} subagent with this prompt: ${args}`
+      return line.slice(0, match.index) + replacement + line.slice(closingParen + 1)
+    })
+    .join("\n")
 }
 
 // Bare Claude family aliases used in Claude Code (e.g. `model: haiku`).

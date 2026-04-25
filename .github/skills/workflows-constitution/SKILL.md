@@ -69,7 +69,7 @@ Before asking the user about project rules, gather repo evidence in parallel:
    - `compound-engineering.local.md` (if present)
 
 2. Run lightweight repo research in parallel:
-   - Before dispatching `repo-research-analyst` or `learnings-researcher`, first read the bundled agent template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+   - Before dispatching `repo-research-analyst` or `learnings-researcher`, first read the bundled agent template from `portable/compound-engineering/agents/<agent-name>.md` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"`. Include the loaded template's rules in the Task prompt, record which template source you used, and stop with an explicit error if no template can be loaded. Never dispatch a named agent by name alone.
    - Task `repo-research-analyst` to summarize project shape, recurring conventions, architecture boundaries, quality patterns, and docs conventions.
    - Task `learnings-researcher` to surface recurring lessons in `docs/solutions/` that look durable enough to become constitution material.
 

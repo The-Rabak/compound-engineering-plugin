@@ -152,7 +152,13 @@ If no settings file exists, invoke the `setup` skill to create one. Then read th
 
 Run all configured review agents in parallel using Task tool. For each agent in the `review_agents` list:
 
-Before dispatching any named review agent below, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+Before dispatching any named review agent below, complete this protocol:
+1. Read its bundled template from `portable/compound-engineering/agents/<agent-name>.md` when present.
+2. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"`.
+3. Include the loaded template's rules in the delegated prompt.
+4. Record which template source you used.
+5. If no template can be loaded, stop and report the missing agent instead of dispatching blindly.
+Never dispatch a named agent by name alone.
 
 ```
 Task {agent-name}(branch diff content + review context from settings body + WHY context block)
@@ -311,7 +317,7 @@ Complete system context map with component interactions
 
 ### 4. Simplification and Minimalism Review
 
-Load the bundled `code-simplicity-reviewer` template from `portable/compound-engineering/agents/` first, or resolve it from OpenViking/global context, then run Task code-simplicity-reviewer() to see if we can simplify the code.
+Load the `code-simplicity-reviewer` template first from `portable/compound-engineering/agents/code-simplicity-reviewer.md`, or resolve it from OpenViking/global context, then run Task code-simplicity-reviewer() to see if we can simplify the code. If no template can be loaded, stop and report that gap instead of dispatching blindly.
 
 ### 5. Findings Synthesis and Todo Creation Using file-todos Skill
 

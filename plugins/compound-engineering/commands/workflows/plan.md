@@ -235,7 +235,13 @@ First, I need to understand the project's conventions, existing patterns, and an
 
 Run these agents **in parallel** to gather local context:
 
-Before dispatching any named agent below, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+Before dispatching any named agent below, complete this protocol:
+1. Read its bundled template from `portable/compound-engineering/agents/<agent-name>.md` when present.
+2. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"`.
+3. Include the loaded template's rules in the delegated prompt.
+4. Record which template source you used.
+5. If no template can be loaded, stop and report the missing agent instead of dispatching blindly.
+Never dispatch a named agent by name alone.
 
 - Task repo-research-analyst(feature_description)
 - Task learnings-researcher(feature_description)
@@ -268,7 +274,13 @@ Examples:
 
 Run these agents in parallel:
 
-Before dispatching any named research agent below, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+Before dispatching any named research agent below, complete this protocol:
+1. Read its bundled template from `portable/compound-engineering/agents/<agent-name>.md` when present.
+2. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"`.
+3. Include the loaded template's rules in the delegated prompt.
+4. Record which template source you used.
+5. If no template can be loaded, stop and report the missing agent instead of dispatching blindly.
+Never dispatch a named agent by name alone.
 
 - Task best-practices-researcher(feature_description)
 - Task framework-docs-researcher(feature_description)
@@ -366,7 +378,7 @@ This structured format enables the `/workflows:work` orchestrator to delegate ea
 
 After planning the issue structure, run SpecFlow Analyzer to validate the feature specification **against the user story and success criteria**:
 
-Before dispatching `spec-flow-analyzer`, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "spec-flow-analyzer"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+Before dispatching `spec-flow-analyzer`, first read `portable/compound-engineering/agents/spec-flow-analyzer.md` when present. If it comes from OpenViking/global context instead, load it with `ov_load_global_agent "spec-flow-analyzer"`. Include the loaded template's rules in the Task prompt, record which template source you used, and stop with an explicit error if no template can be loaded. Never dispatch a named agent by name alone.
 
 - Task spec-flow-analyzer(feature_description, user_story, success_criteria, research_findings)
 

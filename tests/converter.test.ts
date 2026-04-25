@@ -286,6 +286,33 @@ describe("convertClaudeToOpenCode", () => {
     expect(agentFile!.content).toContain("~/.config/opencode/agents/security-sentinel.md")
     expect(agentFile!.content).toContain(".opencode/plugins/converted-hooks.ts")
   })
+
+  test("rewrites bundled agent-template instructions to OpenCode paths", () => {
+    const result = transformContentForOpenCode(
+      "Before dispatching any named review agent below, complete this protocol:\n1. Read its bundled template from `portable/compound-engineering/agents/<agent-name>.md` when present.\n2. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent \"<agent-name>\"`.\n",
+    )
+
+    expect(result).toContain("`.opencode/agents/<agent-name>.md`")
+    expect(result).toContain("`~/.config/opencode/agents/<agent-name>.md`")
+    expect(result).not.toContain("portable/compound-engineering/agents/")
+  })
+
+  test("rewrites Task tool pseudocode to explicit OpenCode task-tool instructions", () => {
+    const result = transformContentForOpenCode(
+      'Task security-sentinel(branch diff content + WHY context block)\nTask {agent-name}(branch diff content)\n- Task repo-research-analyst("Understand this area. Report: (1) existing patterns, (2) touched modules.")',
+    )
+
+    expect(result).toContain(
+      "Use the Task tool to invoke the security-sentinel subagent with this prompt: branch diff content + WHY context block",
+    )
+    expect(result).toContain(
+      "Use the Task tool to invoke the {agent-name} subagent with this prompt: branch diff content",
+    )
+    expect(result).toContain(
+      '- Use the Task tool to invoke the repo-research-analyst subagent with this prompt: "Understand this area. Report: (1) existing patterns, (2) touched modules."',
+    )
+    expect(result).not.toContain("Task security-sentinel(")
+  })
 })
 
 describe("convertClaudeToCopilot", () => {

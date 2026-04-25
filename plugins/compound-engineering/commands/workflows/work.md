@@ -482,7 +482,13 @@ If a subagent fails after its internal retries:
 
    Use for complex, risky, or large changes. Read agents from `compound-engineering.local.md` frontmatter (`review_agents`). If no settings file, invoke the `setup` skill to create one.
 
-    Before dispatching any named reviewer agent from `review_agents`, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+    Before dispatching any named reviewer agent from `review_agents`, complete this protocol:
+    1. Read its bundled template from `portable/compound-engineering/agents/<agent-name>.md` when present.
+    2. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"`.
+    3. Include the loaded template's rules in the delegated prompt.
+    4. Record which template source you used.
+    5. If no template can be loaded, stop and report the missing agent instead of dispatching blindly.
+    Never dispatch a named agent by name alone.
 
     Run configured agents in parallel with Task tool. **Pass the WHY context (problem narrative, user story, success criteria) to reviewer agents** so they can evaluate fitness for purpose, not just code quality. Present findings and address critical issues.
 
