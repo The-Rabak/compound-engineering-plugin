@@ -478,7 +478,7 @@ describe("CLI", () => {
       throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
     }
 
-    expect(stdout).toContain("Synced 1 agents, 1 skills, 2 commands, and 1 skill support files")
+    expect(stdout).toContain("Synced 1 agents, 1 skills, 2 commands, and 3 skill support files")
     expect(await exists(path.join(fakeOvRoot, "agents", "repo-research-analyst.md"))).toBe(true)
     expect(await exists(path.join(fakeOvRoot, "skills", "skill-one.md"))).toBe(true)
     expect(await exists(path.join(fakeOvRoot, "skills", "workflows-constitution.md"))).toBe(true)

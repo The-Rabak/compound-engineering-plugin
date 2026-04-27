@@ -79,6 +79,9 @@ export async function writeOpenCodeBundle(outputRoot: string, bundle: OpenCodeBu
       console.log(`Backed up existing command file to ${cmdBackupPath}`)
     }
     await writeText(dest, commandFile.content + "\n")
+    if (commandFile.sourcePath) {
+      await copyCommandReferenceDocs(commandFile.sourcePath, openCodePaths.commandDir)
+    }
   }
 
   if (bundle.plugins.length > 0) {
@@ -108,6 +111,25 @@ export async function writeOpenCodeBundle(outputRoot: string, bundle: OpenCodeBu
       await writeText(path.join(targetDir, "SKILL.md"), content + "\n")
     }
   }
+}
+
+async function copyCommandReferenceDocs(commandSourcePath: string, commandDir: string): Promise<void> {
+  const sourceReferencesDir = path.join(path.dirname(commandSourcePath), "references")
+  if (!(await pathExists(sourceReferencesDir))) return
+
+  const relativeDir = resolveCommandRelativeDir(commandSourcePath)
+  const targetReferencesDir = path.join(commandDir, relativeDir, "references")
+  await copyDir(sourceReferencesDir, targetReferencesDir)
+}
+
+function resolveCommandRelativeDir(commandSourcePath: string): string {
+  const marker = `${path.sep}commands${path.sep}`
+  const markerIndex = commandSourcePath.lastIndexOf(marker)
+  if (markerIndex === -1) return ""
+
+  const relativePath = commandSourcePath.slice(markerIndex + marker.length)
+  const relativeDir = path.dirname(relativePath)
+  return relativeDir === "." ? "" : relativeDir
 }
 
 function resolveOpenCodePaths(outputRoot: string) {

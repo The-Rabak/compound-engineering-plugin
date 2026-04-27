@@ -20,6 +20,7 @@ type SkillSupportResource = {
 type GeneratedCommandSkill = {
   name: string
   sourcePath: string
+  commandSourcePath?: string
 }
 
 export default defineCommand({
@@ -44,10 +45,12 @@ export default defineCommand({
     const ovCorePath = resolveTargetHome(args.ovCore ?? process.env.OV_CORE_PATH, DEFAULT_OV_CORE)
     await assertReadableFile(ovCorePath, "OpenViking core script")
 
-    const supportFiles = await collectSkillSupportResources(plugin)
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "compound-plugin-sync-ov-"))
     const scriptPath = path.join(tempRoot, "sync-ov.sh")
     const generatedCommandSkills = await generateCommandSkills(plugin, tempRoot)
+    const skillSupportFiles = await collectSkillSupportResources(plugin)
+    const commandSupportFiles = await collectCommandSupportResources(generatedCommandSkills)
+    const supportFiles = [...skillSupportFiles, ...commandSupportFiles]
 
     try {
       await fs.writeFile(scriptPath, buildSyncScript(ovCorePath, plugin, supportFiles, generatedCommandSkills), "utf8")
@@ -112,6 +115,32 @@ async function collectSkillSupportResources(plugin: PortablePlugin): Promise<Ski
   )
 
   return resourcesBySkill.flat()
+}
+
+async function collectCommandSupportResources(
+  generatedCommandSkills: GeneratedCommandSkill[],
+): Promise<SkillSupportResource[]> {
+  const resources: SkillSupportResource[] = []
+
+  for (const skill of generatedCommandSkills) {
+    if (!skill.commandSourcePath) continue
+
+    const referencesDir = path.join(path.dirname(skill.commandSourcePath), "references")
+    if (!(await pathExists(referencesDir))) continue
+
+    const files = await walkFiles(referencesDir)
+    for (const file of files) {
+      const relativePath = path.relative(path.dirname(skill.commandSourcePath), file)
+      assertRelativePath(relativePath, file)
+      resources.push({
+        sourcePath: file,
+        parentUri: buildSkillParentUri(skill.name, path.dirname(relativePath)),
+        targetUri: buildSkillTargetUri(skill.name, relativePath),
+      })
+    }
+  }
+
+  return resources
 }
 
 function buildSkillParentUri(skillName: string, relativeDir: string): string {
@@ -234,6 +263,7 @@ async function generateCommandSkills(
     generated.push({
       name: skill.name,
       sourcePath: targetPath,
+      commandSourcePath: skill.sourcePath,
     })
   }
 

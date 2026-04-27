@@ -289,12 +289,22 @@ describe("convertClaudeToOpenCode", () => {
 
   test("rewrites bundled agent-template instructions to OpenCode paths", () => {
     const result = transformContentForOpenCode(
-      "Before dispatching any named review agent below, complete this protocol:\n1. Read its bundled template from `portable/compound-engineering/agents/<agent-name>.md` when present.\n2. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent \"<agent-name>\"`.\n",
+      "Before dispatching any named review agent below, complete this protocol:\n1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.\n2. If the bundled template exists, use the file-read tool to load the full template.\n3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent \"<agent-name>\"`.\n4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.\n",
     )
 
-    expect(result).toContain("`.opencode/agents/<agent-name>.md`")
-    expect(result).toContain("`~/.config/opencode/agents/<agent-name>.md`")
-    expect(result).not.toContain("portable/compound-engineering/agents/")
+    expect(result).toContain("`glob` with `paths` set to `.opencode/agents`")
+    expect(result).toContain("`~/.config/opencode/agents`")
+    expect(result).toContain("use `read` to load the full file")
+  })
+
+  test("rewrites command reference template instructions to OpenCode paths", () => {
+    const result = transformContentForOpenCode(
+      "Before building `scoped_prompt`, complete this template-load protocol for `execution-agent-prompt.md`:\n1. Use the platform's file-search tool against the command reference directory to look for `execution-agent-prompt.md`. Search the directory, not a full path embedded in the pattern argument.\n2. Use the file-read tool to load the full template.\n3. Before continuing, quote the first non-empty line of the loaded template and record which file you used.\n",
+    )
+
+    expect(result).toContain("`.opencode/commands/workflows/references`")
+    expect(result).toContain("`~/.config/opencode/commands/workflows/references`")
+    expect(result).toContain("Use `read` to load the full template.")
   })
 
   test("rewrites Task tool pseudocode to explicit OpenCode task-tool instructions", () => {

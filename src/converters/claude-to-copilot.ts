@@ -108,7 +108,7 @@ function convertCommandToSkill(
 
   const body = sections.filter(Boolean).join("\n\n").trim()
   const content = formatFrontmatter(frontmatter, body)
-  return { name, content }
+  return { name, content, sourcePath: command.sourcePath }
 }
 
 export function transformContentForCopilot(body: string): string {
@@ -132,6 +132,8 @@ export function transformContentForCopilot(body: string): string {
 
   // 3. Rewrite .claude/ paths to .github/ and ~/.claude/ to ~/.copilot/
   result = result
+    .replace(/commands\/[a-z0-9/_:-]+\/references\/([a-z0-9-]+\.md)/gi, "references/$1")
+    .replace(/command reference directory/g, "local `references/` directory bundled with this skill")
     .replace(/~\/\.claude\//g, "~/.copilot/")
     .replace(/\.claude\//g, ".github/")
 

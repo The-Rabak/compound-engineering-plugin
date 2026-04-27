@@ -41,6 +41,7 @@ export type OpenCodePluginFile = {
 export type OpenCodeCommandFile = {
   name: string
   content: string
+  sourcePath?: string
 }
 
 export type OpenCodeBundle = {

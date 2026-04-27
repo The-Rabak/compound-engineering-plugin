@@ -227,7 +227,14 @@ For each task (or parallel batch of tasks), follow this cycle:
 
 ##### a. Build Scoped Prompt
 
-For each task, the orchestrator constructs a focused prompt by reading the **execution agent prompt template** from `commands/workflows/references/execution-agent-prompt.md` and filling in the context blocks:
+For each task, the orchestrator constructs a focused prompt by loading the **execution agent prompt template** from `commands/workflows/references/execution-agent-prompt.md` and filling in the context blocks.
+
+Before building `scoped_prompt`, complete this template-load protocol for `execution-agent-prompt.md`:
+1. Use the platform's file-search tool against the command reference directory to look for `execution-agent-prompt.md`. Search the directory, not a full path embedded in the pattern argument.
+2. Use the file-read tool to load the full template.
+3. Before continuing, quote the first non-empty line of the loaded template and record which file you used.
+4. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not spawn the subagent.
+5. Fill the placeholders from the loaded template. Do not reconstruct the prompt from memory.
 
 - **{{TASK_NAME}}** and **{{TASK_DESCRIPTION}}** -- from the plan
 - **{{FILE_LIST}}** -- files to create/modify from the plan
@@ -262,7 +269,7 @@ Delegate the task to a focused subagent:
 Task(general-purpose, prompt=scoped_prompt)
 ```
 
-The subagent prompt is constructed from the execution agent template (`commands/workflows/references/execution-agent-prompt.md`). The template already includes instructions for the 4-phase protocol (understand, implement, self-review, report). The orchestrator fills in the context blocks and passes the result:
+The subagent prompt is constructed from the loaded execution agent template (`commands/workflows/references/execution-agent-prompt.md`). The template already includes instructions for the 4-phase protocol (understand, implement, self-review, report). The orchestrator fills in the context blocks and passes the result:
 
 1. Read referenced files and understand existing patterns
 2. Implement the task following conventions
@@ -380,7 +387,7 @@ session_id: [SESSION_ID]
 
    **Stage 1: Spec Compliance Review**
 
-   Read the spec review prompt template from `commands/workflows/references/spec-review-prompt.md`. Fill in:
+   Apply the same template-load protocol above, substituting `spec-review-prompt.md`. If the template cannot be loaded and quoted, stop the inline review loop and report the missing template instead of improvising. Then fill in:
    - `{{TASK_REQUIREMENTS}}` -- the task description and success criteria
    - `{{SUCCESS_CRITERIA}}` -- the success criteria checkboxes
    - `{{IMPLEMENTER_REPORT}}` -- the execution report from the subagent
@@ -398,7 +405,7 @@ session_id: [SESSION_ID]
 
    **Stage 2: Code Quality Review** (only after spec compliance passes)
 
-   Read the quality review prompt template from `commands/workflows/references/quality-review-prompt.md`. Fill in:
+   Apply the same template-load protocol above, substituting `quality-review-prompt.md`. If the template cannot be loaded and quoted, stop the inline review loop and report the missing template instead of improvising. Then fill in:
    - `{{IMPLEMENTER_REPORT}}` -- the execution report
    - `{{FILES_CHANGED}}` -- list of files from the report
 
@@ -485,11 +492,12 @@ If a subagent fails after its internal retries:
    Use for complex, risky, or large changes. Read agents from `compound-engineering.local.md` frontmatter (`review_agents`). If no settings file, invoke the `setup` skill to create one.
 
     Before dispatching any named reviewer agent from `review_agents`, complete this protocol:
-    1. Read its bundled template from `portable/compound-engineering/agents/<agent-name>.md` when present.
-    2. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"`.
-    3. Include the loaded template's rules in the delegated prompt.
-    4. Record which template source you used.
-    5. If no template can be loaded, stop and report the missing agent instead of dispatching blindly.
+    1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.
+    2. If the bundled template exists, use the file-read tool to load the full template.
+    3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent "<agent-name>"`.
+    4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.
+    5. Include the loaded template's rules in the delegated prompt.
+    6. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch the agent.
     Never dispatch a named agent by name alone.
 
     Run configured agents in parallel with Task tool. **Pass the WHY context (problem narrative, user story, success criteria) to reviewer agents** so they can evaluate fitness for purpose, not just code quality. Present findings and address critical issues.

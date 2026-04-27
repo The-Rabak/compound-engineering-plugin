@@ -36,10 +36,27 @@ describe("writeCopilotBundle", () => {
 
     expect(await exists(skillPath)).toBe(true)
     expect(await exists(scriptPath)).toBe(true)
+    expect(
+      await exists(
+        path.join(
+          githubRoot,
+          "skills",
+          "workflows-work",
+          "references",
+          "execution-agent-prompt.md",
+        ),
+      ),
+    ).toBe(true)
 
     const content = await fs.readFile(skillPath, "utf8")
     expect(content).toContain("name: resolve-pr-parallel")
     expect(content).toContain("skills/resolve-pr-parallel/scripts/resolve-pr-thread")
+
+    const workflowContent = await fs.readFile(
+      path.join(githubRoot, "skills", "workflows-work", "SKILL.md"),
+      "utf8",
+    )
+    expect(workflowContent).toContain("references/execution-agent-prompt.md")
   })
 
   test("rejects unsafe generated output names", async () => {

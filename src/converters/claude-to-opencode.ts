@@ -132,7 +132,7 @@ function convertCommands(commands: ClaudeCommand[]): OpenCodeCommandFile[] {
       frontmatter.model = normalizeModel(model)
     }
     const content = formatFrontmatter(frontmatter, transformContentForOpenCode(command.body))
-    files.push({ name: command.name, content })
+    files.push({ name: command.name, content, sourcePath: command.sourcePath })
   }
   return files
 }
@@ -258,6 +258,55 @@ export function transformContentForOpenCode(body: string): string {
   return transformTaskCallsForOpenCode(
     body
       .replace(
+        /use the platform's file-search tool against the bundled agent directory to look for `([<a-z0-9-]+)\.md`, then use the file-read tool to load the full template\./g,
+        (_match, agentName: string) =>
+          "use `glob` with `paths` set to `.opencode/agents` and `pattern` set to `" +
+          agentName +
+          ".md`. Do not pass a full path as the `pattern`. If nothing matches, run `glob` again with `paths` set to `~/.config/opencode/agents` and the same `pattern`, then use `read` to load the full template from the matched file.",
+      )
+      .replace(
+        /Only if the bundled template cannot be loaded should you fall back to `ov_load_global_agent "([<a-z0-9-]+)"`\./g,
+        (_match, agentName: string) =>
+          `Only if neither file can be loaded should you fall back to \`ov_load_global_agent "${agentName}"\`.`,
+      )
+      .replace(
+        /If the bundled template exists, use the file-read tool to load the full template\./g,
+        "If either `glob` call returns a match, use `read` to load the full file.",
+      )
+      .replace(
+        /Before dispatching, quote the first non-empty line of the loaded template and record the source used\./g,
+        "Before dispatching, quote the first non-empty line of the loaded template and record whether it came from `.opencode/agents`, `~/.config/opencode/agents`, or OpenViking/global context.",
+      )
+      .replace(
+        /If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch\./g,
+        "If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch.",
+      )
+      .replace(
+        /Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>\.md`\. Search the directory, not a full path embedded in the pattern argument\./g,
+        "Use `glob` with `paths` set to `.opencode/agents` and `pattern` set to `<agent-name>.md`. Do not pass a full path as the `pattern`. If nothing matches, run `glob` again with `paths` set to `~/.config/opencode/agents` and the same `pattern`.",
+      )
+      .replace(
+        /Only if no bundled template can be loaded, fall back to OpenViking\/global context with `ov_load_global_agent "<agent-name>"`\./g,
+        "Only if neither file can be loaded should you fall back to `ov_load_global_agent \"<agent-name>\"`.",
+      )
+      .replace(
+        /Before dispatching, quote the first non-empty line of the loaded template and record which source you used\./g,
+        "Before dispatching, quote the first non-empty line of the loaded template and record whether it came from `.opencode/agents`, `~/.config/opencode/agents`, or OpenViking/global context.",
+      )
+      .replace(
+        /Use the platform's file-search tool against the command reference directory to look for `([a-z-]+-prompt\.md)`\. Search the directory, not a full path embedded in the pattern argument\./g,
+        (_match, fileName: string) =>
+          `Use \`glob\` with \`paths\` set to \`.opencode/commands/workflows/references\` and \`pattern\` set to \`${fileName}\`. Do not pass a full path as the \`pattern\`. If nothing matches, run \`glob\` again with \`paths\` set to \`~/.config/opencode/commands/workflows/references\` and the same \`pattern\`.`,
+      )
+      .replace(
+        /Use the file-read tool to load the full template\./g,
+        "Use `read` to load the full template.",
+      )
+      .replace(
+        /Before continuing, quote the first non-empty line of the loaded template and record which file you used\./g,
+        "Before continuing, quote the first non-empty line of the loaded template and record whether it came from `.opencode/commands/workflows/references` or `~/.config/opencode/commands/workflows/references`.",
+      )
+      .replace(
         /Read its bundled template from `portable\/compound-engineering\/agents\/<agent-name>\.md` when present\./g,
         "Check for a project override at `.opencode/agents/<agent-name>.md` first, then read the installed global template at `~/.config/opencode/agents/<agent-name>.md`.",
       )
@@ -274,6 +323,15 @@ export function transformContentForOpenCode(body: string): string {
       .replace(
         /portable\/compound-engineering\/agents\/<agent-name>\.md/g,
         ".opencode/agents/<agent-name>.md or ~/.config/opencode/agents/<agent-name>.md",
+      )
+      .replace(
+        /`commands\/workflows\/references\/([a-z-]+-prompt\.md)`/g,
+        (_match, fileName: string) =>
+          "`.opencode/commands/workflows/references/" +
+          fileName +
+          "` (project override) or `~/.config/opencode/commands/workflows/references/" +
+          fileName +
+          "` (global install)",
       )
       .replace(/~\/\.claude\/agents\//g, "~/.config/opencode/agents/")
       .replace(/~\/\.claude\/commands\//g, "~/.config/opencode/commands/")

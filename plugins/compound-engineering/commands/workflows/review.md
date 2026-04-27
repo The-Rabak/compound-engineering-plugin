@@ -151,21 +151,22 @@ If no settings file exists, invoke the `setup` skill to create one. Then read th
 Run all configured review agents in parallel using Task tool. For each agent in the `review_agents` list:
 
 Before dispatching any named review agent below, complete this protocol:
-1. Read its bundled template from `portable/compound-engineering/agents/<agent-name>.md` when present.
-2. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"`.
-3. Include the loaded template's rules in the delegated prompt.
-4. Record which template source you used.
-5. If no template can be loaded, stop and report the missing agent instead of dispatching blindly.
+1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.
+2. If the bundled template exists, use the file-read tool to load the full template.
+3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent "<agent-name>"`.
+4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.
+5. Include the loaded template's rules in the delegated prompt.
+6. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch the agent.
 Never dispatch a named agent by name alone.
 
 ```
 Task {agent-name}(branch diff content + review context from settings body + WHY context block)
 ```
 
-**Every agent prompt MUST include the WHY context block** from the step above. This ensures agents evaluate fitness-for-purpose, not just technical quality. Example:
+**Every agent prompt MUST include the WHY context block** from the step above. This ensures agents evaluate fitness-for-purpose, not just technical quality. After loading the template, dispatch each reviewer with a prompt like:
 
 ```
-Task security-sentinel: "Review this branch diff for security issues.
+Review this branch diff for security issues.
 
 WHY CONTEXT FOR REVIEWERS:
 - Problem: [problem narrative]
@@ -179,12 +180,12 @@ When reporting findings, note whether each finding:
 (c) Would require changes that ALTER the user's intended outcome (flag as DRIFT RISK)
 
 Branch diff:
-[diff content]"
+[diff content]
 ```
 
 Additionally, always run these regardless of settings:
-- Load the agent template first, then Task agent-native-reviewer(branch diff content + WHY context) - Verify new features are agent-accessible
-- Load the agent template first, then Task learnings-researcher(branch diff content + WHY context) - Search docs/solutions/ for past issues related to this PR's modules and patterns
+- Apply the protocol above to `agent-native-reviewer`, then dispatch it with branch diff content + WHY context - Verify new features are agent-accessible
+- Apply the protocol above to `learnings-researcher`, then dispatch it with branch diff content + WHY context - Search docs/solutions/ for past issues related to this PR's modules and patterns
 
 </parallel_tasks>
 
@@ -198,9 +199,9 @@ Apply the same template-loading rule to every named conditional agent below. Nev
 
 **MIGRATIONS: If PR contains database migrations or data backfills:**
 
-- Load the agent template first, then Task data-integrity-guardian(branch diff content) - Reviews migration safety, constraint naming, and migration conventions
-- Load the agent template first, then Task data-migration-expert(branch diff content) - Validates ID mappings match production, checks for swapped values, verifies rollback safety
-- Load the agent template first, then Task deployment-verification-agent(branch diff content) - Creates Go/No-Go deployment checklist with SQL verification queries
+- Apply the protocol above to `data-integrity-guardian`, then dispatch it with branch diff content - Reviews migration safety, constraint naming, and migration conventions
+- Apply the protocol above to `data-migration-expert`, then dispatch it with branch diff content - Validates ID mappings match production, checks for swapped values, verifies rollback safety
+- Apply the protocol above to `deployment-verification-agent`, then dispatch it with branch diff content - Creates Go/No-Go deployment checklist with SQL verification queries
 
 
 **When to run:**
@@ -315,7 +316,7 @@ Complete system context map with component interactions
 
 ### 4. Simplification and Minimalism Review
 
-Load the `code-simplicity-reviewer` template first from `portable/compound-engineering/agents/code-simplicity-reviewer.md`, or resolve it from OpenViking/global context, then run Task code-simplicity-reviewer() to see if we can simplify the code. If no template can be loaded, stop and report that gap instead of dispatching blindly.
+Apply the same protocol above to `code-simplicity-reviewer`, then dispatch it to see if the code can be simplified. If the template cannot be quoted from a loaded source, stop and report that gap instead of dispatching blindly.
 
 ### 5. Findings Synthesis and Todo Creation Using file-todos Skill
 
