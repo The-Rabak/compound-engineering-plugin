@@ -1,15 +1,44 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 29 specialized agents, 25 commands, and 24 skills.
+Generated Claude Code compatibility output for the OpenCode-first `compound-engineering` repo. AI-powered development tools that get smarter with every use. Includes 29 specialized agents, 26 commands, and 24 skills.
+
+> Support order for the canonical repo: OpenCode first-class, GitHub Copilot second, Claude Code third. Non-core exporters (Codex, Droid, Pi, Gemini, Kiro) are de-emphasized compatibility surfaces, and legacy assets such as `.github_gpt/` plus dormant Cursor-specific code have been removed to stop unsupported workflow drift.
 
 This repository also ships generated Copilot assets under the repo root `.github/`, built from the canonical portable source in `portable/compound-engineering/`.
+
+## Support policy
+
+- **Keep:** OpenCode-first portable source, generated Copilot output, and this generated Claude Code plugin.
+- **De-emphasize:** compatibility exporters for Codex, Droid, Pi, Gemini, and Kiro, plus legacy Claude-home sync mirrors.
+- **Removed legacy surfaces:** `.github_gpt/` and dormant Cursor-specific export/sync code that no longer fit the supported target matrix.
+
+## Workflow contract highlights
+
+- `/workflows:architecture` is the architecture-improvement handoff between planning and `/deepen-plan`.
+- `/workflows:work` is the Ralph-first execution path; `/ralph-loop` and `/cancel-ralph` are helpers, not a detached workflow.
+- Plans default to unit + e2e evidence unless an explicit exception documents replacement evidence.
+
+## Migration notes
+
+- `/technical_review` is no longer part of the supported workflow. Use `/workflows:architecture` between planning and `/deepen-plan`, then continue through `/workflows:work` and `/workflows:review`.
+- OpenCode remains the canonical first-class surface for the source repo. This generated Claude output is the third-class compatibility surface, while Copilot is the supported second-class generated output.
+- `.github_gpt/` and dormant Cursor-specific export/sync code have been removed from the supported workflow. Codex, Droid, Pi, Gemini, and Kiro remain de-emphasized compatibility exporters.
+- Ralph evidence is now part of the normal work/review contract: red, green, and post-refactor green proof are expected unless a plan records an explicit exception.
+
+### Verification guidance
+
+```bash
+bun run build:platforms
+bun run verify:generated
+bun test
+```
 
 ## Components
 
 | Component | Count |
 |-----------|-------|
 | Agents | 29 |
-| Commands | 25 |
+| Commands | 26 |
 | Skills | 24 |
 | Hooks | 1 |
 | MCP Servers | 1 |
@@ -79,6 +108,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/workflows:ideate` | Generate and rank grounded improvement ideas before selecting one to brainstorm |
 | `/workflows:brainstorm` | Explore requirements and approaches before planning |
 | `/workflows:plan` | Create implementation plans with structured project inputs (tickets, docs, designs) |
+| `/workflows:architecture` | Produce a dedicated architecture improvement artifact before deepening and execution |
 | `/workflows:review` | Run comprehensive code reviews |
 | `/workflows:work` | Execute work items systematically |
 | `/workflows:compound` | Document solved problems to compound team knowledge |

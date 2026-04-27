@@ -12,7 +12,7 @@ description: Enhance a plan with parallel research agents grounded in user story
 
 **Note: The current year is 2026.** Use this when searching for recent documentation and best practices.
 
-This command takes an existing plan (from `/workflows-plan`) and enhances each section with parallel research agents. Every enhancement is **grounded in the plan's WHY artifacts** -- the problem narrative, user story, architectural context, and success criteria -- so that deepening adds purpose-aligned depth, not generic complexity.
+This command takes an existing plan (from `/workflows-plan`) and, when available, the architecture improvement artifact from `/workflows-architecture`. If no artifact exists yet, it must assemble an **explicit architecture handoff contract** from the plan instead of treating architecture as hidden context. Every enhancement is **grounded in the plan's WHY artifacts** -- the problem narrative, user story, architectural context, success criteria, the explicit architecture contract, and the plan's TDD/evidence contract -- so that deepening adds purpose-aligned depth, not generic complexity.
 
 Each major element gets its own dedicated research sub-agent to find:
 - Best practices and industry patterns **relevant to the user story**
@@ -21,7 +21,7 @@ Each major element gets its own dedicated research sub-agent to find:
 - Quality enhancements and edge cases **that could threaten success criteria**
 - Real-world implementation examples **in similar architectural contexts**
 
-The result is a deeply grounded, production-ready plan that remains tightly coupled to WHY we're building it.
+The result is a deeply grounded, production-ready plan that remains tightly coupled to WHY we're building it while honoring the deletion-test, interface, seam, and adapter decisions captured in the architecture artifact or explicit architecture handoff contract.
 
 ## Plan File
 
@@ -48,6 +48,10 @@ First, read and parse the plan to extract the WHY artifacts (problem narrative, 
 - [ ] **Architectural Context** -- the WHERE map (lives in, interacts with, entry point, data, dependencies)
 - [ ] **Success Criteria** -- the DONE definition (measurable outcomes tied to user story)
 - [ ] **`handoff` frontmatter** -- check all fields are `true`; if any are `false` or missing, flag: "Plan is missing [X]. Deepening may add technically correct but purpose-misaligned enhancements. Consider running `/workflows-plan` to fill gaps first."
+- [ ] **`tdd` frontmatter + `## TDD & Evidence Contract`** -- extract precedence, mode, loop, unit/e2e evidence expectations, and any exceptions
+- [ ] Use `references/tdd-evidence-contract.md` to resolve the effective TDD contract: plan values override local defaults, `inherit` falls back, and no-local-config falls back to Ralph-driven `red-green-refactor` with unit + e2e evidence required
+- [ ] If the plan weakens Ralph/unit+e2e without a justification, flag it and add a justified exception before continuing
+- [ ] If the plan is missing the `tdd` block or the `## TDD & Evidence Contract` section, add them using the resolved local/fallback defaults before deepening other sections
 
 **Check for brainstorm reference:**
 
@@ -58,6 +62,20 @@ First, read and parse the plan to extract the WHY artifacts (problem narrative, 
   - Approaches Considered and why they were rejected
   - Resolved Questions (context that informed decisions)
 - [ ] This additional context helps research agents make purpose-aligned recommendations
+
+**Check for architecture artifact or explicit handoff contract:**
+
+- [ ] Read `architecture_ref` from plan frontmatter
+- [ ] If an architecture path exists, read it and extract:
+  - Deepening Candidates
+  - Deletion Test decisions
+  - Interfaces as test surfaces
+  - Seams, Adapters, and Contracts
+  - Recommendations for `/deepen-plan`, `/workflows-work`, and `/workflows-review`
+- [ ] If no `architecture_ref` exists, check `docs/architecture/*.md` for a recent artifact that matches the plan topic
+- [ ] If no architecture artifact exists, build an explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and any `## Related Artifacts` section
+- [ ] Record whether deepening used a real artifact or a plan-derived handoff contract so `/workflows-work` and `/workflows-review` inherit the same structural guidance
+- [ ] If no architecture artifact exists, continue but flag: "No architecture artifact found. Consider running `/workflows-architecture` before deepening so structural decisions are explicit."
 
 **Then extract plan structure:**
 
@@ -91,6 +109,7 @@ Check if the plan has sufficiently structured execution chunks for the subagent 
 - [ ] **Depends on:** Dependencies on other tasks
 - [ ] **Success criteria:** Testable checkboxes defining "done"
 - [ ] **Test command:** Exact command to verify completion
+- [ ] **TDD alignment:** Task-level test commands collectively satisfy the resolved unit/e2e evidence contract, or the plan records a justified exception with replacement evidence
 
 **Validate WHY tracing:**
 
@@ -132,8 +151,9 @@ Execution Readiness: X/Y tasks have complete structure (Z%)
 2. Identify which files each task will create or modify
 3. Write concrete success criteria (not vague goals)
 4. Determine the test command (look at existing test patterns in the codebase)
-5. Map dependencies between tasks
-6. Add a suggested commit message per task (conventional format: `feat(scope): description`)
+5. Make it explicit whether the test command contributes unit evidence, e2e evidence, or both
+6. Map dependencies between tasks
+7. Add a suggested commit message per task (conventional format: `feat(scope): description`)
 
 ### 1.2 Task Complexity Check
 
@@ -508,7 +528,7 @@ Read the first few lines of each agent file to understand what it reviews/analyz
 
 For EVERY agent discovered, launch a Task in parallel with WHY context:
 
-Before dispatching any named agent discovered in this step, use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`, then use the file-read tool to load the full template. Only if the bundled template cannot be loaded should you fall back to `ov_load_global_agent "<agent-name>"`. Before dispatching, quote the first non-empty line of the loaded template and record the source used. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch. Never dispatch a named agent by name alone.
+Before dispatching any named agent discovered in this step, apply the shared `Named Agent Dispatch` protocol in `references/orchestration-protocol.md`. Pass the WHY context block from this workflow together with the loaded template.
 
 ```
 Task [agent-name]: "Review this plan using your expertise.
@@ -592,6 +612,11 @@ Merge research findings back into the plan, adding depth without changing the or
 
 If research suggests changes to these, add a `### WHY Reassessment` note at the end of the plan for the user to review manually. Do not edit the originals.
 
+**RULE: Do not silently weaken the TDD contract.**
+- Preserve the plan's `tdd` frontmatter and `## TDD & Evidence Contract`
+- You may clarify commands, add missing precedence notes, or add missing justifications
+- Any relaxation from Ralph/unit+e2e must appear as an explicit justified exception with replacement evidence
+
 **Enhancement format for each section:**
 
 ```markdown
@@ -641,6 +666,12 @@ At the top of the plan, add a summary section:
 - Success Criteria: [preserved / flagged for reassessment]
 - Phase tracing: [all phases still trace to user story: yes/no]
 
+### TDD Contract Check
+- Precedence: [plan overrides local / inherit uses local / fallback default noted]
+- Effective loop: [red-green-refactor / implementation-first]
+- Evidence: [unit required?] [e2e required?]
+- Exceptions: [none / justified and preserved]
+
 ### Key Improvements
 1. [Major improvement 1] (serves: [success criterion])
 2. [Major improvement 2] (serves: [success criterion])
@@ -677,6 +708,7 @@ Before finalizing:
 - [ ] No contradictions between sections
 - [ ] Enhancement summary accurately reflects changes
 - [ ] Implementation tasks have execution-ready structure (files, success criteria, test commands, dependencies)
+- [ ] TDD contract is explicit, precedence is documented, and unit/e2e evidence stays aligned with task test commands unless an exception says otherwise
 
 **WHY integrity:**
 - [ ] Problem Narrative, User Story, Success Criteria, and Architectural Context are unmodified from the original plan
@@ -686,6 +718,7 @@ Before finalizing:
 - [ ] Enhancements tagged with which success criterion they serve
 - [ ] Scope-expanding recommendations flagged in "Scope Warnings" rather than silently added to phases
 - [ ] If WHY reassessment was needed, it's in a clearly marked section at the end (not inline edits)
+- [ ] `tdd` frontmatter and `## TDD & Evidence Contract` still agree on precedence, effective loop, evidence, and exceptions
 
 ## Post-Enhancement Options
 
@@ -695,15 +728,15 @@ After writing the enhanced plan, use the **AskUserQuestion tool** to present the
 
 **Options:**
 1. **View diff** - Show what was added/changed
-2. **Run `/technical_review`** - Get feedback from reviewers on enhanced plan
-3. **Start `/workflows-work`** - Begin implementing this enhanced plan
+2. **Review and refine** - Improve the enhanced plan through structured document review
+3. **Start `/workflows-work`** - Begin implementing this enhanced plan with its architecture artifact or explicit handoff contract
 4. **Deepen further** - Run another round of research on specific sections
 5. **Revert** - Restore original plan (if backup exists)
 
 Based on selection:
 - **View diff** → Run `git diff [plan_path]` or show before/after
-- **`/technical_review`** → Call the /technical_review command with the plan file path
-- **`/workflows-work`** → Call the /workflows-work command with the plan file path
+- **Review and refine** → Load the `document-review` skill against the enhanced plan and the architecture artifact or explicit handoff contract that informed it
+- **`/workflows-work`** → Call the /workflows-work command with the plan file path so execution loads the same architecture artifact or explicit handoff contract
 - **Deepen further** → Ask which sections need more research, then re-run those agents
 - **Revert** → Restore from git or backup
 

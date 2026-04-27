@@ -10,11 +10,13 @@ description: Execute work plans while maintaining WHY tracing from problem narra
 
 Execute a work plan while maintaining WHY tracing from problem narrative through implementation.
 
+**Ralph-first execution:** When the resolved TDD contract selects Ralph-driven execution, `/workflows-work` is the canonical Ralph red-green-refactor path. `/compound-engineering-ralph-loop` and `/compound-engineering-cancel-ralph` are operational helpers for that path, not a detached alternative workflow.
+
 ## Introduction
 
 This command takes a work document (plan, specification, or todo file) and executes it systematically using a **subagent orchestration model**. The orchestrator (this conversation) decomposes the plan into scoped chunks and delegates each to a focused subagent. Each subagent follows a standardized 4-phase protocol (understand, implement, self-review, report) defined in the execution agent prompt template.
 
-**WHY-grounded execution:** Every subagent receives the plan's WHY context -- the problem narrative, user story, architectural context, and which success criterion their specific task serves. This prevents implementation drift where technically correct code fails to deliver the user's actual need. The orchestrator is the guardian of WHY: it extracts purpose from the plan, threads it through every task prompt, and validates that the combined output delivers the stated user story.
+**WHY-grounded execution:** Every subagent receives the plan's WHY context -- the problem narrative, user story, architectural context, the architecture handoff contract, and which success criterion their specific task serves. This prevents implementation drift where technically correct code fails to deliver the user's actual need. The orchestrator is the guardian of WHY: it extracts purpose from the plan, threads it through every task prompt, and validates that the combined output delivers the stated user story.
 
 ### Review Mode
 
@@ -37,19 +39,23 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
 1. **Read Plan and Extract WHY + Guardrail Context**
 
    - Read the work document completely
-    - **Extract WHY artifacts** from the plan (these ground everything that follows):
-      - **Problem Narrative** -- why this work exists, what pain it solves
-      - **User Story** -- who benefits and what outcome they get
-      - **Architectural Context** -- how the solution fits in the system
-      - **Success Criteria** -- measurable conditions that define "done"
-      - **Phase-to-story tracing** -- each phase's "Serves:" line showing what user story aspect it delivers
-      - **Constitution alignment** -- relevant principles, required approvals, and any approved waivers
-    - Check for `handoff:` frontmatter in the plan. If present, verify all flags are `true` (problem_narrative, user_story, architectural_context, success_criteria). If any are `false`, warn the user that WHY context is incomplete and suggest running `/workflows-brainstorm` or `/workflows-plan` first.
-    - If `docs/constitution.md` exists, read it and extract the active constitution version, applicable principles, execution baselines, and approval rules. If the plan lists `constitution_waivers`, honor only those explicit exceptions.
-    - If the plan has a `brainstorm_ref:` path, read that brainstorm document too for richer WHY context
-    - Review any other references or links provided in the plan
-    - If the constitution requires explicit approval for any part of the planned work (for example, risky writes, schema changes, auth changes, or scope expansions), surface that before execution starts
-    - If anything is unclear or ambiguous, ask clarifying questions now
+   - **Extract WHY artifacts** from the plan (these ground everything that follows):
+     - **Problem Narrative** -- why this work exists, what pain it solves
+     - **User Story** -- who benefits and what outcome they get
+     - **Architectural Context** -- how the solution fits in the system
+     - **Success Criteria** -- measurable conditions that define "done"
+     - **Phase-to-story tracing** -- each phase's "Serves:" line showing what user story aspect it delivers
+     - **Constitution alignment** -- relevant principles, required approvals, and any approved waivers
+     - **`tdd` frontmatter + `## TDD & Evidence Contract`** -- resolve the effective TDD contract using `references/tdd-evidence-contract.md` (plan overrides local, `inherit` falls back, and no-local-config defaults to Ralph-driven `red-green-refactor` with unit + e2e evidence required)
+   - Check for `handoff:` frontmatter in the plan. If present, verify all flags are `true` (problem_narrative, user_story, architectural_context, success_criteria). If any are `false`, warn the user that WHY context is incomplete and suggest running `/workflows-brainstorm` or `/workflows-plan` first.
+   - If the resolved contract weakens Ralph/unit+e2e without a justified exception in the plan, stop and ask for the plan contract to be corrected before execution
+   - If `docs/constitution.md` exists, read it and extract the active constitution version, applicable principles, execution baselines, and approval rules. If the plan lists `constitution_waivers`, honor only those explicit exceptions.
+   - If the plan has a `brainstorm_ref:` path, read that brainstorm document too for richer WHY context
+   - If the plan has an `architecture_ref:` path or `## Related Artifacts` entry, read that `docs/architecture/` artifact and extract the deletion test, interfaces as test surfaces, seams, adapters, contracts, deepening candidates, and downstream work/review guidance
+   - If no architecture artifact is recorded, assemble an explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and execution constraints. Tell the user this is a fallback and recommend `/workflows-architecture` if boundaries are still unsettled.
+   - Review any other references or links provided in the plan
+   - If the constitution requires explicit approval for any part of the planned work (for example, risky writes, schema changes, auth changes, or scope expansions), surface that before execution starts
+   - If anything is unclear or ambiguous, ask clarifying questions now
    - Get user approval to proceed
    - **Do not skip this** - better to ask questions now than build the wrong thing
 
@@ -109,7 +115,7 @@ Phase 2 is where the orchestrator (this conversation) decomposes the plan into s
 
 #### Step 1: Validate Plan Readiness
 
-Before executing, validate three things: **structural readiness** (tasks are granular and testable), **WHY readiness** (the plan carries purpose context), and **guardrail readiness** (repo-wide rules are visible and actionable).
+Before executing, validate four things: **structural readiness** (tasks are granular and testable), **WHY readiness** (the plan carries purpose context), **TDD readiness** (the execution contract is explicit and enforceable), and **guardrail readiness** (repo-wide rules are visible and actionable).
 
 **Structural readiness** -- each implementation task should have:
 
@@ -126,6 +132,14 @@ Before executing, validate three things: **structural readiness** (tasks are gra
 - **Constitution waivers** -- explicit and limited; empty by default
 - **Required approvals** -- called out before work begins
 
+**TDD readiness** -- the plan and local defaults must resolve to one clear execution contract:
+
+- **`tdd` frontmatter present** -- includes precedence, mode, loop, evidence, and exceptions
+- **`## TDD & Evidence Contract` present** -- states the resolved execution path in plain language
+- **Effective mode resolved** -- Ralph-driven by default unless the plan explicitly approves a standard-mode exception
+- **Required evidence resolved** -- unit + e2e by default, or justified replacement evidence when explicitly waived
+- **Report contract visible** -- Ralph-driven tasks must emit stable red, green, and post-refactor green evidence blocks
+
 **WHY readiness** -- the plan should have:
 
 - **Problem Narrative** -- present and non-empty
@@ -134,7 +148,9 @@ Before executing, validate three things: **structural readiness** (tasks are gra
 - **Success Criteria** -- present at plan level (not just task level)
 - **Phase tracing** -- each phase has a "Serves:" line connecting it to the user story
 
-If the plan lacks structural details, refuse to proceed and suggest running `/deepen-plan` or manually breaking down the plan.
+If the plan lacks structural details, or if no architecture artifact / handoff contract can explain the boundaries, refuse to proceed and suggest running `/workflows-architecture` first if the boundaries are still fuzzy, then `/deepen-plan`, or manually breaking down the plan.
+
+If the plan lacks the `tdd` block or `## TDD & Evidence Contract`, or if the resolved contract is ambiguous, refuse to proceed and suggest `/workflows-plan` or `/deepen-plan` to repair the execution contract before spawning subagents.
 
 If the plan lacks WHY artifacts, the orchestrator should **construct minimal WHY context** before proceeding:
 1. Ask the user: "This plan doesn't include a problem narrative or user story. In one sentence, what problem are we solving and for whom?"
@@ -153,7 +169,7 @@ ls docs/execution-sessions/work-*/state.md 2>/dev/null
 If a previous session exists for the same plan file and has `status: in_progress`:
 
 - Ask the user: "Found incomplete session `[session_id]` for this plan. Resume where you left off, or start fresh?"
-- **If resume**: Read STATE.md, load the WHY Context section (problem narrative, user story, criteria), skip completed tasks, load the learnings brief, and continue from `current_task`
+- **If resume**: Read STATE.md, load the WHY Context section plus the Architecture Handoff section, skip completed tasks, load the learnings brief, and continue from `current_task`
 - **If fresh**: Archive the old session directory (rename with `-archived` suffix), then start a new session
 
 If no resumable session exists, proceed to Step 3.
@@ -194,8 +210,22 @@ session_id: [SESSION_ID]
 ### Success Criteria
 [Extracted from plan -- measurable conditions for "done"]
 
+### TDD Contract
+- Effective mode: [Ralph-driven TDD | Standard implementation with approved exception]
+- Effective loop: [Failing tests first -> minimal implementation -> refactor -> post-refactor rerun | Implementation-first]
+- Required evidence: [Unit command/result], [E2E command/result], [Replacement evidence for any approved exception]
+- Exceptions: [None, or explicit approved deviations from Ralph/unit+e2e]
+
 ### Constitution Context
 [Relevant principles, baselines, approvals, and waivers extracted from plan and docs/constitution.md]
+
+### Architecture Handoff
+- Artifact: [docs/architecture/... path or "plan-derived handoff"]
+- Deepening candidates to preserve: [list]
+- Deletion test: [what stays concrete vs what may be abstracted later]
+- Interfaces as test surfaces: [behavioral contracts]
+- Seams / adapters / contracts: [boundaries this execution must honor]
+- Review guidance: [what `/workflows-review` must verify later]
 
 ## Task Status
 | # | Task | Serves | Status | Attempts | Session File |
@@ -229,12 +259,7 @@ For each task (or parallel batch of tasks), follow this cycle:
 
 For each task, the orchestrator constructs a focused prompt by loading the **execution agent prompt template** from `references/execution-agent-prompt.md` and filling in the context blocks.
 
-Before building `scoped_prompt`, complete this template-load protocol for `execution-agent-prompt.md`:
-1. Use the platform's file-search tool against the local `references/` directory bundled with this skill to look for `execution-agent-prompt.md`. Search the directory, not a full path embedded in the pattern argument.
-2. Use the file-read tool to load the full template.
-3. Before continuing, quote the first non-empty line of the loaded template and record which file you used.
-4. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not spawn the subagent.
-5. Fill the placeholders from the loaded template. Do not reconstruct the prompt from memory.
+Before building `scoped_prompt`, apply the shared `Reference Template Loading` protocol in `references/orchestration-protocol.md` to `execution-agent-prompt.md`. Fill the placeholders from the loaded template and do not reconstruct the prompt from memory.
 
 - **{{TASK_NAME}}** and **{{TASK_DESCRIPTION}}** -- from the plan
 - **{{FILE_LIST}}** -- files to create/modify from the plan
@@ -251,15 +276,17 @@ Before building `scoped_prompt`, complete this template-load protocol for `execu
   **Guardrails:** [relevant constitution principles, approval rules, and approved waivers]
   ```
 - **{{ARCHITECTURAL_CONTEXT}}** -- from the plan's Architectural Context section, filtered to what's relevant for this task's files and domain
+- **{{ARCHITECTURE_HANDOFF}}** -- from the `docs/architecture/` artifact or explicit plan-derived handoff contract; include deletion-test decisions, interfaces as test surfaces, seams, adapters, contracts, and downstream review guidance relevant to this task
 - **{{LEARNINGS_BRIEF}}** -- from previous tasks, filtered by domain relevance (only include backend learnings for backend tasks, frontend learnings for frontend tasks, etc.)
 - **{{PROJECT_CONVENTIONS}}** -- from CLAUDE.md plus relevant constitution baselines
-- **{{TDD_SECTION}}** -- if `tdd_enabled: true` in `compound-engineering.local.md`, include the TDD Implementation Section from the template; otherwise include the Standard Implementation Section
+- **{{TDD_CONTRACT}}** -- the resolved execution contract: effective mode, Ralph/default loop, required unit/e2e evidence, and any explicit exceptions
+- **{{TDD_SECTION}}** -- if the resolved effective mode is Ralph-driven, include the Ralph/TDD Implementation Section from the template; otherwise include the Standard Implementation Section. Do not treat Ralph as an adjacent side command when it is the resolved default.
 
 The execution agent template instructs each subagent to follow a 4-phase protocol:
 1. **Understand** -- review requirements, surface ambiguities, state assumptions before coding
-2. **Implement** -- follow standard or TDD mode, retry on failure (up to 3 attempts)
+2. **Implement** -- follow the resolved Ralph/default execution mode, retry on failure (up to 3 attempts)
 3. **Self-review** -- check completeness, quality, discipline, testing, and evidence
-4. **Report** -- return a structured execution report with test output, assumptions, patterns discovered
+4. **Report** -- return a structured execution report with stable red, green, and post-refactor green evidence when Ralph-driven
 
 ##### b. Spawn Subagent
 
@@ -272,8 +299,8 @@ Task(general-purpose, prompt=scoped_prompt)
 The subagent prompt is constructed from the loaded execution agent template (`references/execution-agent-prompt.md`). The template already includes instructions for the 4-phase protocol (understand, implement, self-review, report). The orchestrator fills in the context blocks and passes the result:
 
 1. Read referenced files and understand existing patterns
-2. Implement the task following conventions
-3. Write tests matching the success criteria
+2. Follow the resolved Ralph/default execution contract
+3. Capture stable red, green, and post-refactor green evidence when Ralph-driven
 4. Run the test command
 5. If tests fail: analyze failure, fix, and retry (up to 3 internal attempts)
 6. Return a structured execution report containing:
@@ -281,6 +308,7 @@ The subagent prompt is constructed from the loaded execution agent template (`re
    - Files created/modified (with paths)
    - Problems encountered and how they were fixed
    - Patterns discovered (naming conventions, architectural patterns, etc.)
+   - TDD evidence (Red, Green, Post-Refactor Green) when Ralph-driven
    - Final test results (pass/fail)
    - Attempt count
 
@@ -320,6 +348,12 @@ npm test -- --filter UserAuthService
 ## Architectural Context
 JWT-based stateless auth. Tokens issued by UserAuthService, validated by middleware (Task 4). No server-side session storage.
 
+## TDD Execution Contract
+- Effective mode: Ralph-driven TDD
+- Effective loop: failing tests first -> minimal implementation -> refactor -> post-refactor rerun
+- Required evidence: unit command/result + e2e command/result
+- Exceptions: none
+
 ## Conventions
 - Use dependency injection pattern
 - Variables are camelCase
@@ -332,16 +366,18 @@ JWT-based stateless auth. Tokens issued by UserAuthService, validated by middlew
 
 ## Instructions
 1. Read the referenced files and understand existing patterns
-2. Implement the task following the conventions above
-3. Write tests matching the success criteria
+2. Follow the Ralph-driven TDD contract: RED first, GREEN second, REFACTOR third, post-refactor rerun fourth
+3. Capture stable report evidence for Red, Green, and Post-Refactor Green
 4. Run the test command
 5. If tests fail: analyze, fix, retry (up to 3 attempts)
-6. Return a structured report: summary, files changed, problems encountered and fixes, patterns discovered, test results, attempt count
+6. Return a structured report: summary, files changed, problems encountered and fixes, patterns discovered, TDD evidence, test results, attempt count
 ```
 
 ##### c. Process Subagent Results
 
 When the subagent returns, the orchestrator processes the results:
+
+**0. Validate the execution contract evidence** -- audit the report against `references/tdd-evidence-contract.md`. If a Ralph-driven task is missing stable `Red`, `Green`, and `Post-Refactor Green` evidence blocks, treat the report as incomplete and send it back for correction before marking the task complete.
 
 **1. Write session file** to `docs/execution-sessions/${SESSION_ID}/task-{nn}-{slug}.md`:
 
@@ -375,6 +411,9 @@ session_id: [SESSION_ID]
 - [pattern 1]
 - [pattern 2]
 
+## TDD Evidence
+[Mirror the exact Ralph evidence block from `references/tdd-evidence-contract.md`. Preserve the `Red`, `Green`, and `Post-Refactor Green` headings with their command/result/evidence fields.]
+
 ## Test Results
 - Command: `[test command]`
 - Result: PASS/FAIL
@@ -387,7 +426,7 @@ session_id: [SESSION_ID]
 
    **Stage 1: Spec Compliance Review**
 
-   Apply the same template-load protocol above, substituting `spec-review-prompt.md`. If the template cannot be loaded and quoted, stop the inline review loop and report the missing template instead of improvising. Then fill in:
+   Apply the shared `Reference Template Loading` protocol from `references/orchestration-protocol.md`, substituting `spec-review-prompt.md`. If the template cannot be loaded and quoted, stop the inline review loop and report the missing template instead of improvising. Then fill in:
    - `{{TASK_REQUIREMENTS}}` -- the task description and success criteria
    - `{{SUCCESS_CRITERIA}}` -- the success criteria checkboxes
    - `{{IMPLEMENTER_REPORT}}` -- the execution report from the subagent
@@ -405,7 +444,7 @@ session_id: [SESSION_ID]
 
    **Stage 2: Code Quality Review** (only after spec compliance passes)
 
-   Apply the same template-load protocol above, substituting `quality-review-prompt.md`. If the template cannot be loaded and quoted, stop the inline review loop and report the missing template instead of improvising. Then fill in:
+   Apply the shared `Reference Template Loading` protocol from `references/orchestration-protocol.md`, substituting `quality-review-prompt.md`. If the template cannot be loaded and quoted, stop the inline review loop and report the missing template instead of improvising. Then fill in:
    - `{{IMPLEMENTER_REPORT}}` -- the execution report
    - `{{FILES_CHANGED}}` -- list of files from the report
 
@@ -482,8 +521,9 @@ If a subagent fails after its internal retries:
 
     - **User story delivered?** -- Review the user story from STATE.md. Can a user actually achieve the stated outcome with what was built? If any success criterion is unmet or any task was skipped, note the gap.
     - **Architectural integrity?** -- Does the implementation match the architectural context from the plan? Flag any deviations (e.g., plan said "stateless JWT" but implementation uses server sessions).
-    - **Constitution honored?** -- Does the implementation respect the constitution baselines and approval rules captured in STATE.md? Flag any unwaived violations.
-    - **No orphan code** -- Is there any implemented code that doesn't trace back to the user story or success criteria? This may indicate scope creep during execution.
+     - **Constitution honored?** -- Does the implementation respect the constitution baselines and approval rules captured in STATE.md? Flag any unwaived violations.
+     - **Ralph evidence complete?** -- For Ralph-driven tasks, does every session file include Red, Green, and Post-Refactor Green evidence aligned to the resolved unit/e2e contract or an explicitly approved exception?
+     - **No orphan code** -- Is there any implemented code that doesn't trace back to the user story or success criteria? This may indicate scope creep during execution.
 
    If purpose validation reveals gaps, present them to the user before proceeding to PR.
 
@@ -491,14 +531,7 @@ If a subagent fails after its internal retries:
 
    Use for complex, risky, or large changes. Read agents from `compound-engineering.local.md` frontmatter (`review_agents`). If no settings file, invoke the `setup` skill to create one.
 
-    Before dispatching any named reviewer agent from `review_agents`, complete this protocol:
-    1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.
-    2. If the bundled template exists, use the file-read tool to load the full template.
-    3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent "<agent-name>"`.
-    4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.
-    5. Include the loaded template's rules in the delegated prompt.
-    6. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch the agent.
-    Never dispatch a named agent by name alone.
+    Before dispatching any named reviewer agent from `review_agents`, apply the shared `Named Agent Dispatch` protocol in `references/orchestration-protocol.md`.
 
     Run configured agents in parallel with Task tool. **Pass the WHY context (problem narrative, user story, success criteria) to reviewer agents** so they can evaluate fitness for purpose, not just code quality. Present findings and address critical issues.
 

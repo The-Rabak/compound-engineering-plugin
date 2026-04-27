@@ -7,14 +7,18 @@ import { syncToCodex } from "../sync/codex"
 import { syncToPi } from "../sync/pi"
 import { syncToDroid } from "../sync/droid"
 import { syncToCopilot } from "../sync/copilot"
+import { getSurfaceTargetNotice, getTargetNamesForSurface, syncTargetHelp } from "../targets"
 import { expandHome } from "../utils/resolve-home"
+ 
+const syncHandlers = {
+  opencode: syncToOpenCode,
+  copilot: syncToCopilot,
+  codex: syncToCodex,
+  droid: syncToDroid,
+  pi: syncToPi,
+} as const
 
-const validTargets = ["opencode", "codex", "pi", "droid", "copilot"] as const
-type SyncTarget = (typeof validTargets)[number]
-
-function isValidTarget(value: string): value is SyncTarget {
-  return (validTargets as readonly string[]).includes(value)
-}
+type SyncTarget = keyof typeof syncHandlers
 
 /** Check if any MCP servers have env vars that might contain secrets */
 function hasPotentialSecrets(mcpServers: Record<string, unknown>): boolean {
@@ -48,13 +52,13 @@ function resolveOutputRoot(target: SyncTarget): string {
 export default defineCommand({
   meta: {
     name: "sync",
-    description: "Sync Claude Code config (~/.claude/) to OpenCode, Codex, Pi, Droid, or Copilot",
+    description: "Sync Claude Code config into the OpenCode-first support matrix",
   },
   args: {
     target: {
       type: "string",
       required: true,
-      description: "Target: opencode | codex | pi | droid | copilot",
+      description: syncTargetHelp,
     },
     claudeHome: {
       type: "string",
@@ -63,9 +67,8 @@ export default defineCommand({
     },
   },
   async run({ args }) {
-    if (!isValidTarget(args.target)) {
-      throw new Error(`Unknown target: ${args.target}. Use one of: ${validTargets.join(", ")}`)
-    }
+    const target = resolveSyncTarget(String(args.target))
+    warnIfDeEmphasizedTarget(target)
 
     const claudeHome = expandHome(args.claudeHome ?? path.join(os.homedir(), ".claude"))
     const config = await loadClaudeHome(claudeHome)
@@ -82,26 +85,30 @@ export default defineCommand({
       `Syncing ${config.skills.length} skills, ${Object.keys(config.mcpServers).length} MCP servers...`,
     )
 
-    const outputRoot = resolveOutputRoot(args.target)
+    const outputRoot = resolveOutputRoot(target)
 
-    switch (args.target) {
-      case "opencode":
-        await syncToOpenCode(config, outputRoot)
-        break
-      case "codex":
-        await syncToCodex(config, outputRoot)
-        break
-      case "pi":
-        await syncToPi(config, outputRoot)
-        break
-      case "droid":
-        await syncToDroid(config, outputRoot)
-        break
-      case "copilot":
-        await syncToCopilot(config, outputRoot)
-        break
-    }
+    await syncHandlers[target](config, outputRoot)
 
-    console.log(`✓ Synced to ${args.target}: ${outputRoot}`)
+    console.log(`✓ Synced to ${target}: ${outputRoot}`)
   },
 })
+
+function resolveSyncTarget(value: string): SyncTarget {
+  const validTargets = getTargetNamesForSurface("sync")
+  if (!validTargets.includes(value)) {
+    throw new Error(`Unknown target: ${value}. Use one of: ${validTargets.join(", ")}`)
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(syncHandlers, value)) {
+    throw new Error(`Target ${value} is listed for sync but has no sync implementation.`)
+  }
+
+  return value as SyncTarget
+}
+
+function warnIfDeEmphasizedTarget(targetName: SyncTarget): void {
+  const notice = getSurfaceTargetNotice(targetName, "sync")
+  if (notice) {
+    console.warn(`[support-tier] ${notice}`)
+  }
+}

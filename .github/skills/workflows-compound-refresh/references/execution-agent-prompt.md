@@ -43,6 +43,10 @@ You are an execution agent implementing a specific task from a work plan. Follow
 
 {{PROJECT_CONVENTIONS}}
 
+## TDD Execution Contract
+
+{{TDD_CONTRACT}}
+
 ---
 
 ## Phase 1: Understand Before Building
@@ -126,6 +130,8 @@ If you find issues during self-review, **fix them now** before reporting. Do not
 
 Return a structured execution report in exactly this format:
 
+Use `commands/workflows/references/tdd-evidence-contract.md` as the single source for the `### TDD Evidence` block. `Red` and `Green` prove behavior coverage. `Post-Refactor Green` proves cleanup safety after refactor. Each `Evidence` line should quote the decisive failing or passing signal in one sentence, not a narrative.
+
 ```markdown
 ## Execution Report: [Task Name]
 
@@ -143,6 +149,9 @@ Return a structured execution report in exactly this format:
 
 ### Files Changed
 - `path/to/file` -- created/modified (brief description of change)
+
+### TDD Evidence
+[Insert the exact Ralph evidence block from `commands/workflows/references/tdd-evidence-contract.md`. Preserve the `Red`, `Green`, and `Post-Refactor Green` headings with their command/result/evidence fields.]
 
 ### Test Results
 - Command: `[test command]`
@@ -176,7 +185,7 @@ Return a structured execution report in exactly this format:
 
 ## Standard Implementation Section
 
-_This section is included when TDD is not enabled._
+_This section is included only when the resolved TDD contract explicitly allows standard implementation._
 
 1. Read referenced files and understand existing patterns
 2. Implement the task following project conventions
@@ -188,14 +197,14 @@ _This section is included when TDD is not enabled._
 
 ## TDD Implementation Section
 
-_This section is included when `tdd_enabled: true` is configured._
+_This section is included when the resolved TDD contract selects Ralph-driven execution._
 
-Follow the red-green-refactor cycle strictly:
+Ralph is the default TDD execution path. Follow the red-green-refactor cycle strictly and keep the report evidence stable:
 
 1. Read referenced files and understand existing patterns
-2. **RED:** Write tests FIRST based on the success criteria. Run them. They MUST fail -- and they must fail for the RIGHT reason (the behavior is missing, not import errors or syntax problems)
-3. **GREEN:** Write the MINIMAL production code needed to make the tests pass. No more than what is necessary.
-4. Run tests. They MUST pass.
-5. **REFACTOR:** Clean up if needed. Tests must still pass after refactoring.
+2. **RED:** Write tests FIRST based on the success criteria. Run them. They MUST fail -- and they must fail for the RIGHT reason (the behavior is missing, not import errors or syntax problems). Record the command, result, and failure evidence under `### TDD Evidence -> Red`.
+3. **GREEN:** Write the MINIMAL production code needed to make the tests pass. No more than what is necessary. Run the required tests and record the passing command, result, and evidence under `### TDD Evidence -> Green`.
+4. **REFACTOR:** Clean up if needed without changing behavior.
+5. **POST-REFACTOR GREEN:** Re-run the required tests after refactoring. If no cleanup was needed, still rerun and say so. Record the command, result, and rerun evidence under `### TDD Evidence -> Post-Refactor Green`.
 
 **Iron rule:** If at any point you find yourself writing production code before a failing test exists for that behavior, STOP. Write the test first. This is not a suggestion -- it is the process.
