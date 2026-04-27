@@ -373,18 +373,20 @@ Each implementation phase must state **what aspect of the user story it serves**
 When decomposing into phases:
 - **Group by user-facing capability**, not by technical layer. "User can log in" is a phase; "Create database tables" is a task within a phase.
 - **Each phase should deliver a testable slice** of the user story where possible
+- **Each subphase/task should be a self-contained execution unit** -- after its listed dependencies are satisfied, the executor should have the context, scope, relevant files, success criteria, and verification command needed to complete it without reconstructing intent from neighboring phases
 - **Cross-reference success criteria** -- map each success criterion to the phase(s) that deliver it
 - **Architectural context informs boundaries** -- use the WHERE map to identify natural phase boundaries (e.g., service boundaries, module boundaries)
 
 **Execution Readiness:**
 
 For plans that will be executed via `/workflows:work`, ensure each implementation task includes:
+- **Scope:** What this task owns, what it changes, and any important boundary or non-goal that keeps the slice contained
 - **Files:** List of files to create or modify
 - **Depends on:** Which other tasks must complete first (or "None")
 - **Success criteria:** Testable checkboxes that define "done"
 - **Test command:** The exact command to verify the task is complete. Across the plan, these commands must satisfy the plan-level TDD evidence contract.
 
-This structured format enables the `/workflows:work` orchestrator to delegate each task to a focused subagent with clear scope and termination criteria. Plans without this structure will be flagged for refinement before execution begins.
+This structured format enables the `/workflows:work` orchestrator to delegate each task to a focused subagent with clear scope and termination criteria. Treat every task as a mini-handoff packet: if an executor had only that task plus the shared WHY/architecture context, they should still know what to touch, what not to touch, and how to prove it is done. Plans without this structure will be flagged for refinement before execution begins.
 
 **TDD & Evidence Contract (mandatory):**
 
@@ -418,7 +420,7 @@ The SpecFlow Analyzer should evaluate:
 
 ### 4. Choose Implementation Detail Level
 
-**Important for `/workflows:work` compatibility:** All detail levels can be executed, but the MORE and A LOT levels produce plans with structured execution chunks (per-task success criteria, test commands, file lists) that enable the subagent orchestration model in `/workflows:work`. MINIMAL plans work but may require the orchestrator to decompose tasks further before delegating to subagents.
+**Important for `/workflows:work` compatibility:** All detail levels can be executed, but the MORE and A LOT levels produce plans with structured execution chunks (per-task scope, success criteria, test commands, and file lists) that enable the subagent orchestration model in `/workflows:work`. MINIMAL plans work but may require the orchestrator to decompose tasks further before delegating to subagents and supply any missing containment details.
 
 **All detail levels include WHY sections.** The Problem Narrative, User Story, Architectural Context, and Success Criteria are mandatory at every level -- they are the contract that downstream phases depend on. The difference between levels is how much implementation detail surrounds them.
 
@@ -984,7 +986,9 @@ public function processUser(User $user): array
 
 **Execution Readiness (for `/workflows:work`):**
 
+- [ ] Each task is a self-contained execution unit once dependencies are met
 - [ ] Each task has: Files, Depends on, Success criteria, Test command
+- [ ] Each task scope is explicit enough that an executor does not need to infer missing boundaries from adjacent phases
 - [ ] Task success criteria are testable (not vague)
 - [ ] Dependencies between tasks are explicit
 - [ ] Architectural context is specific enough to fill `{{ARCHITECTURAL_CONTEXT}}` in execution agent prompts
