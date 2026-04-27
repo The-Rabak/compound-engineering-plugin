@@ -38,6 +38,8 @@ describe("TDD contract surfaces", () => {
     expect(planPrompt).toContain("Plan-level `tdd` values override `compound-engineering.local.md`")
     expect(planPrompt).toContain("unit + e2e evidence")
     expect(planPrompt).toContain("replacement_evidence")
+    expect(planPrompt).toContain("Each subphase/task should be a self-contained execution unit")
+    expect(planPrompt).toContain("Treat every task as a mini-handoff packet")
   })
 
   test("deepen-plan preserves and validates the resolved TDD contract", async () => {
