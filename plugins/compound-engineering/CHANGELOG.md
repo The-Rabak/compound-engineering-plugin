@@ -5,6 +5,14 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.4.0] - 2026-04-27
+
+### Added
+
+- **`caveman` skill** -- Ultra-compressed response mode that preserves technical accuracy while minimizing token usage after an explicit user trigger.
+- **`grill-me` skill** -- Single-question design interrogation workflow for stress-testing plans and resolving dependencies one branch at a time.
+- **`ubiquitous-language` skill** -- DDD-oriented glossary generator that extracts canonical domain terminology from the conversation and writes `UBIQUITOUS_LANGUAGE.md`.
+
 ## [4.3.0] - 2026-04-25
 
 ### Added

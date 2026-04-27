@@ -2,7 +2,7 @@
 
 Portable source-of-truth and release repository for the `compound-engineering` plugin.
 
-The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **29 specialized agents, 25 commands, and 21 skills** built from one portable definition set and emitted into multiple agent harnesses.
+The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **29 specialized agents, 25 commands, and 24 skills** built from one portable definition set and emitted into multiple agent harnesses.
 
 ## What this repository ships
 
@@ -103,7 +103,7 @@ That writes into `~/.config/opencode` by default. Claude-specific paths in comma
 bun run sync:ov
 ```
 
-This registers portable agents and skills into the OpenViking global index and mirrors skill support files so future sessions can load them by name.
+This registers portable agents, skills, and command-derived workflow skills into the OpenViking global index and mirrors skill support files so future sessions can load them by name.
 
 ### Convert to other targets
 
