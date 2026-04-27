@@ -1,5 +1,5 @@
 import path from "path"
-import { backupFile, copyDir, ensureDir, readText, writeJson, writeText } from "../utils/files"
+import { backupFile, copyDir, ensureDir, pathExists, readText, writeJson, writeText } from "../utils/files"
 import { transformContentForCopilot } from "../converters/claude-to-copilot"
 import type { CopilotBundle } from "../types/copilot"
 import { formatFrontmatter, parseFrontmatter } from "../utils/frontmatter"
@@ -21,7 +21,11 @@ export async function writeCopilotBundle(outputRoot: string, bundle: CopilotBund
     const skillsDir = path.join(paths.githubDir, "skills")
     for (const skill of bundle.generatedSkills) {
       assertSafeOutputName(skill.name, "skill")
-      await writeText(path.join(skillsDir, skill.name, "SKILL.md"), skill.content + "\n")
+      const targetDir = path.join(skillsDir, skill.name)
+      await writeText(path.join(targetDir, "SKILL.md"), skill.content + "\n")
+      if (skill.sourcePath) {
+        await copyCommandReferenceDocs(skill.sourcePath, targetDir)
+      }
     }
   }
 
@@ -54,6 +58,12 @@ export async function writeCopilotBundle(outputRoot: string, bundle: CopilotBund
     }
     await writeJson(mcpPath, { mcpServers: bundle.mcpConfig })
   }
+}
+
+async function copyCommandReferenceDocs(commandSourcePath: string, targetDir: string): Promise<void> {
+  const sourceReferencesDir = path.join(path.dirname(commandSourcePath), "references")
+  if (!(await pathExists(sourceReferencesDir))) return
+  await copyDir(sourceReferencesDir, path.join(targetDir, "references"))
 }
 
 function resolveCopilotPaths(outputRoot: string) {

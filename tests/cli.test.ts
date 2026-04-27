@@ -427,12 +427,29 @@ describe("CLI", () => {
     expect(copiedSkillContent).toContain("~/.copilot/skills/skill-one/notes.md")
   })
 
-  test("sync-ov registers portable agents, skills, and skill support files", async () => {
+  test("sync-ov registers portable agents, skills, commands, and skill support files", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-sync-ov-"))
-    const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+    const sourceFixture = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+    const fixtureRoot = path.join(tempRoot, "portable-plugin")
     const fakeOvCore = path.join(import.meta.dir, "fixtures", "fake-ov-core.sh")
     const fakeOvRoot = path.join(tempRoot, "ov-global")
     const fakeOvLog = path.join(tempRoot, "ov.log")
+
+    await fs.cp(sourceFixture, fixtureRoot, { recursive: true })
+    const constitutionCommandPath = path.join(fixtureRoot, "commands", "workflows", "constitution.md")
+    await fs.writeFile(
+      constitutionCommandPath,
+      [
+        "---",
+        "name: workflows:constitution",
+        "description: Create a repo constitution.",
+        "---",
+        "",
+        "Task repo-research-analyst(understand repo rules)",
+        "",
+      ].join("\n"),
+      "utf8",
+    )
 
     const proc = Bun.spawn([
       "bun",
@@ -461,16 +478,21 @@ describe("CLI", () => {
       throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
     }
 
-    expect(stdout).toContain("Synced 1 agents, 1 skills, and 1 skill support files")
+    expect(stdout).toContain("Synced 1 agents, 1 skills, 2 commands, and 3 skill support files")
     expect(await exists(path.join(fakeOvRoot, "agents", "repo-research-analyst.md"))).toBe(true)
     expect(await exists(path.join(fakeOvRoot, "skills", "skill-one.md"))).toBe(true)
+    expect(await exists(path.join(fakeOvRoot, "skills", "workflows-constitution.md"))).toBe(true)
     const mirroredSupportPath = path.join(fakeOvRoot, "skills", "skill-one", "references", "guide.txt")
     expect(await exists(mirroredSupportPath)).toBe(true)
     expect(await fs.readFile(mirroredSupportPath, "utf8")).toBe("Portable reference\n")
+    const generatedCommandContent = await fs.readFile(path.join(fakeOvRoot, "skills", "workflows-constitution.md"), "utf8")
+    expect(generatedCommandContent).toContain("name: workflows-constitution")
+    expect(generatedCommandContent).toContain("Use the repo-research-analyst skill to: understand repo rules")
 
     const log = await fs.readFile(fakeOvLog, "utf8")
     expect(log).toContain(`resource\tviking://resources/_global/agents\t${path.join(fakeOvRoot, "agents", "repo-research-analyst.md")}`)
     expect(log).toContain(`resource\tviking://resources/_global/skills\t${path.join(fakeOvRoot, "skills", "skill-one.md")}`)
+    expect(log).toContain(`resource\tviking://resources/_global/skills\t${path.join(fakeOvRoot, "skills", "workflows-constitution.md")}`)
     expect(log).toContain("resource\tviking://resources/_global/skills/skill-one/references")
     expect(log).toContain("rebuild\tglobal-manifest")
   })

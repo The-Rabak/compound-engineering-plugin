@@ -13,6 +13,8 @@ Look at github issue #$ARGUMENTS and read the issue description and comments.
 
 Run the following agents in parallel to investigate the bug:
 
+Before dispatching `repo-research-analyst` or `learnings-researcher`, use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`, then use the file-read tool to load the full template. Only if the bundled template cannot be loaded should you fall back to `ov_load_global_agent "<agent-name>"`. Before dispatching, quote the first non-empty line of the loaded template and record the source used. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch. Never dispatch a named agent by name alone.
+
 1. Task repo-research-analyst(issue_description) - Search codebase for relevant code paths
 2. Task learnings-researcher(issue_description) - Check if similar bugs have been solved before
 

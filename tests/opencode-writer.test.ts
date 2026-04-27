@@ -94,6 +94,52 @@ describe("writeOpenCodeBundle", () => {
     expect(await exists(path.join(outputRoot, ".opencode"))).toBe(false)
   })
 
+  test("copies command reference docs into the installed command tree", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "opencode-refs-"))
+    const sourceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "portable-command-"))
+    const sourceCommand = path.join(sourceRoot, "commands", "workflows", "work.md")
+    const sourceReference = path.join(
+      sourceRoot,
+      "commands",
+      "workflows",
+      "references",
+      "execution-agent-prompt.md",
+    )
+
+    await fs.mkdir(path.dirname(sourceReference), { recursive: true })
+    await fs.writeFile(sourceCommand, "# work\n")
+    await fs.writeFile(sourceReference, "# Execution Agent Prompt Template\n")
+
+    const bundle: OpenCodeBundle = {
+      config: { $schema: "https://opencode.ai/config.json" },
+      agents: [],
+      commandFiles: [
+        {
+          name: "workflows:work",
+          content: "Use the installed references.",
+          sourcePath: sourceCommand,
+        },
+      ],
+      plugins: [],
+      skillDirs: [],
+    }
+
+    await writeOpenCodeBundle(tempRoot, bundle)
+
+    expect(
+      await exists(
+        path.join(
+          tempRoot,
+          ".opencode",
+          "commands",
+          "workflows",
+          "references",
+          "execution-agent-prompt.md",
+        ),
+      ),
+    ).toBe(true)
+  })
+
   test("backs up existing opencode.json before overwriting", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "opencode-backup-"))
     const outputRoot = path.join(tempRoot, ".opencode")

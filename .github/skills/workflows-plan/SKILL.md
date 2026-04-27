@@ -237,7 +237,14 @@ First, I need to understand the project's conventions, existing patterns, and an
 
 Run these agents **in parallel** to gather local context:
 
-Before dispatching any named agent below, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+Before dispatching any named agent below, complete this protocol:
+1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.
+2. If the bundled template exists, use the file-read tool to load the full template.
+3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent "<agent-name>"`.
+4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.
+5. Include the loaded template's rules in the delegated prompt.
+6. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch the agent.
+Never dispatch a named agent by name alone.
 
 - Use the repo-research-analyst skill to: feature_description
 - Use the learnings-researcher skill to: feature_description
@@ -270,7 +277,14 @@ Examples:
 
 Run these agents in parallel:
 
-Before dispatching any named research agent below, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+Before dispatching any named research agent below, complete this protocol:
+1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.
+2. If the bundled template exists, use the file-read tool to load the full template.
+3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent "<agent-name>"`.
+4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.
+5. Include the loaded template's rules in the delegated prompt.
+6. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch the agent.
+Never dispatch a named agent by name alone.
 
 - Use the best-practices-researcher skill to: feature_description
 - Use the framework-docs-researcher skill to: feature_description
@@ -368,7 +382,7 @@ This structured format enables the `/workflows-work` orchestrator to delegate ea
 
 After planning the issue structure, run SpecFlow Analyzer to validate the feature specification **against the user story and success criteria**:
 
-Before dispatching `spec-flow-analyzer`, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "spec-flow-analyzer"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+Apply the same named-agent dispatch protocol above to `spec-flow-analyzer`. OpenViking/global context is a last-resort fallback only after bundled template lookup fails. Do not dispatch unless you can quote the first non-empty line of the loaded template.
 
 - Use the spec-flow-analyzer skill to: feature_description, user_story, success_criteria, research_findings
 

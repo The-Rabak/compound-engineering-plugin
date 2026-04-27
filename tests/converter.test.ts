@@ -286,6 +286,46 @@ describe("convertClaudeToOpenCode", () => {
     expect(agentFile!.content).toContain("~/.config/opencode/agents/security-sentinel.md")
     expect(agentFile!.content).toContain(".opencode/plugins/converted-hooks.ts")
   })
+
+  test("rewrites bundled agent-template instructions to OpenCode paths", () => {
+    const result = transformContentForOpenCode(
+      "Before dispatching any named review agent below, complete this protocol:\n1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.\n2. If the bundled template exists, use the file-read tool to load the full template.\n3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent \"<agent-name>\"`.\n4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.\n",
+    )
+
+    expect(result).toContain("`glob` with `paths` set to `.opencode/agents`")
+    expect(result).toContain("`~/.config/opencode/agents`")
+    expect(result).toContain("use `read` to load the full file")
+  })
+
+  test("rewrites command reference template instructions to OpenCode paths", () => {
+    const result = transformContentForOpenCode(
+      "Before building `scoped_prompt`, complete this template-load protocol for `execution-agent-prompt.md`:\n1. Use the platform's file-search tool against the command reference directory to look for `execution-agent-prompt.md`. Search the directory, not a full path embedded in the pattern argument.\n2. Use the file-read tool to load the full template.\n3. Before continuing, quote the first non-empty line of the loaded template and record which file you used.\n",
+    )
+
+    expect(result).toContain("`.opencode/commands/workflows/references`")
+    expect(result).toContain("`~/.config/opencode/commands/workflows/references`")
+    expect(result).toContain("Use `read` to load the full template.")
+  })
+
+  test("rewrites Task tool pseudocode to explicit OpenCode task-tool instructions", () => {
+    const result = transformContentForOpenCode(
+      'Task security-sentinel(branch diff content + WHY context block)\nTask {agent-name}(branch diff content)\n- Task repo-research-analyst("Understand this area. Report: (1) existing patterns, (2) touched modules.")\n- Task read-and-extract(plan_file_paths) -> Read each `.md` file, extract structure (title, problem statement, approach).',
+    )
+
+    expect(result).toContain(
+      "Use the Task tool to invoke the security-sentinel subagent with this prompt: branch diff content + WHY context block",
+    )
+    expect(result).toContain(
+      "Use the Task tool to invoke the {agent-name} subagent with this prompt: branch diff content",
+    )
+    expect(result).toContain(
+      '- Use the Task tool to invoke the repo-research-analyst subagent with this prompt: "Understand this area. Report: (1) existing patterns, (2) touched modules."',
+    )
+    expect(result).toContain(
+      "- Use the Task tool to invoke the read-and-extract subagent with this prompt: plan_file_paths -> Read each `.md` file, extract structure (title, problem statement, approach).",
+    )
+    expect(result).not.toContain("Task security-sentinel(")
+  })
 })
 
 describe("convertClaudeToCopilot", () => {

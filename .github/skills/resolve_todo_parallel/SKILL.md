@@ -24,6 +24,8 @@ Create a TodoWrite list of all unresolved items grouped by type.Make sure to loo
 
 Spawn a pr-comment-resolver agent for each unresolved item in parallel.
 
+Before dispatching `pr-comment-resolver`, use the platform's file-search tool against the bundled agent directory to look for `pr-comment-resolver.md`, then use the file-read tool to load the full template. Only if the bundled template cannot be loaded should you fall back to `ov_load_global_agent "pr-comment-resolver"`. Before dispatching, quote the first non-empty line of the loaded template and record the source used. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch. Never dispatch a named agent by name alone.
+
 So if there are 3 comments, it will spawn 3 pr-comment-resolver agents in parallel. liek this
 
 1. Task pr-comment-resolver(comment1)

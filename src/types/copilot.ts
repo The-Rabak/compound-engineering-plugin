@@ -6,6 +6,7 @@ export type CopilotAgent = {
 export type CopilotGeneratedSkill = {
   name: string
   content: string
+  sourcePath?: string
 }
 
 export type CopilotSkillDir = {

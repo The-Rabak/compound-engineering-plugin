@@ -2,6 +2,7 @@ import { defineCommand } from "citty"
 import { promises as fs } from "fs"
 import os from "os"
 import path from "path"
+import { convertClaudeToCopilot } from "../converters/claude-to-copilot"
 import { loadPortablePlugin } from "../parsers/portable"
 import type { PortablePlugin } from "../types/portable"
 import { pathExists, walkFiles } from "../utils/files"
@@ -16,10 +17,16 @@ type SkillSupportResource = {
   targetUri: string
 }
 
+type GeneratedCommandSkill = {
+  name: string
+  sourcePath: string
+  commandSourcePath?: string
+}
+
 export default defineCommand({
   meta: {
     name: "sync-ov",
-    description: "Sync portable agents and skills into the OpenViking global index",
+    description: "Sync portable agents, skills, and commands into the OpenViking global index",
   },
   args: {
     source: {
@@ -38,12 +45,15 @@ export default defineCommand({
     const ovCorePath = resolveTargetHome(args.ovCore ?? process.env.OV_CORE_PATH, DEFAULT_OV_CORE)
     await assertReadableFile(ovCorePath, "OpenViking core script")
 
-    const supportFiles = await collectSkillSupportResources(plugin)
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "compound-plugin-sync-ov-"))
     const scriptPath = path.join(tempRoot, "sync-ov.sh")
+    const generatedCommandSkills = await generateCommandSkills(plugin, tempRoot)
+    const skillSupportFiles = await collectSkillSupportResources(plugin)
+    const commandSupportFiles = await collectCommandSupportResources(generatedCommandSkills)
+    const supportFiles = [...skillSupportFiles, ...commandSupportFiles]
 
     try {
-      await fs.writeFile(scriptPath, buildSyncScript(ovCorePath, plugin, supportFiles), "utf8")
+      await fs.writeFile(scriptPath, buildSyncScript(ovCorePath, plugin, supportFiles, generatedCommandSkills), "utf8")
 
       const proc = Bun.spawn(["bash", scriptPath], {
         cwd: plugin.root,
@@ -74,8 +84,9 @@ export default defineCommand({
     }
 
     console.log(
-      `Synced ${plugin.agents.length} agents, ${plugin.skills.length} skills, and ` +
-        `${supportFiles.length} skill support files to the OpenViking global index.`,
+      `Synced ${plugin.agents.length} agents, ${plugin.skills.length} skills, ` +
+        `${generatedCommandSkills.length} commands, and ${supportFiles.length} skill support files ` +
+        `to the OpenViking global index.`,
     )
   },
 })
@@ -106,6 +117,32 @@ async function collectSkillSupportResources(plugin: PortablePlugin): Promise<Ski
   return resourcesBySkill.flat()
 }
 
+async function collectCommandSupportResources(
+  generatedCommandSkills: GeneratedCommandSkill[],
+): Promise<SkillSupportResource[]> {
+  const resources: SkillSupportResource[] = []
+
+  for (const skill of generatedCommandSkills) {
+    if (!skill.commandSourcePath) continue
+
+    const referencesDir = path.join(path.dirname(skill.commandSourcePath), "references")
+    if (!(await pathExists(referencesDir))) continue
+
+    const files = await walkFiles(referencesDir)
+    for (const file of files) {
+      const relativePath = path.relative(path.dirname(skill.commandSourcePath), file)
+      assertRelativePath(relativePath, file)
+      resources.push({
+        sourcePath: file,
+        parentUri: buildSkillParentUri(skill.name, path.dirname(relativePath)),
+        targetUri: buildSkillTargetUri(skill.name, relativePath),
+      })
+    }
+  }
+
+  return resources
+}
+
 function buildSkillParentUri(skillName: string, relativeDir: string): string {
   const baseUri = `${GLOBAL_SKILLS_URI}/${skillName}`
   if (!relativeDir || relativeDir === ".") return baseUri
@@ -120,6 +157,7 @@ function buildSyncScript(
   ovCorePath: string,
   plugin: PortablePlugin,
   supportFiles: SkillSupportResource[],
+  generatedCommandSkills: GeneratedCommandSkill[],
 ): string {
   const lines = [
     "#!/usr/bin/env bash",
@@ -184,6 +222,13 @@ function buildSyncScript(
     )
   }
 
+  for (const command of generatedCommandSkills) {
+    assertNamespaceSegment(command.name, "command")
+    lines.push(
+      `register_global_fast ${shellEscape(command.name)} ${shellEscape(command.sourcePath)} "\${OV_GLOBAL_SKILLS_DIR:-}" "\${OV_GLOBAL_SKILLS_URI:-}" ov_register_global_skill`,
+    )
+  }
+
   for (const resource of supportFiles) {
     lines.push(
       `mirror_skill_support_file ${shellEscape(resource.sourcePath)} ${shellEscape(resource.parentUri)} ${shellEscape(resource.targetUri)}`,
@@ -196,6 +241,33 @@ function buildSyncScript(
   lines.push("fi")
 
   return lines.join("\n") + "\n"
+}
+
+async function generateCommandSkills(
+  plugin: PortablePlugin,
+  tempRoot: string,
+): Promise<GeneratedCommandSkill[]> {
+  const bundle = convertClaudeToCopilot(plugin, {
+    agentMode: "subagent",
+    inferTemperature: false,
+    permissions: "none",
+  })
+  const outputDir = path.join(tempRoot, "generated-command-skills")
+  await fs.mkdir(outputDir, { recursive: true })
+
+  const generated: GeneratedCommandSkill[] = []
+  for (const skill of bundle.generatedSkills) {
+    assertNamespaceSegment(skill.name, "command")
+    const targetPath = path.join(outputDir, `${skill.name}.md`)
+    await fs.writeFile(targetPath, skill.content, "utf8")
+    generated.push({
+      name: skill.name,
+      sourcePath: targetPath,
+      commandSourcePath: skill.sourcePath,
+    })
+  }
+
+  return generated.sort((left, right) => left.name.localeCompare(right.name))
 }
 
 function assertNamespaceSegment(value: string, label: string): void {

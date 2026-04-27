@@ -132,7 +132,7 @@ function convertCommands(commands: ClaudeCommand[]): OpenCodeCommandFile[] {
       frontmatter.model = normalizeModel(model)
     }
     const content = formatFrontmatter(frontmatter, transformContentForOpenCode(command.body))
-    files.push({ name: command.name, content })
+    files.push({ name: command.name, content, sourcePath: command.sourcePath })
   }
   return files
 }
@@ -255,17 +255,150 @@ function renderHookStatements(
 }
 
 export function transformContentForOpenCode(body: string): string {
+  return transformTaskCallsForOpenCode(
+    body
+      .replace(
+        /use the platform's file-search tool against the bundled agent directory to look for `([<a-z0-9-]+)\.md`, then use the file-read tool to load the full template\./g,
+        (_match, agentName: string) =>
+          "use `glob` with `paths` set to `.opencode/agents` and `pattern` set to `" +
+          agentName +
+          ".md`. Do not pass a full path as the `pattern`. If nothing matches, run `glob` again with `paths` set to `~/.config/opencode/agents` and the same `pattern`, then use `read` to load the full template from the matched file.",
+      )
+      .replace(
+        /Only if the bundled template cannot be loaded should you fall back to `ov_load_global_agent "([<a-z0-9-]+)"`\./g,
+        (_match, agentName: string) =>
+          `Only if neither file can be loaded should you fall back to \`ov_load_global_agent "${agentName}"\`.`,
+      )
+      .replace(
+        /If the bundled template exists, use the file-read tool to load the full template\./g,
+        "If either `glob` call returns a match, use `read` to load the full file.",
+      )
+      .replace(
+        /Before dispatching, quote the first non-empty line of the loaded template and record the source used\./g,
+        "Before dispatching, quote the first non-empty line of the loaded template and record whether it came from `.opencode/agents`, `~/.config/opencode/agents`, or OpenViking/global context.",
+      )
+      .replace(
+        /If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch\./g,
+        "If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch.",
+      )
+      .replace(
+        /Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>\.md`\. Search the directory, not a full path embedded in the pattern argument\./g,
+        "Use `glob` with `paths` set to `.opencode/agents` and `pattern` set to `<agent-name>.md`. Do not pass a full path as the `pattern`. If nothing matches, run `glob` again with `paths` set to `~/.config/opencode/agents` and the same `pattern`.",
+      )
+      .replace(
+        /Only if no bundled template can be loaded, fall back to OpenViking\/global context with `ov_load_global_agent "<agent-name>"`\./g,
+        "Only if neither file can be loaded should you fall back to `ov_load_global_agent \"<agent-name>\"`.",
+      )
+      .replace(
+        /Before dispatching, quote the first non-empty line of the loaded template and record which source you used\./g,
+        "Before dispatching, quote the first non-empty line of the loaded template and record whether it came from `.opencode/agents`, `~/.config/opencode/agents`, or OpenViking/global context.",
+      )
+      .replace(
+        /Use the platform's file-search tool against the command reference directory to look for `([a-z-]+-prompt\.md)`\. Search the directory, not a full path embedded in the pattern argument\./g,
+        (_match, fileName: string) =>
+          `Use \`glob\` with \`paths\` set to \`.opencode/commands/workflows/references\` and \`pattern\` set to \`${fileName}\`. Do not pass a full path as the \`pattern\`. If nothing matches, run \`glob\` again with \`paths\` set to \`~/.config/opencode/commands/workflows/references\` and the same \`pattern\`.`,
+      )
+      .replace(
+        /Use the file-read tool to load the full template\./g,
+        "Use `read` to load the full template.",
+      )
+      .replace(
+        /Before continuing, quote the first non-empty line of the loaded template and record which file you used\./g,
+        "Before continuing, quote the first non-empty line of the loaded template and record whether it came from `.opencode/commands/workflows/references` or `~/.config/opencode/commands/workflows/references`.",
+      )
+      .replace(
+        /Read its bundled template from `portable\/compound-engineering\/agents\/<agent-name>\.md` when present\./g,
+        "Check for a project override at `.opencode/agents/<agent-name>.md` first, then read the installed global template at `~/.config/opencode/agents/<agent-name>.md`.",
+      )
+      .replace(
+        /first read `portable\/compound-engineering\/agents\/([a-z0-9-]+)\.md` when present\./g,
+        (_match, agentName: string) =>
+          `first check for a project override at \`.opencode/agents/${agentName}.md\`, then read the installed global template at \`~/.config/opencode/agents/${agentName}.md\`.`,
+      )
+      .replace(
+        /from `portable\/compound-engineering\/agents\/([a-z0-9-]+)\.md`/g,
+        (_match, agentName: string) =>
+          `from \`.opencode/agents/${agentName}.md\` (project override) or \`~/.config/opencode/agents/${agentName}.md\` (global install)`,
+      )
+      .replace(
+        /portable\/compound-engineering\/agents\/<agent-name>\.md/g,
+        ".opencode/agents/<agent-name>.md or ~/.config/opencode/agents/<agent-name>.md",
+      )
+      .replace(
+        /`commands\/workflows\/references\/([a-z-]+-prompt\.md)`/g,
+        (_match, fileName: string) =>
+          "`.opencode/commands/workflows/references/" +
+          fileName +
+          "` (project override) or `~/.config/opencode/commands/workflows/references/" +
+          fileName +
+          "` (global install)",
+      )
+      .replace(/~\/\.claude\/agents\//g, "~/.config/opencode/agents/")
+      .replace(/~\/\.claude\/commands\//g, "~/.config/opencode/commands/")
+      .replace(/~\/\.claude\/skills\//g, "~/.config/opencode/skills/")
+      .replace(/~\/\.claude\/plugins\//g, "~/.config/opencode/plugins/")
+      .replace(/~\/\.claude\//g, "~/.config/opencode/")
+      .replace(/\.claude\/agents\//g, ".opencode/agents/")
+      .replace(/\.claude\/commands\//g, ".opencode/commands/")
+      .replace(/\.claude\/skills\//g, ".opencode/skills/")
+      .replace(/\.claude\/plugins\//g, ".opencode/plugins/")
+      .replace(/\.claude\//g, ".opencode/"),
+  )
+}
+
+function transformTaskCallsForOpenCode(body: string): string {
   return body
-    .replace(/~\/\.claude\/agents\//g, "~/.config/opencode/agents/")
-    .replace(/~\/\.claude\/commands\//g, "~/.config/opencode/commands/")
-    .replace(/~\/\.claude\/skills\//g, "~/.config/opencode/skills/")
-    .replace(/~\/\.claude\/plugins\//g, "~/.config/opencode/plugins/")
-    .replace(/~\/\.claude\//g, "~/.config/opencode/")
-    .replace(/\.claude\/agents\//g, ".opencode/agents/")
-    .replace(/\.claude\/commands\//g, ".opencode/commands/")
-    .replace(/\.claude\/skills\//g, ".opencode/skills/")
-    .replace(/\.claude\/plugins\//g, ".opencode/plugins/")
-    .replace(/\.claude\//g, ".opencode/")
+    .split("\n")
+    .map((line) => {
+      const match = line.match(/Task\s+([a-z{][a-z0-9{}_-]*)\(/)
+      if (!match || match.index === undefined) return line
+
+      const agentName = match[1]
+      const argsStart = match.index + match[0].length
+      const closingParen = findClosingParen(line, argsStart - 1)
+      if (closingParen === -1) return line
+
+      const args = line.slice(argsStart, closingParen).trim()
+      const replacement = `Use the Task tool to invoke the ${agentName} subagent with this prompt: ${args}`
+      return line.slice(0, match.index) + replacement + line.slice(closingParen + 1)
+    })
+    .join("\n")
+}
+
+function findClosingParen(line: string, openingParenIndex: number): number {
+  let depth = 0
+  let quote: '"' | "'" | null = null
+
+  for (let index = openingParenIndex; index < line.length; index += 1) {
+    const char = line[index]
+    const previous = index > 0 ? line[index - 1] : ""
+
+    if (quote) {
+      if (char === quote && previous !== "\\") {
+        quote = null
+      }
+      continue
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char
+      continue
+    }
+
+    if (char === "(") {
+      depth += 1
+      continue
+    }
+
+    if (char === ")") {
+      depth -= 1
+      if (depth === 0) {
+        return index
+      }
+    }
+  }
+
+  return -1
 }
 
 // Bare Claude family aliases used in Claude Code (e.g. `model: haiku`).
