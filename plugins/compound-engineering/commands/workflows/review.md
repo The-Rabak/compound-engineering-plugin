@@ -94,11 +94,21 @@ If a plan file is found, read it and extract:
 - **Architectural Context** — how the solution fits in the system
 - **Success Criteria** — measurable conditions that define "done"
 - **brainstorm_ref** — path to brainstorm document, if available
+- **architecture_ref / Related Artifacts** — pointer to the architecture artifact or handoff document, if available
 - **constitution_version** / **constitution_waivers** — what repo-wide rules apply and which exceptions were explicitly approved
 
-ALWAYS READ ARCHITECTURE AND README FILES FOR CONTEXT — they often contain critical information about architectural intent, constraints, and domain knowledge that is not in the plan.
+If an `architecture_ref` or matching `docs/architecture/*.md` artifact exists, read it and extract:
+- Deepening Candidates
+- Deletion Test decisions
+- Interfaces as test surfaces
+- Seams, Adapters, and Contracts
+- Recommendations for `/workflows:review`
 
-If a STATE.md execution session exists, also read its WHY Context section.
+If no architecture artifact exists, build an explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and STATE.md notes. Do not review architecture implicitly.
+
+ALWAYS READ THE ARCHITECTURE ARTIFACT (or explicit handoff contract) AND README FILES FOR CONTEXT — they often contain critical information about architectural intent, constraints, and domain knowledge that is not in the plan.
+
+If a STATE.md execution session exists, also read its WHY Context and Architecture Handoff sections.
 
 If `docs/constitution.md` exists, read it too and extract:
 - core principles
@@ -121,11 +131,25 @@ WHY CONTEXT FOR REVIEWERS:
 - User Story: [user story]  
 - Success Criteria: [list]
 - Architectural Intent: [arch context summary]
+- Architecture Artifact: [docs/architecture/... path or none]
+- Architecture Handoff: [deletion-test decisions, interfaces as test surfaces, seams/adapters/contracts, and drift checks the implementation must honor]
 - Constitution Version: [version or none]
 - Constitution Guardrails: [relevant principles, review baselines, approvals, waivers]
 ```
 
 This context is passed to EVERY review agent below. It is not optional.
+
+#### TDD Evidence Gate (BEFORE reviewer dispatch)
+
+If a `docs/execution-sessions/work-*/STATE.md` file exists for this branch, read the completed task session files before dispatching review agents and build a terse evidence ledger.
+
+Apply `commands/workflows/references/tdd-evidence-contract.md` as the source of truth for the Ralph evidence block and review-gate classifications. Verify the plan's approved exception contract instead of improvising replacement evidence rules.
+
+Classify gate failures explicitly:
+- **Missing behavior coverage** — treat as a spec blocker.
+- **Missing cleanup after refactor** — treat as a quality failure, escalating to blocker when behavior may have changed without a rerun.
+
+Keep the gate output terse and evidence-based. If the gate fails, carry that failure into the final summary even if no reviewer agent finds anything else.
 
 #### Protected Artifacts
 
@@ -133,6 +157,7 @@ This context is passed to EVERY review agent below. It is not optional.
 The following paths are compound-engineering pipeline artifacts and must never be flagged for deletion, removal, or gitignore by any review agent:
 
 - `docs/plans/*.md` — Plan files created by `/workflows:plan`. These are living documents that track implementation progress (checkboxes are checked off by `/workflows:work`).
+- `docs/architecture/*.md` — Architecture improvement artifacts and handoff contracts created or referenced between planning, deepening, execution, and review.
 - `docs/solutions/*.md` — Solution documents created during the pipeline.
 
 If a review agent flags any file in these directories for cleanup or removal, discard that finding during synthesis. Do not create a todo for it.
@@ -150,20 +175,15 @@ If no settings file exists, invoke the `setup` skill to create one. Then read th
 
 Run all configured review agents in parallel using Task tool. For each agent in the `review_agents` list:
 
-Before dispatching any named review agent below, complete this protocol:
-1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.
-2. If the bundled template exists, use the file-read tool to load the full template.
-3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent "<agent-name>"`.
-4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.
-5. Include the loaded template's rules in the delegated prompt.
-6. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch the agent.
-Never dispatch a named agent by name alone.
+Before dispatching any named review agent below, apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md`.
+
+##### CRITICAL: You must always pass the full agent template to the task tool, no questions asked, no summarizing or abbreviating the templates is allowed.
 
 ```
 Task {agent-name}(branch diff content + review context from settings body + WHY context block)
 ```
 
-**Every agent prompt MUST include the WHY context block** from the step above. This ensures agents evaluate fitness-for-purpose, not just technical quality. After loading the template, dispatch each reviewer with a prompt like:
+**Every agent prompt MUST include the WHY context block and architecture handoff block** from the step above. This ensures agents evaluate fitness-for-purpose, not just technical quality. After loading the template, dispatch each reviewer with a prompt like:
 
 ```
 Review this branch diff for security issues.
@@ -173,6 +193,8 @@ WHY CONTEXT FOR REVIEWERS:
 - User Story: [user story]
 - Success Criteria: [criteria list]
 - Architectural Intent: [arch context]
+- Architecture Artifact: [artifact path or "plan-derived handoff"]
+- Architecture Handoff: [deletion test, interfaces, seams/adapters/contracts, review checks]
 
 When reporting findings, note whether each finding:
 (a) THREATENS the user story or success criteria (highest priority)
@@ -195,7 +217,7 @@ Additionally, always run these regardless of settings:
 
 These agents are run ONLY when the branch changes match specific criteria. Check the changed files list to determine if they apply. **Pass the WHY context block to all conditional agents as well.**
 
-Apply the same template-loading rule to every named conditional agent below. Never dispatch them by name alone.
+Apply the same shared `Named Agent Dispatch` protocol to every named conditional agent below. Never dispatch them by name alone.
 
 **MIGRATIONS: If PR contains database migrations or data backfills:**
 
@@ -298,6 +320,7 @@ Complete system context map with component interactions
 - **Success criteria coverage**: Which criteria are met, partially met, or unmet?
 - **Scope containment**: Was anything built beyond what the user story requires?
 - **Architectural fidelity**: Does implementation match the planned architecture, or has it drifted?
+- **Architecture handoff fidelity**: Does implementation honor the artifact or explicit handoff decisions about deletion test, interfaces, seams, adapters, and contracts?
 
 #### Risk Management Angle
 
@@ -316,7 +339,7 @@ Complete system context map with component interactions
 
 ### 4. Simplification and Minimalism Review
 
-Apply the same protocol above to `code-simplicity-reviewer`, then dispatch it to see if the code can be simplified. If the template cannot be quoted from a loaded source, stop and report that gap instead of dispatching blindly.
+Apply the shared `Named Agent Dispatch` protocol above to `code-simplicity-reviewer`, then dispatch it to see if the code can be simplified. If the template cannot be quoted from a loaded source, stop and report that gap instead of dispatching blindly.
 
 ### 5. Findings Synthesis and Todo Creation Using file-todos Skill
 
@@ -492,6 +515,12 @@ After creating all todo files, present comprehensive summary:
 
 **User Story:** [user story from plan]
 **Delivery Status:** ✅ DELIVERS / ⚠️ PARTIALLY DELIVERS / ❌ DOES NOT DELIVER
+**Architecture Basis:** [docs/architecture/... path or "plan-derived handoff contract"]
+
+### TDD Evidence Gate
+
+- **Behavior coverage:** PASS / FAIL — [task/session refs with weak or missing `Red`/`Green` evidence]
+- **Cleanup after refactor:** PASS / FAIL — [task/session refs with weak or missing `Post-Refactor Green` evidence]
 
 [If PARTIALLY or NO:]
 **Gaps:**
@@ -547,7 +576,7 @@ After creating all todo files, present comprehensive summary:
    - Implement fixes or request exemption
    - Verify fixes before merging PR
 
-2. **Review Drift Risk Findings**: These require your decision — they suggest changes that would alter what the feature delivers. Accept, reject, or modify each one.
+2. **Review Drift Risk Findings**: These require your decision — they suggest changes that would alter what the feature delivers. Accept, reject, or modify each one. If the drift is architectural, update the architecture artifact or explicit handoff contract before more implementation proceeds.
 
 3. **Triage All Todos**:
    ```bash
@@ -605,6 +634,10 @@ The subagent will:
 ### Important: P1 Findings and User Story Delivery Block Merge
 
 Any **🔴 P1 (CRITICAL)** findings must be addressed before merging. Additionally, if the User Story Delivery Assessment is **❌ DOES NOT DELIVER**, the branch should not be merged regardless of P1 count — the code doesn't solve the stated problem.
+
+Any **Missing behavior coverage** TDD gate failure should be treated as merge-blocking even if the implementation currently appears to work; review requires proof, not claims.
+
+Any **Missing cleanup after refactor** TDD gate failure should block merge when cleanup/refactor happened without a trustworthy post-refactor rerun. Otherwise keep it as an important quality finding until the rerun evidence is repaired.
 
 Any unwaived **🏛️ CONSTITUTION VIOLATION** findings should also block merge until the code is fixed, the waiver is explicitly approved, or the constitution is amended.
 

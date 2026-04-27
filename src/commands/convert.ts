@@ -2,7 +2,13 @@ import { defineCommand } from "citty"
 import os from "os"
 import path from "path"
 import { loadPluginForTargetConversion } from "../parsers/conversion-source"
-import { targets } from "../targets"
+import {
+  convertInstallTargetHelp,
+  extraCompatibilityTargetHelp,
+  getDeEmphasizedTargetNamesForSurface,
+  getSurfaceTargetNotice,
+  resolveTargetHandler,
+} from "../targets"
 import type { PermissionMode } from "../converters/claude-to-opencode"
 import { ensureCodexAgentsFile } from "../utils/codex-agents"
 import { expandHome, resolveTargetHome } from "../utils/resolve-home"
@@ -12,7 +18,7 @@ const permissionModes: PermissionMode[] = ["none", "broad", "from-commands"]
 export default defineCommand({
   meta: {
     name: "convert",
-    description: "Convert a Claude Code plugin into another format",
+    description: "Convert plugin sources for the OpenCode-first support matrix",
   },
   args: {
     source: {
@@ -23,7 +29,7 @@ export default defineCommand({
     to: {
       type: "string",
       default: "opencode",
-      description: "Target format (opencode | codex | droid | cursor | pi | copilot | gemini | kiro)",
+      description: convertInstallTargetHelp,
     },
     output: {
       type: "string",
@@ -42,7 +48,7 @@ export default defineCommand({
     },
     also: {
       type: "string",
-      description: "Comma-separated extra targets to generate (ex: codex)",
+      description: extraCompatibilityTargetHelp,
     },
     permissions: {
       type: "string",
@@ -62,14 +68,8 @@ export default defineCommand({
   },
   async run({ args }) {
     const targetName = String(args.to)
-    const target = targets[targetName]
-    if (!target) {
-      throw new Error(`Unknown target: ${targetName}`)
-    }
-
-    if (!target.implemented) {
-      throw new Error(`Target ${targetName} is registered but not implemented yet.`)
-    }
+    const target = resolveTargetHandler(targetName, "convert")
+    warnIfDeEmphasizedTarget(targetName)
 
     const permissions = String(args.permissions)
     if (!permissionModes.includes(permissions as PermissionMode)) {
@@ -96,18 +96,11 @@ export default defineCommand({
     await target.write(primaryOutputRoot, bundle)
     console.log(`Converted ${plugin.manifest.name} to ${targetName} at ${primaryOutputRoot}`)
 
-    const extraTargets = parseExtraTargets(args.also)
+    const extraTargets = parseExtraTargets(args.also, targetName)
     const allTargets = [targetName, ...extraTargets]
     for (const extra of extraTargets) {
-      const handler = targets[extra]
-      if (!handler) {
-        console.warn(`Skipping unknown target: ${extra}`)
-        continue
-      }
-      if (!handler.implemented) {
-        console.warn(`Skipping ${extra}: not implemented yet.`)
-        continue
-      }
+      const handler = resolveTargetHandler(extra, "convert")
+      warnIfDeEmphasizedTarget(extra)
       const extraBundle = handler.convert(plugin, options)
       if (!extraBundle) {
         console.warn(`Skipping ${extra}: no output returned.`)
@@ -124,12 +117,31 @@ export default defineCommand({
   },
 })
 
-function parseExtraTargets(value: unknown): string[] {
+function parseExtraTargets(value: unknown, primaryTarget?: string): string[] {
   if (!value) return []
-  return String(value)
+
+  const allowedTargets = new Set(getDeEmphasizedTargetNamesForSurface("convert"))
+  const parsedTargets: string[] = []
+
+  for (const entry of String(value)
     .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean)
+    .map((targetName) => targetName.trim())
+    .filter(Boolean)) {
+    if (entry === primaryTarget || parsedTargets.includes(entry)) {
+      continue
+    }
+
+    if (!allowedTargets.has(entry)) {
+      console.warn(
+        `Skipping ${entry}: --also only supports de-emphasized compatibility targets (${[...allowedTargets].join(", ")}).`,
+      )
+      continue
+    }
+
+    parsedTargets.push(entry)
+  }
+
+  return parsedTargets
 }
 
 function resolveOutputRoot(value: unknown): string {
@@ -144,8 +156,14 @@ function resolveTargetOutputRoot(targetName: string, outputRoot: string, codexHo
   if (targetName === "codex") return codexHome
   if (targetName === "pi") return piHome
   if (targetName === "droid") return path.join(os.homedir(), ".factory")
-  if (targetName === "cursor") return path.join(outputRoot, ".cursor")
   if (targetName === "gemini") return path.join(outputRoot, ".gemini")
   if (targetName === "kiro") return path.join(outputRoot, ".kiro")
   return outputRoot
+}
+
+function warnIfDeEmphasizedTarget(targetName: string): void {
+  const notice = getSurfaceTargetNotice(targetName, "convert")
+  if (notice) {
+    console.warn(`[support-tier] ${notice}`)
+  }
 }

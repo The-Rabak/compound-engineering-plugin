@@ -8,14 +8,13 @@ description: Full autonomous engineering workflow
 
 Run these slash commands in order. Do not do anything else.
 
-1. `/compound-engineering-ralph-loop "finish all slash commands" --completion-promise "DONE"`
-2. `/workflows-plan $ARGUMENTS`
-3. `/compound-engineering-deepen-plan`
-4. `/workflows-work`
-5. `/workflows-review`
-6. `/compound-engineering-resolve_todo_parallel`
-7. `/compound-engineering-test-browser`
-8. `/compound-engineering-feature-video`
-9. Output `<promise>DONE</promise>` when video is in PR
+1. `/workflows-plan $ARGUMENTS`
+2. `/compound-engineering-deepen-plan`
+3. `/workflows-work` -- this is the default Ralph-driven execution path and should emit red, green, and post-refactor green evidence unless the plan declares an explicit exception
+4. `/workflows-review`
+5. `/compound-engineering-resolve_todo_parallel`
+6. `/compound-engineering-test-browser`
+7. `/compound-engineering-feature-video`
+8. Output `<promise>DONE</promise>` when video is in PR
 
 Start with step 1 now.

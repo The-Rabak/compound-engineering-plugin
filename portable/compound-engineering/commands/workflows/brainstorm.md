@@ -8,7 +8,7 @@ argument-hint: '[feature idea or problem to explore]'
 
 **Note: The current year is 2026.** Use this when dating brainstorm documents.
 
-Brainstorming answers **WHY** we're building something and **WHAT** it is. It produces the lynchpin artifacts -- a problem narrative, user story, and architectural context -- that thread through every downstream phase (`/workflows:plan` -> `/deepen-plan` -> `/workflows:work` -> `/workflows:review`).
+Brainstorming answers **WHY** we're building something and **WHAT** it is. It produces the lynchpin artifacts -- a problem narrative, user story, and architectural context -- that thread through every downstream phase (`/workflows:plan` -> `/workflows:architecture` -> `/deepen-plan` -> `/workflows:work` -> `/workflows:review`).
 
 When `docs/constitution.md` exists, brainstorming must work **within** that project-level constitution. The brainstorm can propose a constitution amendment when a durable repo-wide rule needs to change, but it must not silently override project baselines.
 
@@ -241,7 +241,7 @@ Use **AskUserQuestion tool** to present next steps:
 
 **Options:**
 1. **Review and refine** - Improve the document through structured self-review
-2. **Proceed to planning** - Run `/workflows:plan` (will auto-detect this brainstorm and use its lynchpin artifacts)
+2. **Proceed to planning** - Run `/workflows:plan` (will auto-detect this brainstorm, then route through `/workflows:architecture` before `/deepen-plan`)
 3. **Ask more questions** - I have more questions to clarify before moving on
 4. **Done for now** - Return later
 
@@ -253,7 +253,7 @@ Load the `document-review` skill and apply it to the brainstorm document.
 
 When document-review returns "Review complete", present next steps:
 
-1. **Move to planning** - Continue to `/workflows:plan` with this document
+1. **Move to planning** - Continue to `/workflows:plan` with this document, then use `/workflows:architecture` as the supported next handoff before deepening
 2. **Done for now** - Brainstorming complete. To start planning later: `/workflows:plan [document-path]`
 
 ## Output Summary
@@ -273,9 +273,11 @@ Key decisions:
 - [Decision 1]
 - [Decision 2]
 
-Next: Run `/workflows:plan` when ready to implement.
+Next: Run `/workflows:plan`, then `/workflows:architecture` before
+`/deepen-plan` or `/workflows:work`.
 The plan will use this brainstorm's user story and architectural context
-as its foundation.
+as its foundation, and the architecture phase will turn that into an
+explicit downstream handoff.
 ```
 
 ## Important Guidelines
@@ -291,8 +293,9 @@ as its foundation.
 This brainstorm document is consumed alongside the project constitution:
 
 - **`/workflows:plan`** -- Reads user story and architectural context to structure phases, while also checking constitution rules and recording any waivers or amendment proposals.
-- **`/deepen-plan`** -- Uses problem narrative and success criteria to evaluate whether deepened tasks still serve the original intent.
-- **`/workflows:work`** -- Feeds architectural context into each execution agent's `{{ARCHITECTURAL_CONTEXT}}` block, while constitution rules act as guardrails for implementation and approvals.
-- **`/workflows:review`** -- Uses problem narrative, user story, success criteria, and constitution baselines as the frame for evaluating whether the implementation actually solves the stated problem without policy drift.
+- **`/workflows:architecture`** -- Turns the plan into a dedicated architecture artifact that names deepening candidates, deletion tests, interfaces, seams, adapters, and contracts.
+- **`/deepen-plan`** -- Uses the problem narrative, success criteria, and architecture artifact to deepen tasks without losing the original intent.
+- **`/workflows:work`** -- Feeds architectural context plus the architecture artifact into execution so agents do not guess at structural boundaries.
+- **`/workflows:review`** -- Uses problem narrative, user story, success criteria, architecture artifact, and constitution baselines as the frame for evaluating whether the implementation actually solves the stated problem without policy drift.
 
 NEVER CODE! Just explore, understand, and document the WHY, WHAT, and WHERE.

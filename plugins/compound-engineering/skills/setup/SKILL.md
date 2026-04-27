@@ -7,11 +7,11 @@ disable-model-invocation: true
 
 # Compound Engineering Setup
 
-Interactive setup for `compound-engineering.local.md` -- configures which agents run during `/workflows:review` and `/workflows:work`.
+Interactive setup for `compound-engineering.local.md` -- configures which agents run during `/workflows:review` and `/workflows:work`, plus the visible Ralph/TDD defaults that planning and execution inherit.
 
 ## Step 1: Check Existing Config
 
-Read `compound-engineering.local.md` in the project root. If it exists, display current settings summary and use AskUserQuestion:
+Read `compound-engineering.local.md` in the project root. If it exists, display current settings summary (including the TDD contract) and use AskUserQuestion:
 
 ```
 question: "Settings file already exists. What would you like to do?"
@@ -77,7 +77,7 @@ options:
     description: "Choose stack, focus areas, and review depth."
 ```
 
-### If Auto-configure -> Skip to Step 4 with defaults:
+### If Auto-configure -> Skip stack/focus/depth and continue with Step 3d and Step 3e using these defaults:
 
 - **Laravel:** `[rabak-laravel-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
 - **PHP:** `[rabak-laravel-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
@@ -92,9 +92,9 @@ options:
 - **Go:** `[code-simplicity-reviewer, security-sentinel, performance-oracle, architecture-strategist]`
 - **General:** `[code-simplicity-reviewer, security-sentinel, performance-oracle, architecture-strategist]`
 
-### If Customize -> Step 3
+### If Customize -> Step 3 (all questions)
 
-## Step 3: Customize (5 questions)
+## Step 3: Configure Details
 
 **a. Stack** -- confirm or override:
 
@@ -155,16 +155,16 @@ options:
     description: "All above + git history, data integrity, agent-native checks."
 ```
 
-**d. TDD mode:**
+**d. Delivery loop:**
 
 ```
-question: "Enable TDD mode?"
+question: "What should the default delivery loop be for this repo?"
 header: "TDD"
 options:
-  - label: "Disabled (Default)"
-    description: "Standard implementation workflow. Tests optional."
-  - label: "Enabled"
-    description: "Enforces test-first workflow. Agents verify tests exist before implementation proceeds."
+  - label: "Ralph-driven TDD (Recommended)"
+    description: "Failing tests first, minimal implementation second, refactor third, rerun until green and clean. Plans default to unit + e2e evidence unless they record a justified exception."
+  - label: "Standard implementation"
+    description: "Implementation can lead. Plans may still opt into Ralph explicitly, but any weaker test evidence should be recorded in the plan."
 ```
 
 **e. Review mode:**
@@ -205,7 +205,13 @@ options:
 **Plan review agents:** stack-specific reviewer + `code-simplicity-reviewer`.
 
 **Execution settings:**
-- `tdd_enabled`: false (default) or true (enables TDD mode in execution agent template)
+- `tdd_enabled`: compatibility mirror for current execution templates. `true` when `tdd.mode` is `ralph`, otherwise `false`.
+- `tdd.precedence`: `plan_overrides_local` (any concrete plan `tdd` value beats this file; `inherit` falls back here)
+- `tdd.mode`: `ralph` or `standard`
+- `tdd.loop`: `red-green-refactor` or `implementation-first`
+- `tdd.evidence.unit`: `required` or `optional`
+- `tdd.evidence.e2e`: `required` or `optional`
+- `tdd.exceptions`: `[]` by default. Plans must carry any justified exceptions.
 - `review_mode`: "bulk" (default), "inline", or "both" (controls per-task review in workflows:work)
 
 Write `compound-engineering.local.md`:
@@ -214,7 +220,15 @@ Write `compound-engineering.local.md`:
 ---
 review_agents: [{computed agent list}]
 plan_review_agents: [{computed plan agent list}]
-tdd_enabled: false
+tdd_enabled: {true|false}
+tdd:
+  precedence: plan_overrides_local
+  mode: {ralph|standard}
+  loop: {red-green-refactor|implementation-first}
+  evidence:
+    unit: {required|optional}
+    e2e: {required|optional}
+  exceptions: []
 review_mode: bulk
 ---
 
@@ -222,6 +236,12 @@ review_mode: bulk
 
 Add project-specific review instructions here.
 These notes are passed to all review agents during /workflows:review and /workflows:work.
+
+## TDD Defaults
+
+- `tdd` is the visible repo-local default contract for planning and execution.
+- Plan-level `tdd` values override this file for that plan; `inherit` falls back to these defaults.
+- `tdd_enabled` mirrors whether `tdd.mode` is `ralph` until execution templates read the full `tdd` block directly.
 
 Examples:
 - "We use Turbo Frames heavily -- check for frame-busting issues"
@@ -238,7 +258,11 @@ Stack:        {type}
 Review depth: {depth}
 Agents:       {count} configured
               {agent list, one per line}
+TDD default:  {ralph|standard}
+Loop:         {red-green-refactor|implementation-first}
+Evidence:     unit={required|optional}, e2e={required|optional}
+Precedence:   plan `tdd` values override local defaults when set
 
 Tip: Edit the "Review Context" section to add project-specific instructions.
-     Re-run this setup anytime to reconfigure.
+     Re-run this setup anytime to reconfigure review agents or TDD defaults.
 ```

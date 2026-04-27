@@ -16,9 +16,10 @@ Transform feature descriptions, bug reports, or improvement ideas into well-stru
 2. **Map WHERE** -- architectural context grounds task decomposition in the system's structure
 3. **Define DONE** -- success criteria tied to user outcomes, not just technical checkboxes
 4. **Honor project guardrails** -- constitution principles, baselines, and approval rules are made explicit
-5. **Enable downstream execution** -- `/workflows:work` can delegate tasks with full context; `/workflows:review` evaluates against the stated purpose
+5. **Make TDD explicit** -- the plan declares the Ralph/default loop, required unit + e2e evidence, and any justified exceptions
+6. **Enable architecture-first execution** -- `/workflows:architecture` turns the plan into a dedicated architecture artifact before `/deepen-plan`, `/workflows:work`, and `/workflows:review` harden or execute it
 
-Plans consume the project constitution from `/workflows:constitution` when available, plus lynchpin artifacts from `/workflows:brainstorm` when available, or construct feature context fresh when running standalone. Either way, the plan document carries forward the WHY, WHERE, DONE, and GUARDRAIL contract that all downstream phases depend on.
+Plans consume the project constitution from `/workflows:constitution` when available, plus lynchpin artifacts from `/workflows:brainstorm` when available, or construct feature context fresh when running standalone. Either way, the plan document carries forward the WHY, WHERE, DONE, GUARDRAIL, and TDD contract that all downstream phases depend on. After the plan is written, the next explicit step is `/workflows:architecture`, not direct deepening.
 
 ## Feature Description
 
@@ -46,6 +47,29 @@ If `docs/constitution.md` exists:
 4. If the feature appears to conflict with the constitution, ask the user whether this should be:
    - a plan waiver for this feature
    - a constitution amendment to be handled by `/workflows:constitution`
+
+#### TDD Baseline (Runs Before Path A/B/C)
+
+If `compound-engineering.local.md` exists:
+
+1. Read the YAML frontmatter before planning.
+2. Extract the visible local `tdd` contract:
+   - `tdd.precedence`
+   - `tdd.mode`
+   - `tdd.loop`
+   - `tdd.evidence.unit`
+   - `tdd.evidence.e2e`
+   - `tdd.exceptions`
+   - `tdd_enabled` (compatibility mirror only)
+3. Treat these as repo-local defaults, not hidden implementation details.
+
+Every plan must then write its own `tdd:` frontmatter block plus a `## TDD & Evidence Contract` section.
+
+- **Precedence rule:** Plan-level `tdd` values override `compound-engineering.local.md` for that plan.
+- **Fallback rule:** Any plan field set to `inherit` falls back to the local config.
+- **No-local-config fallback:** If there is no local config, default to Ralph-driven `red-green-refactor` with both unit and e2e evidence required.
+- **Exception rule:** Any deviation from the resolved default loop or evidence requirements must be explicit and justified in `tdd.exceptions` and in the plan body.
+- **Shared source of truth:** Reuse `commands/workflows/references/tdd-evidence-contract.md` for contract resolution, the `## TDD & Evidence Contract` section shape, Ralph evidence semantics, and exception handling.
 
 #### Path A: Spec/Plan File Provided
 
@@ -236,14 +260,7 @@ First, I need to understand the project's conventions, existing patterns, and an
 
 Run these agents **in parallel** to gather local context:
 
-Before dispatching any named agent below, complete this protocol:
-1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.
-2. If the bundled template exists, use the file-read tool to load the full template.
-3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent "<agent-name>"`.
-4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.
-5. Include the loaded template's rules in the delegated prompt.
-6. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch the agent.
-Never dispatch a named agent by name alone.
+Before dispatching any named agent below, apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md`.
 
 - Task repo-research-analyst(feature_description)
 - Task learnings-researcher(feature_description)
@@ -276,14 +293,7 @@ Examples:
 
 Run these agents in parallel:
 
-Before dispatching any named research agent below, complete this protocol:
-1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.
-2. If the bundled template exists, use the file-read tool to load the full template.
-3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent "<agent-name>"`.
-4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.
-5. Include the loaded template's rules in the delegated prompt.
-6. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch the agent.
-Never dispatch a named agent by name alone.
+Before dispatching any named research agent below, apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md`.
 
 - Task best-practices-researcher(feature_description)
 - Task framework-docs-researcher(feature_description)
@@ -373,15 +383,24 @@ For plans that will be executed via `/workflows:work`, ensure each implementatio
 - **Files:** List of files to create or modify
 - **Depends on:** Which other tasks must complete first (or "None")
 - **Success criteria:** Testable checkboxes that define "done"
-- **Test command:** The exact command to verify the task is complete
+- **Test command:** The exact command to verify the task is complete. Across the plan, these commands must satisfy the plan-level TDD evidence contract.
 
 This structured format enables the `/workflows:work` orchestrator to delegate each task to a focused subagent with clear scope and termination criteria. Plans without this structure will be flagged for refinement before execution begins.
+
+**TDD & Evidence Contract (mandatory):**
+
+- [ ] Use `commands/workflows/references/tdd-evidence-contract.md` as the single source for contract resolution, the `## TDD & Evidence Contract` section shape, Ralph evidence semantics, and approved exceptions
+- [ ] Add a `tdd:` frontmatter block to every plan
+- [ ] Add a `## TDD & Evidence Contract` section that states the resolved loop and evidence in plain language
+- [ ] Default to Ralph-driven `red-green-refactor` with unit + e2e evidence
+- [ ] If the plan weakens that default (`mode: standard`, `unit: optional`, `e2e: optional`, or similar), record a justified exception with `scope`, `reason`, and `replacement_evidence`
+- [ ] Make it obvious whether each `tdd` field is inherited or plan-specific so downstream phases do not guess
 
 ### 3. SpecFlow Analysis (grounded in user story)
 
 After planning the issue structure, run SpecFlow Analyzer to validate the feature specification **against the user story and success criteria**:
 
-Apply the same named-agent dispatch protocol above to `spec-flow-analyzer`. OpenViking/global context is a last-resort fallback only after bundled template lookup fails. Do not dispatch unless you can quote the first non-empty line of the loaded template.
+Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md` to `spec-flow-analyzer`. Bundled template lookup still comes first, OpenViking/global context is last-resort only, and dispatch is forbidden unless you can quote the first non-empty line of the loaded template.
 
 - Task spec-flow-analyzer(feature_description, user_story, success_criteria, research_findings)
 
@@ -439,6 +458,14 @@ handoff:
   user_story: true
   architectural_context: true
   success_criteria: true
+tdd:
+  precedence: plan_overrides_local
+  mode: inherit # inherit | ralph | standard
+  loop: inherit # inherit | red-green-refactor | implementation-first
+  evidence:
+    unit: inherit # inherit | required | optional
+    e2e: inherit # inherit | required | optional
+  exceptions: [] # [{ scope, reason, replacement_evidence }]
 ---
 
 # [Issue Title]
@@ -466,6 +493,10 @@ which causes [impact].
 
 - [ ] [Measurable outcome tied to user story's "so that"]
 - [ ] [Observable behavior proving the problem is solved]
+
+## TDD & Evidence Contract
+
+Use the exact section shape from `commands/workflows/references/tdd-evidence-contract.md` with the resolved values for this plan. Do not omit any bullet, and make every deviation explicit with `replacement_evidence`.
 
 ## Constitution Alignment
 
@@ -516,6 +547,14 @@ handoff:
   user_story: true
   architectural_context: true
   success_criteria: true
+tdd:
+  precedence: plan_overrides_local
+  mode: inherit # inherit | ralph | standard
+  loop: inherit # inherit | red-green-refactor | implementation-first
+  evidence:
+    unit: inherit # inherit | required | optional
+    e2e: inherit # inherit | required | optional
+  exceptions: [] # [{ scope, reason, replacement_evidence }]
 ---
 
 # [Issue Title]
@@ -547,6 +586,10 @@ which causes [impact].
 - [ ] [Measurable outcome 1 -- tied to user story's "so that"]
 - [ ] [Measurable outcome 2 -- observable behavior]
 - [ ] [Measurable outcome 3 -- proving the problem is solved]
+
+## TDD & Evidence Contract
+
+Use the exact section shape from `commands/workflows/references/tdd-evidence-contract.md` with the resolved values for this plan. Do not omit any bullet, and make every deviation explicit with `replacement_evidence`.
 
 ## Constitution Alignment
 
@@ -653,6 +696,14 @@ handoff:
   user_story: true
   architectural_context: true
   success_criteria: true
+tdd:
+  precedence: plan_overrides_local
+  mode: inherit # inherit | ralph | standard
+  loop: inherit # inherit | red-green-refactor | implementation-first
+  evidence:
+    unit: inherit # inherit | required | optional
+    e2e: inherit # inherit | required | optional
+  exceptions: [] # [{ scope, reason, replacement_evidence }]
 ---
 
 # [Issue Title]
@@ -691,6 +742,10 @@ As a [persona 2], I need to [action] so that [outcome].
 - [ ] [Measurable outcome 3 -- proving the problem is solved]
 - [ ] [Non-functional: performance target]
 - [ ] [Non-functional: security requirement]
+
+## TDD & Evidence Contract
+
+Use the exact section shape from `commands/workflows/references/tdd-evidence-contract.md` with the resolved values for this plan. Do not omit any bullet, and make every deviation explicit with `replacement_evidence`.
 
 ## Constitution Alignment
 
@@ -798,7 +853,7 @@ As a [persona 2], I need to [action] so that [outcome].
 
 ### Quality Gates
 
-- [ ] Test coverage requirements
+- [ ] Unit + e2e evidence captured, or a justified exception with replacement evidence
 - [ ] Documentation completeness
 - [ ] Code review approval
 
@@ -915,6 +970,8 @@ public function processUser(User $user): array
 - [ ] If `docs/constitution.md` exists, Constitution Alignment names the applicable rules, approvals, and any waivers explicitly
 - [ ] Every implementation phase states which user story aspect / success criterion it serves
 - [ ] `handoff` frontmatter fields are all `true`
+- [ ] `tdd` frontmatter is present and the precedence rule is explicit
+- [ ] `## TDD & Evidence Contract` names the effective loop, required evidence, and any justified exceptions
 
 **Content Quality:**
 
@@ -932,6 +989,8 @@ public function processUser(User $user): array
 - [ ] Task success criteria are testable (not vague)
 - [ ] Dependencies between tasks are explicit
 - [ ] Architectural context is specific enough to fill `{{ARCHITECTURAL_CONTEXT}}` in execution agent prompts
+- [ ] The plan declares unit + e2e evidence by default, or records a justified exception with replacement evidence
+- [ ] Task test commands collectively satisfy the resolved TDD contract
 
 ## Directory Setup & Gitignore
 
@@ -977,26 +1036,26 @@ After writing the plan file, use the **AskUserQuestion tool** to present these o
 
 **Options:**
 1. **Open plan in editor** - Open the plan file for review
-2. **Run `/deepen-plan`** - Enhance each section with parallel research agents (best practices, performance, UI)
-3. **Run `/technical_review`** - Technical feedback from code-focused reviewers (Rabak Laravel, Rabak Vue, Simplicity)
+2. **Run `/workflows:architecture`** - Create the dedicated architecture improvement artifact in `docs/architecture/` and record the handoff contract
+3. **Run `/deepen-plan`** - Enhance each section with architecture guidance plus parallel research agents after the architecture handoff is explicit
 4. **Review and refine** - Improve the document through structured self-review
-5. **Start `/workflows:work`** - Begin implementing this plan locally
-6. **Start `/workflows:work` on remote** - Begin implementing in Claude Code on the web (use `&` to run in background)
+5. **Start `/workflows:work`** - Begin implementing this plan locally once the architecture handoff is explicit
+6. **Start `/workflows:work` on remote** - Begin implementing in Claude Code on the web once the architecture handoff is explicit (use `&` to run in background)
 7. **Create Issue** - Create issue in project tracker
 
 Based on selection:
 - **Open plan in editor** → Run `open docs/plans/<plan_filename>.md` to open the file in the user's default editor
-- **`/deepen-plan`** → Call the /deepen-plan command with the plan file path to enhance with research
-- **`/technical_review`** → Call the /technical_review command with the plan file path
+- **`/workflows:architecture`** → Call the /workflows:architecture command with the plan file path
+- **`/deepen-plan`** → Call the /deepen-plan command with the plan file path only after architecture improvement is complete and `architecture_ref` or a labeled handoff artifact has been recorded
 - **Review and refine** → Load `document-review` skill.
-- **`/workflows:work`** → Call the /workflows:work command with the plan file path
-- **`/workflows:work` on remote** → Run `/workflows:work docs/plans/<plan_filename>.md &` to start work in background for Claude Code web
+- **`/workflows:work`** → Call the /workflows:work command with the plan file path once the architecture artifact or explicit architecture handoff contract is available
+- **`/workflows:work` on remote** → Run `/workflows:work docs/plans/<plan_filename>.md &` after the architecture handoff is explicit so execution agents do not guess at boundaries
 - **Create Issue** → See "Issue Creation" section below
 - **Other** (automatically provided) → Accept free text for rework or specific changes
 
-**Note:** If running `/workflows:plan` with ultrathink enabled, automatically run `/deepen-plan` after plan creation for maximum depth and grounding.
+**Note:** If running `/workflows:plan` with ultrathink enabled, automatically run `/workflows:architecture` and then `/deepen-plan` after plan creation for maximum depth and grounding.
 
-Loop back to options after Simplify or Other changes until user selects `/workflows:work` or `/technical_review`.
+Loop back to options after Simplify or Other changes until user selects `/workflows:work`.
 
 ## Issue Creation
 
@@ -1009,21 +1068,31 @@ When user selects "Create Issue":
    - Copy the plan content to clipboard if possible, or point to the file path
 
 2. **After creation:**
-   - Ask if they want to proceed to `/workflows:work` or `/technical_review`
+   - Ask if they want to proceed to `/workflows:architecture`, then `/deepen-plan`, or `/workflows:work` once the architecture handoff is explicit
 
 ## Downstream Phase Integration
 
 The plan document is a structured contract consumed by all downstream phases. Here's how each phase uses it:
 
+**`/workflows:architecture`** reads:
+- Problem Narrative, User Story, Success Criteria, and Architectural Context -- the WHY/WHERE contract it must preserve
+- Implementation phases and tasks -- identifies the deepening candidates that need structural clarification
+- Constitution Alignment / waivers / brainstorm decisions -- keeps architecture decisions inside approved project guardrails
+- **Must write**: a dedicated artifact in `docs/architecture/` plus an `architecture_ref` back into the plan
+
 **`/deepen-plan`** reads:
 - Implementation phases and tasks -- enriches each with parallel research (best practices, performance, UI patterns)
 - Success criteria -- validates they are testable and complete
-- Architectural context -- uses it to ground research in the right part of the system
+- Architectural Context -- uses it to ground research in the right part of the system
+- `tdd` frontmatter and `## TDD & Evidence Contract` -- preserves the effective Ralph/default loop, evidence requirements, and any justified exceptions
+- `architecture_ref` or the latest matching `docs/architecture/` artifact -- uses deepening candidates, deletion-test decisions, interface test surfaces, seams, adapters, and contracts to guide hardening
 - **Must preserve**: Problem Narrative, User Story, and handoff contract unchanged
 
 **`/workflows:work`** reads:
 - **Problem Narrative & User Story** -- the orchestrator uses these to validate task outcomes make sense in context, not just pass tests
 - **Architectural Context** -- feeds directly into `{{ARCHITECTURAL_CONTEXT}}` in each execution agent's prompt. This is WHY grounded arch context matters -- every subagent gets system-level awareness
+- **`architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract** -- feeds deletion-test decisions, interfaces as test surfaces, seams, adapters, and contracts into execution so subagents do not invent structure ad hoc
+- **`tdd` frontmatter + `## TDD & Evidence Contract`** -- plan-level values win; `inherit` falls back to `compound-engineering.local.md`; if neither exists, execution should assume Ralph-driven unit + e2e evidence
 - **Implementation phases & tasks** -- the execution chunk structure (Files, Depends on, Success criteria, Test command)
 - **Success Criteria** -- the orchestrator checks final outcomes against these, not just individual task passes
 - **`constitution_version` / `constitution_waivers` / Constitution Alignment** -- the execution phase enforces repo-wide guardrails and knows which exceptions were approved
@@ -1033,6 +1102,8 @@ The plan document is a structured contract consumed by all downstream phases. He
 - **Problem Narrative & User Story** -- the frame for evaluating whether the implementation solves the right problem
 - **Success Criteria** -- the measurable outcomes that the review should verify
 - **Architectural Context** -- used to evaluate whether the implementation respects system boundaries and integration points
+- **`architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract** -- supplies the architecture intent, deletion-test outcomes, interfaces, seams, adapters, and contracts that reviewers must verify or flag as drift
+- **`tdd` frontmatter + `## TDD & Evidence Contract`** -- review must verify the declared evidence exists and that any deviation from Ralph/unit+e2e is explicitly justified
 - **Constitution Alignment and waivers** -- used to distinguish approved exceptions from blocking constitution violations
 - **Stakeholder Impact** (A LOT level) -- informs stakeholder-perspective review
 
