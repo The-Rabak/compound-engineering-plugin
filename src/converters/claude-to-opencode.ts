@@ -110,7 +110,7 @@ function convertAgent(agent: ClaudeAgent, options: ClaudeToOpenCodeOptions) {
     }
   }
 
-  const content = formatFrontmatter(frontmatter, rewriteClaudePaths(agent.body))
+  const content = formatFrontmatter(frontmatter, transformContentForOpenCode(agent.body))
 
   return {
     name: agent.name,
@@ -131,7 +131,7 @@ function convertCommands(commands: ClaudeCommand[]): OpenCodeCommandFile[] {
     if (model && model !== "inherit") {
       frontmatter.model = normalizeModel(model)
     }
-    const content = formatFrontmatter(frontmatter, rewriteClaudePaths(command.body))
+    const content = formatFrontmatter(frontmatter, transformContentForOpenCode(command.body))
     files.push({ name: command.name, content })
   }
   return files
@@ -254,9 +254,17 @@ function renderHookStatements(
   return statements
 }
 
-function rewriteClaudePaths(body: string): string {
+export function transformContentForOpenCode(body: string): string {
   return body
+    .replace(/~\/\.claude\/agents\//g, "~/.config/opencode/agents/")
+    .replace(/~\/\.claude\/commands\//g, "~/.config/opencode/commands/")
+    .replace(/~\/\.claude\/skills\//g, "~/.config/opencode/skills/")
+    .replace(/~\/\.claude\/plugins\//g, "~/.config/opencode/plugins/")
     .replace(/~\/\.claude\//g, "~/.config/opencode/")
+    .replace(/\.claude\/agents\//g, ".opencode/agents/")
+    .replace(/\.claude\/commands\//g, ".opencode/commands/")
+    .replace(/\.claude\/skills\//g, ".opencode/skills/")
+    .replace(/\.claude\/plugins\//g, ".opencode/plugins/")
     .replace(/\.claude\//g, ".opencode/")
 }
 

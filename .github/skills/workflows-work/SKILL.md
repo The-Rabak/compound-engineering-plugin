@@ -34,19 +34,22 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
 
 ### Phase 1: Quick Start
 
-1. **Read Plan and Extract WHY Context**
+1. **Read Plan and Extract WHY + Guardrail Context**
 
    - Read the work document completely
-   - **Extract WHY artifacts** from the plan (these ground everything that follows):
-     - **Problem Narrative** -- why this work exists, what pain it solves
-     - **User Story** -- who benefits and what outcome they get
-     - **Architectural Context** -- how the solution fits in the system
-     - **Success Criteria** -- measurable conditions that define "done"
-     - **Phase-to-story tracing** -- each phase's "Serves:" line showing what user story aspect it delivers
-   - Check for `handoff:` frontmatter in the plan. If present, verify all flags are `true` (problem_narrative, user_story, architectural_context, success_criteria). If any are `false`, warn the user that WHY context is incomplete and suggest running `/workflows-brainstorm` or `/workflows-plan` first.
-   - If the plan has a `brainstorm_ref:` path, read that brainstorm document too for richer WHY context
-   - Review any other references or links provided in the plan
-   - If anything is unclear or ambiguous, ask clarifying questions now
+    - **Extract WHY artifacts** from the plan (these ground everything that follows):
+      - **Problem Narrative** -- why this work exists, what pain it solves
+      - **User Story** -- who benefits and what outcome they get
+      - **Architectural Context** -- how the solution fits in the system
+      - **Success Criteria** -- measurable conditions that define "done"
+      - **Phase-to-story tracing** -- each phase's "Serves:" line showing what user story aspect it delivers
+      - **Constitution alignment** -- relevant principles, required approvals, and any approved waivers
+    - Check for `handoff:` frontmatter in the plan. If present, verify all flags are `true` (problem_narrative, user_story, architectural_context, success_criteria). If any are `false`, warn the user that WHY context is incomplete and suggest running `/workflows-brainstorm` or `/workflows-plan` first.
+    - If `docs/constitution.md` exists, read it and extract the active constitution version, applicable principles, execution baselines, and approval rules. If the plan lists `constitution_waivers`, honor only those explicit exceptions.
+    - If the plan has a `brainstorm_ref:` path, read that brainstorm document too for richer WHY context
+    - Review any other references or links provided in the plan
+    - If the constitution requires explicit approval for any part of the planned work (for example, risky writes, schema changes, auth changes, or scope expansions), surface that before execution starts
+    - If anything is unclear or ambiguous, ask clarifying questions now
    - Get user approval to proceed
    - **Do not skip this** - better to ask questions now than build the wrong thing
 
@@ -106,7 +109,7 @@ Phase 2 is where the orchestrator (this conversation) decomposes the plan into s
 
 #### Step 1: Validate Plan Readiness
 
-Before executing, validate two things: **structural readiness** (tasks are granular and testable) and **WHY readiness** (the plan carries purpose context).
+Before executing, validate three things: **structural readiness** (tasks are granular and testable), **WHY readiness** (the plan carries purpose context), and **guardrail readiness** (repo-wide rules are visible and actionable).
 
 **Structural readiness** -- each implementation task should have:
 
@@ -115,6 +118,13 @@ Before executing, validate two things: **structural readiness** (tasks are granu
 - **Success criteria** -- checkboxes that define "done"
 - **Test command** -- how to verify the task works
 - **Dependencies** -- which other tasks must complete first
+
+**Guardrail readiness** -- when the project has `docs/constitution.md`, the plan should make repo-wide rules visible:
+
+- **Constitution alignment** -- relevant principles and baselines are surfaced
+- **Constitution version** -- recorded when a constitution exists
+- **Constitution waivers** -- explicit and limited; empty by default
+- **Required approvals** -- called out before work begins
 
 **WHY readiness** -- the plan should have:
 
@@ -184,6 +194,9 @@ session_id: [SESSION_ID]
 ### Success Criteria
 [Extracted from plan -- measurable conditions for "done"]
 
+### Constitution Context
+[Relevant principles, baselines, approvals, and waivers extracted from plan and docs/constitution.md]
+
 ## Task Status
 | # | Task | Serves | Status | Attempts | Session File |
 |---|------|--------|--------|----------|--------------|
@@ -228,10 +241,11 @@ For each task, the orchestrator constructs a focused prompt by reading the **exe
   **User Story:** [user story from plan]
   **This task serves:** [the "Serves:" line from this task's parent phase -- which user story aspect or success criterion this delivers]
   **Overall success criteria:** [plan-level success criteria list]
+  **Guardrails:** [relevant constitution principles, approval rules, and approved waivers]
   ```
 - **{{ARCHITECTURAL_CONTEXT}}** -- from the plan's Architectural Context section, filtered to what's relevant for this task's files and domain
 - **{{LEARNINGS_BRIEF}}** -- from previous tasks, filtered by domain relevance (only include backend learnings for backend tasks, frontend learnings for frontend tasks, etc.)
-- **{{PROJECT_CONVENTIONS}}** -- from CLAUDE.md
+- **{{PROJECT_CONVENTIONS}}** -- from CLAUDE.md plus relevant constitution baselines
 - **{{TDD_SECTION}}** -- if `tdd_enabled: true` in `compound-engineering.local.md`, include the TDD Implementation Section from the template; otherwise include the Standard Implementation Section
 
 The execution agent template instructs each subagent to follow a 4-phase protocol:
@@ -459,9 +473,10 @@ If a subagent fails after its internal retries:
 
    Before mechanical quality checks, validate that the combined work delivers on the WHY:
 
-   - **User story delivered?** -- Review the user story from STATE.md. Can a user actually achieve the stated outcome with what was built? If any success criterion is unmet or any task was skipped, note the gap.
-   - **Architectural integrity?** -- Does the implementation match the architectural context from the plan? Flag any deviations (e.g., plan said "stateless JWT" but implementation uses server sessions).
-   - **No orphan code** -- Is there any implemented code that doesn't trace back to the user story or success criteria? This may indicate scope creep during execution.
+    - **User story delivered?** -- Review the user story from STATE.md. Can a user actually achieve the stated outcome with what was built? If any success criterion is unmet or any task was skipped, note the gap.
+    - **Architectural integrity?** -- Does the implementation match the architectural context from the plan? Flag any deviations (e.g., plan said "stateless JWT" but implementation uses server sessions).
+    - **Constitution honored?** -- Does the implementation respect the constitution baselines and approval rules captured in STATE.md? Flag any unwaived violations.
+    - **No orphan code** -- Is there any implemented code that doesn't trace back to the user story or success criteria? This may indicate scope creep during execution.
 
    If purpose validation reveals gaps, present them to the user before proceeding to PR.
 
@@ -469,7 +484,9 @@ If a subagent fails after its internal retries:
 
    Use for complex, risky, or large changes. Read agents from `compound-engineering.local.md` frontmatter (`review_agents`). If no settings file, invoke the `setup` skill to create one.
 
-   Run configured agents in parallel with Task tool. **Pass the WHY context (problem narrative, user story, success criteria) to reviewer agents** so they can evaluate fitness for purpose, not just code quality. Present findings and address critical issues.
+    Before dispatching any named reviewer agent from `review_agents`, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+
+    Run configured agents in parallel with Task tool. **Pass the WHY context (problem narrative, user story, success criteria) to reviewer agents** so they can evaluate fitness for purpose, not just code quality. Present findings and address critical issues.
 
 4. **Final Validation**
    - All tasks in STATE.md marked `completed` (or explicitly `skipped` with user approval)
@@ -477,6 +494,7 @@ If a subagent fails after its internal retries:
    - Linting passes
    - Code follows existing patterns
    - Purpose validation passed (user story deliverable, architecture intact)
+   - Constitution validation passed (or waivers are explicit and approved)
    - Figma designs match (if applicable)
    - No console errors or warnings
 

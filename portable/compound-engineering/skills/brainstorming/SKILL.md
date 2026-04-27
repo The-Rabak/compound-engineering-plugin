@@ -11,7 +11,7 @@ platforms:
   copilot:
     model: gpt-5.3-codex
   opencode:
-    model: openrouter/xiaomi/mimo-v2-pro
+    model: openrouter/moonshotai/kimi-k2.6
 ---
 
 # Brainstorming
@@ -313,7 +313,7 @@ This prevents wasted effort on misaligned designs.
 
 ## Integration with Downstream Phases
 
-The brainstorm document is the **constitution** for all downstream work:
+The brainstorm document is the **feature-level spec and handoff contract** for downstream work. The project constitution, when present, remains the repo-wide governing artifact:
 
 **`/workflows:plan` consumes:**
 - Problem narrative and user story -> structures phases around the WHY

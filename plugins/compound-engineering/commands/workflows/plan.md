@@ -14,9 +14,10 @@ Transform feature descriptions, bug reports, or improvement ideas into well-stru
 1. **Anchor to WHY** -- every plan traces back to a user story and problem narrative
 2. **Map WHERE** -- architectural context grounds task decomposition in the system's structure
 3. **Define DONE** -- success criteria tied to user outcomes, not just technical checkboxes
-4. **Enable downstream execution** -- `/workflows:work` can delegate tasks with full context; `/workflows:review` evaluates against the stated purpose
+4. **Honor project guardrails** -- constitution principles, baselines, and approval rules are made explicit
+5. **Enable downstream execution** -- `/workflows:work` can delegate tasks with full context; `/workflows:review` evaluates against the stated purpose
 
-Plans consume lynchpin artifacts from `/workflows:brainstorm` when available, or construct them fresh when running standalone. Either way, the plan document carries forward the WHY, WHERE, and DONE contract that all downstream phases depend on.
+Plans consume the project constitution from `/workflows:constitution` when available, plus lynchpin artifacts from `/workflows:brainstorm` when available, or construct feature context fresh when running standalone. Either way, the plan document carries forward the WHY, WHERE, DONE, and GUARDRAIL contract that all downstream phases depend on.
 
 ## Feature Description
 
@@ -28,7 +29,22 @@ Do not proceed until you have a clear feature description from the user.
 
 ### 0. Idea Refinement & WHY Anchoring
 
-This step establishes the plan's WHY anchor -- whether from a brainstorm, a spec file, or fresh dialogue. Every path must produce or inherit: **problem narrative**, **user story**, **architectural context**, and **success criteria**.
+This step establishes the plan's WHY anchor -- whether from a brainstorm, a spec file, or fresh dialogue. Every path must produce or inherit: **problem narrative**, **user story**, **architectural context**, and **success criteria**. When `docs/constitution.md` exists, every path must also inherit or explicitly waive the relevant project guardrails.
+
+#### Constitution Baseline (Runs Before Path A/B/C)
+
+If `docs/constitution.md` exists:
+
+1. Read it completely before planning.
+2. Extract:
+   - constitution version
+   - relevant core principles
+   - applicable engineering baselines
+   - approval and exception rules
+3. Treat these as non-negotiables unless the plan records an explicit waiver.
+4. If the feature appears to conflict with the constitution, ask the user whether this should be:
+   - a plan waiver for this feature
+   - a constitution amendment to be handled by `/workflows:constitution`
 
 #### Path A: Spec/Plan File Provided
 
@@ -166,6 +182,8 @@ Use the **AskUserQuestion tool** to collect structured project inputs. Ask these
 
 For any non-empty inputs, launch **parallel subagents** to fetch and summarize each document:
 
+- For helper subagents in this step (`fetch-and-summarize`, `read-and-extract`), define the full extraction contract in the prompt itself. Do not rely on implicit behavior, hidden defaults, or platform-specific assumptions.
+
 - Task fetch-and-summarize(ticket_urls) → Extract ticket title, description, acceptance criteria, status
 - Task fetch-and-summarize(doc_urls) → Extract key decisions, requirements, technical context
 - Task fetch-and-summarize(figma_urls) → Extract design intent, component structure, interaction patterns
@@ -217,6 +235,8 @@ First, I need to understand the project's conventions, existing patterns, and an
 
 Run these agents **in parallel** to gather local context:
 
+Before dispatching any named agent below, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+
 - Task repo-research-analyst(feature_description)
 - Task learnings-researcher(feature_description)
 
@@ -248,6 +268,8 @@ Examples:
 
 Run these agents in parallel:
 
+Before dispatching any named research agent below, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+
 - Task best-practices-researcher(feature_description)
 - Task framework-docs-researcher(feature_description)
 
@@ -260,6 +282,7 @@ After all research steps complete, consolidate findings and validate/refine the 
 - Document relevant file paths from repo research (e.g., `app/Services/ExampleService.php:42`)
 - **Include relevant institutional learnings** from `docs/solutions/` (key insights, gotchas to avoid)
 - **Include project context** from structured inputs (project tickets, documentation, Figma designs)
+- **Include constitution context** from `docs/constitution.md` when present (relevant principles, required approvals, waiver needs)
 - Note external documentation URLs and best practices (if external research was done)
 - List related issues or PRs discovered
 - Capture CLAUDE.md conventions
@@ -284,6 +307,7 @@ Explicitly state how research findings confirm, challenge, or refine the planned
 - "Codebase already has a similar pattern in `app/Services/AuthService.php` -- we should follow it for consistency, which aligns with the user story because..."
 - "Learnings doc warns about [gotcha] -- this affects our approach because..."
 - "No existing patterns found for this -- higher risk, may need more tasks for validation."
+- "Constitution requires [baseline] -- the plan must make that visible in acceptance criteria or approvals."
 
 **Optional validation:** Briefly summarize the refined WHY artifacts and key research findings, then ask if anything looks off or missing before proceeding to planning.
 
@@ -342,6 +366,8 @@ This structured format enables the `/workflows:work` orchestrator to delegate ea
 
 After planning the issue structure, run SpecFlow Analyzer to validate the feature specification **against the user story and success criteria**:
 
+Before dispatching `spec-flow-analyzer`, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "spec-flow-analyzer"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+
 - Task spec-flow-analyzer(feature_description, user_story, success_criteria, research_findings)
 
 The SpecFlow Analyzer should evaluate:
@@ -385,6 +411,8 @@ title: [Issue Title]
 type: [feat|fix|refactor]
 status: active
 date: YYYY-MM-DD
+constitution_version: [version from docs/constitution.md, or null]
+constitution_waivers: []
 brainstorm_ref: [path to brainstorm doc, or null]
 source_docs:
   tickets: []
@@ -424,6 +452,12 @@ which causes [impact].
 - [ ] [Measurable outcome tied to user story's "so that"]
 - [ ] [Observable behavior proving the problem is solved]
 
+## Constitution Alignment
+
+- **Relevant principles:** [Project rules that apply to this work]
+- **Required approvals:** [Any approvals mandated by the constitution]
+- **Waivers:** [None, or explicit approved exceptions]
+
 ## Implementation
 
 [Brief description of what to build and how]
@@ -454,6 +488,8 @@ title: [Issue Title]
 type: [feat|fix|refactor]
 status: active
 date: YYYY-MM-DD
+constitution_version: [version from docs/constitution.md, or null]
+constitution_waivers: []
 brainstorm_ref: [path to brainstorm doc, or null]
 source_docs:
   tickets: []
@@ -496,6 +532,13 @@ which causes [impact].
 - [ ] [Measurable outcome 1 -- tied to user story's "so that"]
 - [ ] [Measurable outcome 2 -- observable behavior]
 - [ ] [Measurable outcome 3 -- proving the problem is solved]
+
+## Constitution Alignment
+
+- **Relevant principles:** [Project rules that apply to this work]
+- **Applicable baselines:** [Testing, security, docs, operations, portability, etc.]
+- **Required approvals:** [Any approvals mandated by the constitution]
+- **Waivers:** [None, or explicit approved exceptions]
 
 ## Overview
 
@@ -582,6 +625,8 @@ title: [Issue Title]
 type: [feat|fix|refactor]
 status: active
 date: YYYY-MM-DD
+constitution_version: [version from docs/constitution.md, or null]
+constitution_waivers: []
 brainstorm_ref: [path to brainstorm doc, or null]
 source_docs:
   tickets: []
@@ -631,6 +676,13 @@ As a [persona 2], I need to [action] so that [outcome].
 - [ ] [Measurable outcome 3 -- proving the problem is solved]
 - [ ] [Non-functional: performance target]
 - [ ] [Non-functional: security requirement]
+
+## Constitution Alignment
+
+- **Relevant principles:** [Project rules that apply to this work]
+- **Applicable baselines:** [Testing, security, docs, operations, portability, etc.]
+- **Required approvals:** [Any approvals mandated by the constitution]
+- **Waivers:** [None, or explicit approved exceptions]
 
 ## Stakeholder Impact
 
@@ -845,6 +897,7 @@ public function processUser(User $user): array
 - [ ] User Story is complete (persona, action, outcome, pain point, impact)
 - [ ] Architectural Context is grounded in actual repo research (not hypothetical)
 - [ ] Success Criteria are tied to user outcomes, not just technical checkboxes
+- [ ] If `docs/constitution.md` exists, Constitution Alignment names the applicable rules, approvals, and any waivers explicitly
 - [ ] Every implementation phase states which user story aspect / success criterion it serves
 - [ ] `handoff` frontmatter fields are all `true`
 
@@ -958,12 +1011,14 @@ The plan document is a structured contract consumed by all downstream phases. He
 - **Architectural Context** -- feeds directly into `{{ARCHITECTURAL_CONTEXT}}` in each execution agent's prompt. This is WHY grounded arch context matters -- every subagent gets system-level awareness
 - **Implementation phases & tasks** -- the execution chunk structure (Files, Depends on, Success criteria, Test command)
 - **Success Criteria** -- the orchestrator checks final outcomes against these, not just individual task passes
+- **`constitution_version` / `constitution_waivers` / Constitution Alignment** -- the execution phase enforces repo-wide guardrails and knows which exceptions were approved
 - **`brainstorm_ref`** -- if present, the orchestrator can read the original brainstorm for additional context
 
 **`/workflows:review`** reads:
 - **Problem Narrative & User Story** -- the frame for evaluating whether the implementation solves the right problem
 - **Success Criteria** -- the measurable outcomes that the review should verify
 - **Architectural Context** -- used to evaluate whether the implementation respects system boundaries and integration points
+- **Constitution Alignment and waivers** -- used to distinguish approved exceptions from blocking constitution violations
 - **Stakeholder Impact** (A LOT level) -- informs stakeholder-perspective review
 
 NEVER CODE! Just research and write the plan.

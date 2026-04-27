@@ -209,19 +209,19 @@ Dynamically discover all available skills and match them to plan sections. Don't
 
 ```bash
 # 1. Project-local skills (highest priority - project-specific)
-ls .github/skills/
+ls [project skill dir]
 
-# 2. User's global skills (~/.copilot/)
-ls ~/.copilot/skills/
+# 2. User's platform-global skills (for example ~/.copilot/skills or ~/.config/opencode/skills)
+ls [platform global skills dir]
 
-# 3. compound-engineering plugin skills
-ls ~/.copilot/plugins/cache/*/compound-engineering/*/skills/
+# 3. Installed plugin/package skills if the harness exposes them
+ls [installed plugin skill dirs]
 
-# 4. ALL other installed plugins - check every plugin for skills
-find ~/.copilot/plugins/cache -type d -name "skills" 2>/dev/null
+# 4. Broad fallback: search every discovered plugin/package location for skills
+find [platform plugin roots] -type d -name "skills" 2>/dev/null
 
-# 5. Also check installed_plugins.json for all plugin locations
-cat ~/.copilot/plugins/installed_plugins.json
+# 5. If the harness exposes plugin metadata, inspect it to find additional local skill locations
+cat [installed plugin metadata file]
 ```
 
 **Important:** Check EVERY source. Don't assume compound-engineering is the only plugin. Use skills from ANY installed plugin that's relevant.
@@ -266,6 +266,8 @@ WHY CONTEXT (use this to ground the skill's recommendations):
 The skill tells you what to do - follow it. Execute the skill completely."
 ```
 
+Always use the discovered `[skill-path]` and read `SKILL.md` from that exact location. Do not hardcode Claude-specific paths when spawning skill subagents.
+
 **Spawn ALL skill sub-agents in PARALLEL:**
 - 1 sub-agent per matched skill
 - Each sub-agent reads and uses its assigned skill
@@ -280,13 +282,13 @@ The skill tells you what to do - follow it. Execute the skill completely."
 
 **Example spawns:**
 ```
-Task general-purpose: "Use the laravel-conventions skill at ~/.copilot/plugins/.../laravel-conventions. Read SKILL.md and apply it to: [Laravel sections of plan]"
+Task general-purpose: "Use the laravel-conventions skill at [discovered skill path]. Read SKILL.md and apply it to: [Laravel sections of plan]"
 
-Task general-purpose: "Use the frontend-design skill at ~/.copilot/plugins/.../frontend-design. Read SKILL.md and apply it to: [UI sections of plan]"
+Task general-purpose: "Use the frontend-design skill at [discovered skill path]. Read SKILL.md and apply it to: [UI sections of plan]"
 
-Task general-purpose: "Use the agent-native-architecture skill at ~/.copilot/plugins/.../agent-native-architecture. Read SKILL.md and apply it to: [agent/tool sections of plan]"
+Task general-purpose: "Use the agent-native-architecture skill at [discovered skill path]. Read SKILL.md and apply it to: [agent/tool sections of plan]"
 
-Task general-purpose: "Use the security-patterns skill at ~/.copilot/skills/security-patterns. Read SKILL.md and apply it to: [full plan]"
+Task general-purpose: "Use the security-patterns skill at [discovered skill path]. Read SKILL.md and apply it to: [full plan]"
 ```
 
 **No limit on skill sub-agents. Spawn one for every skill that could possibly be relevant.**
@@ -467,27 +469,26 @@ Dynamically discover every available agent and run them ALL against the plan. Do
 
 ```bash
 # 1. Project-local agents (highest priority - project-specific)
-find .github/agents -name "*.md" 2>/dev/null
+find [project agent dir] -name "*.md" 2>/dev/null
 
-# 2. User's global agents (~/.copilot/)
-find ~/.copilot/agents -name "*.md" 2>/dev/null
+# 2. User's platform-global agents (for example ~/.copilot/agents or ~/.config/opencode/agents)
+find [platform global agents dir] -name "*.md" 2>/dev/null
 
-# 3. compound-engineering plugin agents (all subdirectories)
-find ~/.copilot/plugins/cache/*/compound-engineering/*/agents -name "*.md" 2>/dev/null
+# 3. Installed plugin/package agents (all subdirectories) if the harness exposes them
+find [installed plugin agent dirs] -name "*.md" 2>/dev/null
 
-# 4. ALL other installed plugins - check every plugin for agents
-find ~/.copilot/plugins/cache -path "*/agents/*.md" 2>/dev/null
+# 4. Broad fallback: search every discovered plugin/package location for agents
+find [platform plugin roots] -path "*/agents/*.md" 2>/dev/null
 
-# 5. Check installed_plugins.json to find all plugin locations
-cat ~/.copilot/plugins/installed_plugins.json
+# 5. If the harness exposes plugin metadata, inspect it to find additional local plugin locations
+cat [installed plugin metadata file]
 
-# 6. For local plugins (isLocal: true), check their source directories
-# Parse installed_plugins.json and find local plugin paths
+# 6. For local plugin/package entries, inspect their source directories directly
 ```
 
 **Important:** Check EVERY source. Include agents from:
-- Project `.github/agents/`
-- User's `~/.copilot/agents/`
+- Project-local agent directories
+- User's platform-global agent directory
 - compound-engineering plugin (but SKIP workflow/ agents - only use review/, research/, design/, docs/)
 - ALL other installed plugins (agent-sdk-dev, frontend-design, etc.)
 - Any local plugins
@@ -506,6 +507,8 @@ Read the first few lines of each agent file to understand what it reviews/analyz
 **Step 3: Launch ALL agents in parallel**
 
 For EVERY agent discovered, launch a Task in parallel with WHY context:
+
+Before dispatching any named agent discovered in this step, first read the matching bundled agent template from the discovered agent file path. If the agent is resolved from OpenViking/global context instead, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
 
 ```
 Task [agent-name]: "Review this plan using your expertise.
