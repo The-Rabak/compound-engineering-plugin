@@ -10,6 +10,8 @@ argument-hint: "[feature idea or problem to explore]"
 
 Brainstorming answers **WHY** we're building something and **WHAT** it is. It produces the lynchpin artifacts -- a problem narrative, user story, and architectural context -- that thread through every downstream phase (`/workflows:plan` -> `/deepen-plan` -> `/workflows:work` -> `/workflows:review`).
 
+When `docs/constitution.md` exists, brainstorming must work **within** that project-level constitution. The brainstorm can propose a constitution amendment when a durable repo-wide rule needs to change, but it must not silently override project baselines.
+
 Without a clear WHY, plans decompose into disconnected tasks, execution agents lose sight of purpose, and reviews evaluate code in a vacuum.
 
 **Process knowledge:** Load the `brainstorming` skill for detailed question techniques, approach exploration patterns, user story construction, and architectural context mapping.
@@ -41,11 +43,13 @@ Use **AskUserQuestion tool** to suggest: "Your requirements seem detailed enough
 
 #### 1.1 Repository Research (Lightweight)
 
-Run a quick repo scan to understand existing patterns and system topology:
+Run a quick repo scan to understand existing patterns, system topology, and any existing constitution:
 
-- Task repo-research-analyst("Understand existing patterns, system architecture, and component boundaries related to: <feature_description>. Report: (1) similar features and their structure, (2) services/modules this would touch or neighbor, (3) CLAUDE.md guidance, (4) data flow relevant to this area.")
+Before spawning `repo-research-analyst`, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent is coming from OpenViking/global context, load it with `ov_load_global_agent "repo-research-analyst"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
 
-Focus on: similar features, established patterns, CLAUDE.md guidance, **and system boundaries this feature would interact with**.
+- Task repo-research-analyst("Understand existing patterns, system architecture, and component boundaries related to: <feature_description>. Report: (1) similar features and their structure, (2) services/modules this would touch or neighbor, (3) CLAUDE.md guidance, (4) data flow relevant to this area, (5) whether docs/constitution.md exists and which repo-wide principles or boundaries matter here.")
+
+Focus on: similar features, established patterns, CLAUDE.md guidance, project constitution rules (if present), **and system boundaries this feature would interact with**.
 
 #### 1.2 Collaborative Dialogue -- The WHY Layer
 
@@ -196,6 +200,12 @@ it fully addresses the user's need because..."]
 - [Decision 1]: [Rationale tied to problem/user story]
 - [Decision 2]: [Rationale tied to problem/user story]
 
+## Constitution Alignment
+
+- **Relevant project rules:** [Which constitution principles or baselines matter here]
+- **No amendment needed because:** [Why the feature fits existing rules]
+- **Proposed amendment (if any):** [Only when this feature exposes a durable gap in the constitution]
+
 ## Approaches Considered
 
 [Brief summary of alternatives and why they were not chosen, relative to the
@@ -274,15 +284,15 @@ as its foundation.
 - **Ask one question at a time** -- Don't overwhelm
 - **YAGNI applies to building, not understanding** -- Explore the full problem space to make informed decisions. Build only what's needed now.
 - **Keep outputs concise** -- 200-300 words per section max
-- **The brainstorm document is a contract** -- Downstream phases (plan, work, review) will parse and reference its sections. The problem narrative, user story, and architectural context are not optional prose -- they're structured artifacts.
+- **The brainstorm document is a feature contract, not the constitution** -- Downstream phases (plan, work, review) will parse and reference its sections. The problem narrative, user story, and architectural context are not optional prose -- they're structured artifacts.
 
 ## Downstream Phase Integration
 
-This brainstorm document is consumed by:
+This brainstorm document is consumed alongside the project constitution:
 
-- **`/workflows:plan`** -- Reads user story and architectural context to structure phases. Each plan phase must trace back to the user story. Architectural context informs task decomposition and dependency mapping.
+- **`/workflows:plan`** -- Reads user story and architectural context to structure phases, while also checking constitution rules and recording any waivers or amendment proposals.
 - **`/deepen-plan`** -- Uses problem narrative and success criteria to evaluate whether deepened tasks still serve the original intent.
-- **`/workflows:work`** -- Feeds architectural context into each execution agent's `{{ARCHITECTURAL_CONTEXT}}` block. Feeds user story into the orchestrator's task validation.
-- **`/workflows:review`** -- Uses problem narrative, user story, and success criteria as the frame for evaluating whether the implementation actually solves the stated problem.
+- **`/workflows:work`** -- Feeds architectural context into each execution agent's `{{ARCHITECTURAL_CONTEXT}}` block, while constitution rules act as guardrails for implementation and approvals.
+- **`/workflows:review`** -- Uses problem narrative, user story, success criteria, and constitution baselines as the frame for evaluating whether the implementation actually solves the stated problem without policy drift.
 
 NEVER CODE! Just explore, understand, and document the WHY, WHAT, and WHERE.

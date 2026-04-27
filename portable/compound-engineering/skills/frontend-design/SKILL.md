@@ -9,7 +9,7 @@ platforms:
   copilot:
     model: gpt-5.3-codex
   opencode:
-    model: openrouter/xiaomi/mimo-v2-pro
+    model: openrouter/moonshotai/kimi-k2.6
 ---
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.

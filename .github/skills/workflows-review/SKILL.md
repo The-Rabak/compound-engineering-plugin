@@ -65,7 +65,7 @@ Ensure that the code is ready for analysis (either in worktree or on current bra
 
 </task_list>
 
-#### Load WHY Context (BEFORE running any agents)
+#### Load WHY + Constitution Context (BEFORE running any agents)
 
 <thinking>
 Before any review agent runs, I need to understand WHY this code was built. Without this, I'm reviewing HOW code works without knowing WHAT it's supposed to achieve for users. Technical reviewers will suggest changes that are "better" in isolation but could drift the implementation from its purpose.
@@ -96,10 +96,17 @@ If a plan file is found, read it and extract:
 - **Architectural Context** — how the solution fits in the system
 - **Success Criteria** — measurable conditions that define "done"
 - **brainstorm_ref** — path to brainstorm document, if available
+- **constitution_version** / **constitution_waivers** — what repo-wide rules apply and which exceptions were explicitly approved
 
 ALWAYS READ ARCHITECTURE AND README FILES FOR CONTEXT — they often contain critical information about architectural intent, constraints, and domain knowledge that is not in the plan.
 
 If a STATE.md execution session exists, also read its WHY Context section.
+
+If `docs/constitution.md` exists, read it too and extract:
+- core principles
+- review guardrails
+- required approvals / allowed exceptions
+- active version
 
 **Step 2: If no plan exists**, construct minimal WHY from available signals:
 
@@ -108,7 +115,7 @@ If a STATE.md execution session exists, also read its WHY Context section.
 - Check PR description if available
 - **Ask the user**: "I couldn't find a plan file for this branch. In one sentence, what problem does this code solve and for whom?" — this grounds the entire review.
 
-**Step 3: Summarize the WHY context** that will be passed to every agent:
+**Step 3: Summarize the WHY + constitution context** that will be passed to every agent:
 
 ```
 WHY CONTEXT FOR REVIEWERS:
@@ -116,6 +123,8 @@ WHY CONTEXT FOR REVIEWERS:
 - User Story: [user story]  
 - Success Criteria: [list]
 - Architectural Intent: [arch context summary]
+- Constitution Version: [version or none]
+- Constitution Guardrails: [relevant principles, review baselines, approvals, waivers]
 ```
 
 This context is passed to EVERY review agent below. It is not optional.
@@ -143,6 +152,8 @@ If no settings file exists, invoke the `setup` skill to create one. Then read th
 
 Run all configured review agents in parallel using Task tool. For each agent in the `review_agents` list:
 
+Before dispatching any named review agent below, first read its bundled template from `portable/compound-engineering/agents/` when present. If the agent comes from OpenViking/global context, load it with `ov_load_global_agent "<agent-name>"` and include the loaded template in the Task prompt. Never dispatch a named agent by name alone.
+
 ```
 Task {agent-name}(branch diff content + review context from settings body + WHY context block)
 ```
@@ -168,8 +179,8 @@ Branch diff:
 ```
 
 Additionally, always run these regardless of settings:
-- Use the agent-native-reviewer skill to: branch diff content + WHY context - Verify new features are agent-accessible
-- Use the learnings-researcher skill to: branch diff content + WHY context - Search docs/solutions/ for past issues related to this PR's modules and patterns
+- Load the agent template first, then Task agent-native-reviewer(branch diff content + WHY context) - Verify new features are agent-accessible
+- Load the agent template first, then Task learnings-researcher(branch diff content + WHY context) - Search docs/solutions/ for past issues related to this PR's modules and patterns
 
 </parallel_tasks>
 
@@ -179,11 +190,13 @@ Additionally, always run these regardless of settings:
 
 These agents are run ONLY when the branch changes match specific criteria. Check the changed files list to determine if they apply. **Pass the WHY context block to all conditional agents as well.**
 
+Apply the same template-loading rule to every named conditional agent below. Never dispatch them by name alone.
+
 **MIGRATIONS: If PR contains database migrations or data backfills:**
 
-- Use the data-integrity-guardian skill to: branch diff content - Reviews migration safety, constraint naming, and migration conventions
-- Use the data-migration-expert skill to: branch diff content - Validates ID mappings match production, checks for swapped values, verifies rollback safety
-- Use the deployment-verification-agent skill to: branch diff content - Creates Go/No-Go deployment checklist with SQL verification queries
+- Load the agent template first, then Task data-integrity-guardian(branch diff content) - Reviews migration safety, constraint naming, and migration conventions
+- Load the agent template first, then Task data-migration-expert(branch diff content) - Validates ID mappings match production, checks for swapped values, verifies rollback safety
+- Load the agent template first, then Task deployment-verification-agent(branch diff content) - Creates Go/No-Go deployment checklist with SQL verification queries
 
 
 **When to run:**
@@ -298,7 +311,7 @@ Complete system context map with component interactions
 
 ### 4. Simplification and Minimalism Review
 
-Run the Task code-simplicity-reviewer() to see if we can simplify the code.
+Load the bundled `code-simplicity-reviewer` template from `portable/compound-engineering/agents/` first, or resolve it from OpenViking/global context, then run Task code-simplicity-reviewer() to see if we can simplify the code.
 
 ### 5. Findings Synthesis and Todo Creation Using file-todos Skill
 
@@ -321,6 +334,7 @@ I am about to be hit with a firehose of technical findings from technically-mind
 For each finding, ask: "If we act on this finding, what happens to the user story?"
 
 - **🎯 PROTECTS USER STORY** — Finding addresses something that could prevent the user from achieving the stated outcome. (e.g., security hole in the auth flow when the user story is about secure login). These get elevated priority.
+- **🏛️ CONSTITUTION VIOLATION** — Implementation or recommendation conflicts with a repo-wide MUST / MUST NOT rule, or bypasses a required approval, without an explicit waiver. These should be treated as blocking unless the constitution is amended or the waiver is approved.
 - **⚠️ DRIFT RISK** — Finding suggests a change that is technically valid but would ALTER the user's intended outcome or expand scope beyond the user story. (e.g., "refactor to microservices" when the plan says monolith, or "add OAuth support" when the story only mentions password login). **These must be flagged prominently and NEVER auto-applied.** Present to user with: "This suggestion is technically sound but would change what the feature delivers."
 - **🔧 QUALITY IMPROVEMENT** — Finding improves code quality without affecting the user story positively or negatively. Standard review finding. Keep severity as-is.
 - **📦 SCOPE EXPANSION** — Finding suggests adding functionality not in the user story or success criteria. Automatically downgrade to P3 regardless of agent-assigned severity, and tag as "Beyond current scope."
@@ -328,6 +342,7 @@ For each finding, ask: "If we act on this finding, what happens to the user stor
 - [ ] Categorize by type: security, performance, architecture, quality, etc.
 - [ ] Assign severity levels: 🔴 CRITICAL (P1), 🟡 IMPORTANT (P2), 🔵 NICE-TO-HAVE (P3)
   - **Override rule**: Findings classified as PROTECTS USER STORY get +1 severity bump (P3→P2, P2→P1)
+  - **Override rule**: Findings classified as CONSTITUTION VIOLATION are blocking by default unless a valid waiver exists
   - **Override rule**: Findings classified as SCOPE EXPANSION get capped at P3
 - [ ] Remove duplicate or overlapping findings
 - [ ] Estimate effort for each finding (Small/Medium/Large)
@@ -482,6 +497,7 @@ After creating all todo files, present comprehensive summary:
 
 - **Total Findings:** [X]
 - **🎯 Protects User Story:** [count] — findings that address threats to the user's outcome
+- **🏛️ Constitution Violations:** [count] — unwaived conflicts with repo-wide project rules
 - **⚠️ Drift Risk:** [count] — suggestions that would ALTER what the feature delivers (review carefully)
 - **🔧 Quality Improvements:** [count] — standard technical improvements
 - **📦 Scope Expansion:** [count] — suggestions beyond current user story (consider for future work)
@@ -584,6 +600,8 @@ The subagent will:
 ### Important: P1 Findings and User Story Delivery Block Merge
 
 Any **🔴 P1 (CRITICAL)** findings must be addressed before merging. Additionally, if the User Story Delivery Assessment is **❌ DOES NOT DELIVER**, the branch should not be merged regardless of P1 count — the code doesn't solve the stated problem.
+
+Any unwaived **🏛️ CONSTITUTION VIOLATION** findings should also block merge until the code is fixed, the waiver is explicitly approved, or the constitution is amended.
 
 Any **⚠️ DRIFT RISK** findings must be explicitly reviewed by the user before acting on them. Never auto-resolve drift risk findings — they require a human decision about whether the user story should change.
 ```

@@ -9,7 +9,7 @@ platforms:
   copilot:
     model: gpt-5.3-codex
   opencode:
-    model: openrouter/xiaomi/mimo-v2-pro
+    model: openrouter/moonshotai/kimi-k2.6
 ---
 
 <why_now>

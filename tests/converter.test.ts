@@ -3,7 +3,7 @@ import path from "path"
 import { loadClaudePlugin } from "../src/parsers/claude"
 import { loadPortablePlugin } from "../src/parsers/portable"
 import { convertClaudeToCopilot } from "../src/converters/claude-to-copilot"
-import { convertClaudeToOpenCode } from "../src/converters/claude-to-opencode"
+import { convertClaudeToOpenCode, transformContentForOpenCode } from "../src/converters/claude-to-opencode"
 import { parseFrontmatter } from "../src/utils/frontmatter"
 import type { ClaudePlugin } from "../src/types/claude"
 
@@ -219,7 +219,19 @@ describe("convertClaudeToOpenCode", () => {
     expect(bundle.commandFiles.find((f) => f.name === "workflows:review")).toBeDefined()
   })
 
-  test("rewrites .claude/ paths to .opencode/ in command bodies", () => {
+  test("rewrites Claude path prefixes to OpenCode path prefixes", () => {
+    const result = transformContentForOpenCode(
+      "Read ~/.claude/agents/security-sentinel.md, .claude/skills/file-todos/SKILL.md, and .claude/plugins/converted-hooks.ts.",
+    )
+
+    expect(result).toContain("~/.config/opencode/agents/security-sentinel.md")
+    expect(result).toContain(".opencode/skills/file-todos/SKILL.md")
+    expect(result).toContain(".opencode/plugins/converted-hooks.ts")
+    expect(result).not.toContain(".claude/")
+    expect(result).not.toContain("~/.claude/")
+  })
+
+  test("rewrites OpenCode command bodies with converted Claude paths", () => {
     const plugin: ClaudePlugin = {
       root: "/tmp/plugin",
       manifest: { name: "fixture", version: "1.0.0" },
@@ -228,11 +240,7 @@ describe("convertClaudeToOpenCode", () => {
         {
           name: "review",
           description: "Review command",
-          body: `Read \`compound-engineering.local.md\` in the project root.
-
-If no settings file exists, auto-detect project type.
-
-Run \`/compound-engineering-setup\` to create a settings file.`,
+          body: "Read ~/.claude/commands/workflows/review.md and .claude/skills/file-todos/assets/todo-template.md.",
           sourcePath: "/tmp/plugin/commands/review.md",
         },
       ],
@@ -247,12 +255,11 @@ Run \`/compound-engineering-setup\` to create a settings file.`,
 
     const reviewCmd = bundle.commandFiles.find((f) => f.name === "review")
     expect(reviewCmd).toBeDefined()
-
-    // Tool-agnostic path in project root — no rewriting needed
-    expect(reviewCmd!.content).toContain("compound-engineering.local.md")
+    expect(reviewCmd!.content).toContain("~/.config/opencode/commands/workflows/review.md")
+    expect(reviewCmd!.content).toContain(".opencode/skills/file-todos/assets/todo-template.md")
   })
 
-  test("rewrites .claude/ paths in agent bodies", () => {
+  test("rewrites OpenCode agent bodies with converted Claude paths", () => {
     const plugin: ClaudePlugin = {
       root: "/tmp/plugin",
       manifest: { name: "fixture", version: "1.0.0" },
@@ -260,7 +267,7 @@ Run \`/compound-engineering-setup\` to create a settings file.`,
         {
           name: "test-agent",
           description: "Test agent",
-          body: "Read `compound-engineering.local.md` for config.",
+          body: "Read ~/.claude/agents/security-sentinel.md and .claude/plugins/converted-hooks.ts.",
           sourcePath: "/tmp/plugin/agents/test-agent.md",
         },
       ],
@@ -276,8 +283,8 @@ Run \`/compound-engineering-setup\` to create a settings file.`,
 
     const agentFile = bundle.agents.find((a) => a.name === "test-agent")
     expect(agentFile).toBeDefined()
-    // Tool-agnostic path in project root — no rewriting needed
-    expect(agentFile!.content).toContain("compound-engineering.local.md")
+    expect(agentFile!.content).toContain("~/.config/opencode/agents/security-sentinel.md")
+    expect(agentFile!.content).toContain(".opencode/plugins/converted-hooks.ts")
   })
 })
 

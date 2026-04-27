@@ -5,30 +5,24 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.2.0] - 2026-03-21
+## [4.3.0] - 2026-04-25
 
 ### Added
 
-- **`issue-intelligence-analyst` agent** -- Research agent for GitHub issue landscape analysis. Fetches open and recently closed issues, clusters them into recurring themes, and surfaces trend, severity, and recurrence signals for planning and prioritization.
-- **`schema-drift-detector` agent** -- Framework-agnostic schema drift reviewer that cross-references PR migrations or schema source changes against changed schema dumps, snapshots, and generated database artifacts.
-- **`rabak-frontend-races-reviewer` agent** -- Async UI review agent focused on race conditions, stale responses, cancellation bugs, and lifecycle hazards across React, Vue, shared stores, and browser APIs.
-- **`agent-native-audit` skill** -- Manual scored review workflow for auditing codebases against core agent-native architecture principles, with parallel audit tracks and prioritized recommendations.
-- **`ideate` skill** -- Grounded ideation workflow that scans the repository, generates a large candidate set, filters weak ideas aggressively, and preserves ranked survivors in `docs/ideation/` before handing one off to brainstorm.
-- **`compound-refresh` skill** -- Maintenance workflow for refreshing stale learnings and pattern docs in `docs/solutions/` by classifying them into Keep, Update, Replace, or Archive actions against the current codebase.
-- **`/workflows:ideate` command** -- Local public workflow entrypoint for repository-grounded ideation that feeds the existing brainstorm and planning pipeline.
-- **`/workflows:compound-refresh` command** -- Local public workflow entrypoint for maintaining compounded learnings as the codebase evolves.
+- **`/workflows:constitution` command** -- Portable workflow entrypoint for creating and amending a repo-level `docs/constitution.md` artifact. Uses tool-agnostic blocking-question guidance, writes versioned project principles and phase guardrails, and makes constitution governance a first-class step before ideation, brainstorming, planning, execution, and review.
 
 ### Changed
 
-- **Portable model routing** -- Portable agents, commands, and skills now support shared `model` values plus per-platform overrides such as `platforms.copilot.model` and `platforms.claude.model`. Generated outputs respect the platform-specific route while preserving shared defaults.
-- **Research agent routing** -- Research-oriented agents now use lower-cost default routing where appropriate, including Copilot-specific `gpt-5.4-mini` overrides alongside shared `haiku` defaults.
-- **Reasoning model policy** -- Reasoning-heavy Claude agents and skills now route explicitly to `claude-sonnet-4.6`, GPT code/review routing now uses `gpt-5.3-codex`, and lightweight search/research surfaces remain on `claude-haiku-4.5` / `gpt-5.4-mini`.
-- **Copilot portable skill emission** -- Copilot builds now rewrite portable `SKILL.md` files through the Copilot transformation path so model overrides, slash-command flattening, and `.claude` path rewrites apply to copied skill directories too.
-- **OV sync hardening** -- `sync-ov` now strips inherited `BASH_FUNC_*` shell hooks, preserves a trusted executable `PATH`, and uses hardened fast-path shell helpers that avoid path-hijacked `cp`/`mkdir` calls.
-- **Workflow docs conventions** -- Repository guidance now recognizes `docs/ideation/` as the output location for ideation artifacts alongside plans, brainstorms, solutions, and execution sessions.
-- Agent count bumped from 26 to 29, command count from 22 to 24, and skill count from 18 to 21 in generated metadata and README surfaces
+- **Workflow SDD alignment** -- `ideate`, `brainstorm`, `plan`, `work`, and `review` now treat the constitution as a project-level governing artifact instead of implicitly overloading brainstorm docs to play that role.
+- **`/workflows:plan`** -- Plans now record constitution context via `constitution_version`, `constitution_waivers`, and a `Constitution Alignment` section so downstream phases can distinguish repo-wide guardrails from feature-specific intent.
+- **`/workflows:work`** -- Execution now reads constitution guardrails, threads them into task prompts, and validates constitution compliance alongside user-story delivery.
+- **`/workflows:review`** -- Review now loads constitution context and treats unwaived constitution violations as blocking findings.
+- **Workflow subagent dispatching** -- Orchestrating workflow commands now explicitly tell operators to load named agent templates from bundled `agents/` definitions or OpenViking global context before every specialist Task dispatch, instead of dispatching named agents by name alone.
+- **OpenCode path rewriting** -- OpenCode conversion now applies explicit Claude-to-OpenCode path replacements for `agents/`, `commands/`, `skills/`, and `plugins/` prefixes, including copied SKILL.md bodies, so hardcoded Claude paths do not leak into generated OpenCode bundles.
+- **`ideate` skill and brainstorm docs** -- Ideation now scores ideas for constitution fit, brainstorm explicitly works within project-level baselines, and the brainstorming skill now refers to the brainstorm artifact as a feature-level spec/handoff contract rather than the constitution.
+- Command count bumped from 24 to 25 in generated metadata and README surfaces.
 
-## [4.1.0] - 2026-03-07
+## [4.2.0] - 2026-03-21
 
 ### Added
 

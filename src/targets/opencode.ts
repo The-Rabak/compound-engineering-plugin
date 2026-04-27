@@ -1,5 +1,6 @@
 import path from "path"
 import { backupFile, copyDir, ensureDir, pathExists, readJson, readText, writeJson, writeText } from "../utils/files"
+import { transformContentForOpenCode } from "../converters/claude-to-opencode"
 import { formatFrontmatter, parseFrontmatter } from "../utils/frontmatter"
 import type { OpenCodeBundle, OpenCodeConfig } from "../types/opencode"
 
@@ -103,7 +104,7 @@ export async function writeOpenCodeBundle(outputRoot: string, bundle: OpenCodeBu
       if (skill.model) {
         fm.model = skill.model
       }
-      const content = formatFrontmatter(fm, parsed.body.trim())
+      const content = formatFrontmatter(fm, transformContentForOpenCode(parsed.body.trim()))
       await writeText(path.join(targetDir, "SKILL.md"), content + "\n")
     }
   }

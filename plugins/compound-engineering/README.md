@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 29 specialized agents, 24 commands, and 21 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 29 specialized agents, 25 commands, and 21 skills.
 
 This repository also ships generated Copilot assets under the repo root `.github/`, built from the canonical portable source in `portable/compound-engineering/`.
 
@@ -9,7 +9,7 @@ This repository also ships generated Copilot assets under the repo root `.github
 | Component | Count |
 |-----------|-------|
 | Agents | 29 |
-| Commands | 24 |
+| Commands | 25 |
 | Skills | 21 |
 | Hooks | 1 |
 | MCP Servers | 1 |
@@ -75,6 +75,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 
 | Command | Description |
 |---------|-------------|
+| `/workflows:constitution` | Create or update the repo-level constitution that governs downstream workflows |
 | `/workflows:ideate` | Generate and rank grounded improvement ideas before selecting one to brainstorm |
 | `/workflows:brainstorm` | Explore requirements and approaches before planning |
 | `/workflows:plan` | Create implementation plans with structured project inputs (tickets, docs, designs) |
