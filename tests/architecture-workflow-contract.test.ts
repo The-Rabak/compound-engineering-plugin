@@ -97,6 +97,14 @@ describe("architecture workflow contract", () => {
       "workflows",
       "review.md",
     )
+    const executionPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "execution-agent-prompt.md",
+    )
     const rootReadme = await readRepoFile("README.md")
     const pluginChangelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
 
@@ -104,6 +112,8 @@ describe("architecture workflow contract", () => {
     expect(deepenPrompt).toContain("Read `architecture_ref`")
     expect(workPrompt).toContain("### Architecture Handoff")
     expect(workPrompt).toContain("{{ARCHITECTURE_HANDOFF}}")
+    expect(executionPrompt).toContain("## Architecture Handoff")
+    expect(executionPrompt).toContain("{{ARCHITECTURE_HANDOFF}}")
     expect(reviewPrompt).toContain("Architecture Artifact")
     expect(reviewPrompt).toContain("Architecture Handoff")
     expect(reviewPrompt).toContain("docs/architecture/*.md")

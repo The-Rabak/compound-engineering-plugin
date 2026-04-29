@@ -29,7 +29,7 @@ Use swarms when the work has real parallelism, specialist boundaries, or depende
 - Keep the team small. Extra workers are justified only when they remove wall-clock time or increase specialist quality.
 
 ### Task design
-- Write tasks as outcomes, not vague topics.
+- Write work items as outcomes, not vague topics.
 - Keep scopes non-overlapping unless the assignment is an explicit cross-check.
 - Prefer DAG-style dependencies over ad hoc sequencing.
 - State what evidence counts as done: files changed, tests run, findings delivered, screenshots captured, or open questions listed.
@@ -43,7 +43,7 @@ Have workers report in a terse, machine-checkable shape:
 - `risks`: unresolved concerns
 
 ### Leader responsibilities
-- Keep the canonical task list and dependency map.
+- Keep the canonical slice/work-item list and dependency map.
 - Resolve blockers instead of letting workers stall silently.
 - Merge duplicate findings and remove contradictory advice.
 - Re-run shared verification after integrating worker output.

@@ -26,6 +26,14 @@ describe("workflow orchestration references", () => {
       "references",
       "tdd-evidence-contract.md",
     )
+    const executionShape = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "execution-shape.md",
+    )
 
     expect(orchestration).toContain("## Reference Template Loading")
     expect(orchestration).toContain("## Named Agent Dispatch")
@@ -38,6 +46,11 @@ describe("workflow orchestration references", () => {
     expect(tdd).toContain("## Review Gate Classifications")
     expect(tdd).toContain("replacement_evidence")
     expect(tdd).toContain("Missing cleanup after refactor")
+    expect(executionShape).toContain("## Default")
+    expect(executionShape).toContain("vertical-slices")
+    expect(executionShape).toContain("infra-track")
+    expect(executionShape).toContain("fix-batch")
+    expect(executionShape).toContain("## Plan shape")
   })
 
   test("plan, deepen, work, and review reference the shared orchestration rules instead of duplicating them", async () => {
@@ -158,5 +171,38 @@ describe("workflow orchestration references", () => {
     expect(reviewPrompt).toContain("#### TDD Evidence Gate (BEFORE reviewer dispatch)")
     expect(specPrompt).toContain("Missing behavior coverage")
     expect(qualityPrompt).toContain("Missing cleanup after refactor")
+  })
+
+  test("plan, deepen, and work share the execution-shape contract", async () => {
+    const planPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "plan.md",
+    )
+    const deepenPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "deepen-plan.md",
+    )
+    const workPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "work.md",
+    )
+
+    for (const prompt of [planPrompt, deepenPrompt, workPrompt]) {
+      expect(prompt).toContain("commands/workflows/references/execution-shape.md")
+    }
+
+    expect(planPrompt).toContain("execution_shape:")
+    expect(planPrompt).toContain("## Execution Shape")
+    expect(deepenPrompt).toContain("Resolve execution shape first")
+    expect(workPrompt).toContain("execution_shape")
+    expect(workPrompt).toContain("execution units")
   })
 })

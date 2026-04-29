@@ -13,13 +13,14 @@ argument-hint: '[feature description, bug report, or improvement idea]'
 
 Transform feature descriptions, bug reports, or improvement ideas into well-structured, execution-ready plans that:
 1. **Anchor to WHY** -- every plan traces back to a user story and problem narrative
-2. **Map WHERE** -- architectural context grounds task decomposition in the system's structure
+2. **Map WHERE** -- architectural context grounds slice decomposition in the system's structure
 3. **Define DONE** -- success criteria tied to user outcomes, not just technical checkboxes
 4. **Honor project guardrails** -- constitution principles, baselines, and approval rules are made explicit
 5. **Make TDD explicit** -- the plan declares the Ralph/default loop, required unit + e2e evidence, and any justified exceptions
-6. **Enable architecture-first execution** -- `/workflows:architecture` turns the plan into a dedicated architecture artifact before `/deepen-plan`, `/workflows:work`, and `/workflows:review` harden or execute it
+6. **Choose the right execution shape** -- vertical slices are the default, but infra tracks and fix batches are valid when they fit the real work better
+7. **Enable architecture-first execution** -- `/workflows:architecture` turns the plan into a dedicated architecture artifact before `/deepen-plan`, `/workflows:work`, and `/workflows:review` harden or execute it
 
-Plans consume the project constitution from `/workflows:constitution` when available, plus lynchpin artifacts from `/workflows:brainstorm` when available, or construct feature context fresh when running standalone. Either way, the plan document carries forward the WHY, WHERE, DONE, GUARDRAIL, and TDD contract that all downstream phases depend on. After the plan is written, the next explicit step is `/workflows:architecture`, not direct deepening.
+Plans consume the project constitution from `/workflows:constitution` when available, plus lynchpin artifacts from `/workflows:brainstorm` when available, or construct feature context fresh when running standalone. Either way, the plan document carries forward the WHY, WHERE, DONE, GUARDRAIL, TDD, and **execution shape** contract that all downstream phases depend on. After the plan is written, the next explicit step is `/workflows:architecture`, not direct deepening.
 
 ## Feature Description
 
@@ -71,6 +72,15 @@ Every plan must then write its own `tdd:` frontmatter block plus a `## TDD & Evi
 - **Exception rule:** Any deviation from the resolved default loop or evidence requirements must be explicit and justified in `tdd.exceptions` and in the plan body.
 - **Shared source of truth:** Reuse `commands/workflows/references/tdd-evidence-contract.md` for contract resolution, the `## TDD & Evidence Contract` section shape, Ralph evidence semantics, and exception handling.
 
+#### Execution Shape Baseline (Runs Before Path A/B/C)
+
+Use `commands/workflows/references/execution-shape.md` as the single source for choosing and documenting the execution shape.
+
+- **Default mode:** `vertical-slices`
+- **Allowed overrides:** `infra-track`, `fix-batch`
+- **Override rule:** Any non-default mode must include a short rationale in frontmatter and in the plan body
+- **Anti-coercion rule:** Do not force work into slices if that would create fake end-to-end structure
+
 #### Path A: Spec/Plan File Provided
 
 **Check if arguments contain a plan or spec file:**
@@ -79,7 +89,7 @@ If the feature description (`#$ARGUMENTS`) is or contains a path to a `.md` file
 
 1. Read the file
 2. Announce: "Found existing plan/spec: `[file path]`. Using as foundation."
-3. Extract: title, problem statement, proposed approach, acceptance criteria, implementation phases, and any existing tasks
+3. Extract: title, problem statement, proposed approach, acceptance criteria, execution shape (if any), and any existing execution units
 4. **Check for brainstorm reference** -- look for a `brainstorm_ref` field in frontmatter, or search `docs/brainstorms/` for a matching topic. If found, read and extract lynchpin artifacts (see Path B).
 5. **Extract or construct WHY artifacts from the spec:**
    - If the spec has a Problem Narrative / User Story / Architectural Context -- use them directly
@@ -91,7 +101,7 @@ If the feature description (`#$ARGUMENTS`) is or contains a path to a `.md` file
 6. **Skip free-form idea refinement** -- the spec defines WHAT to build
 7. Proceed to Step 0.5 to gather any additional project inputs, then to research
 
-In Step 2 (Issue Planning), **build upon the existing plan structure** -- preserve its sections, fill gaps, add execution-readiness fields (Files, Depends on, Success criteria, Test command) to any tasks that lack them, and enrich with research findings. Do NOT discard or rewrite sections that are already well-defined.
+In Step 2 (Issue Planning), **build upon the existing plan structure** -- preserve its sections, fill gaps, add the execution-shape contract and execution-readiness fields to any legacy execution units that lack them, and enrich with research findings. Do NOT discard or rewrite sections that are already well-defined.
 
 #### Path B: Brainstorm Document Found
 
@@ -114,11 +124,11 @@ ls -la docs/brainstorms/*.md 2>/dev/null | head -10
 3. Announce: "Found brainstorm from [date]: [topic]. Consuming lynchpin artifacts."
 4. **Extract and surface all lynchpin sections:**
    - **Problem Narrative** -- the synthesized WHY (carry forward verbatim into plan)
-   - **User Story** -- the north star (carry forward, plan tasks must trace to this)
+   - **User Story** -- the north star (carry forward, plan slices must trace to this)
    - **Architectural Context** -- the WHERE map (feeds `{{ARCHITECTURAL_CONTEXT}}` in work.md)
    - **Success Criteria** -- the DONE definition (plan acceptance criteria must include these)
    - **Stakeholder Impact** -- who is affected (informs stakeholder analysis)
-   - **Chosen Approach** and **Key Decisions** -- the WHAT (informs task decomposition)
+   - **Chosen Approach** and **Key Decisions** -- the WHAT (informs slice decomposition)
    - **Open Questions** -- must be resolved before planning proceeds
 5. **If any handoff fields are `false` or sections are empty**, flag them: "Brainstorm is missing [X]. I'll construct this during planning."
 6. **Resolve open questions** -- if the brainstorm has unresolved questions, use **AskUserQuestion tool** to resolve each one before proceeding
@@ -331,7 +341,7 @@ Now that we have concrete codebase knowledge, refine the WHY artifacts establish
 Explicitly state how research findings confirm, challenge, or refine the planned approach relative to the user story. Examples:
 - "Codebase already has a similar pattern in `app/Services/AuthService.php` -- we should follow it for consistency, which aligns with the user story because..."
 - "Learnings doc warns about [gotcha] -- this affects our approach because..."
-- "No existing patterns found for this -- higher risk, may need more tasks for validation."
+- "No existing patterns found for this -- higher risk, may need more slices for validation."
 - "Constitution requires [baseline] -- the plan must make that visible in acceptance criteria or approvals."
 
 **Optional validation:** Briefly summarize the refined WHY artifacts and key research findings, then ask if anything looks off or missing before proceeding to planning.
@@ -366,28 +376,34 @@ Think like a product manager -- what would make this issue clear, actionable, an
 - [ ] Gather supporting materials (error logs, screenshots, design mockups)
 - [ ] Prepare code examples or reproduction steps if applicable, name the mock filenames in the lists
 
-**Phase Decomposition (traced to user story):**
+**Execution Shape Selection (traced to user story):**
 
-Each implementation phase must state **what aspect of the user story it serves**. This creates a traceable chain:
-- User Story → Phase → Tasks → Files
+Use `commands/workflows/references/execution-shape.md` as the source of truth for selecting and documenting the plan's execution shape.
 
-When decomposing into phases:
-- **Group by user-facing capability**, not by technical layer. "User can log in" is a phase; "Create database tables" is a task within a phase.
-- **Each phase should deliver a testable slice** of the user story where possible
-- **Each subphase/task should be a self-contained execution unit** -- after its listed dependencies are satisfied, the executor should have the context, scope, relevant files, success criteria, and verification command needed to complete it without reconstructing intent from neighboring phases
-- **Cross-reference success criteria** -- map each success criterion to the phase(s) that deliver it
-- **Architectural context informs boundaries** -- use the WHERE map to identify natural phase boundaries (e.g., service boundaries, module boundaries)
+Default to **`vertical-slices`**:
+- User Story → Phase/Track (optional grouping) → Slice → Files
+- Start with the thinnest tracer bullet
+- Slice vertically across layers when needed
+- Treat phases as wrappers, not executable units
+- Forbid horizontal slice titles unless they still produce a demoable outcome
+
+Switch only when that default would be fake:
+- **`infra-track`** for enabling/foundation work with no honest user-visible tracer bullet yet
+- **`fix-batch`** for a batch of small mostly independent fixes
+
+Every plan must record:
+- `execution_shape.mode`
+- `execution_shape.rationale` (required when mode is not `vertical-slices`)
+- A matching `## Execution Shape` section in the body
 
 **Execution Readiness:**
 
-For plans that will be executed via `/workflows:work`, ensure each implementation task includes:
-- **Scope:** What this task owns, what it changes, and any important boundary or non-goal that keeps the slice contained
-- **Files:** List of files to create or modify
-- **Depends on:** Which other tasks must complete first (or "None")
-- **Success criteria:** Testable checkboxes that define "done"
-- **Test command:** The exact command to verify the task is complete. Across the plan, these commands must satisfy the plan-level TDD evidence contract.
+For plans that will be executed via `/workflows:work`, the plan must include the packet section required by the selected mode:
+- `## Execution Slices`
+- `## Infrastructure Work Packets`
+- `## Fix Batch Items`
 
-This structured format enables the `/workflows:work` orchestrator to delegate each task to a focused subagent with clear scope and termination criteria. Treat every task as a mini-handoff packet: if an executor had only that task plus the shared WHY/architecture context, they should still know what to touch, what not to touch, and how to prove it is done. Plans without this structure will be flagged for refinement before execution begins.
+Each packet must include the fields defined in `commands/workflows/references/execution-shape.md`. Plans without a declared shape and packet structure will be flagged for refinement before execution begins.
 
 **TDD & Evidence Contract (mandatory):**
 
@@ -407,10 +423,10 @@ Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/refere
 - Task spec-flow-analyzer(feature_description, user_story, success_criteria, research_findings)
 
 The SpecFlow Analyzer should evaluate:
-- Do the planned phases cover all aspects of the user story?
+- Do the planned slices cover all aspects of the user story?
 - Are there user flows implied by the user story that the plan doesn't address?
 - Do edge cases threaten any of the success criteria?
-- Are there gaps between what the user needs (story) and what the plan delivers (tasks)?
+- Are there gaps between what the user needs (story) and what the plan delivers (slices)?
 
 **SpecFlow Analyzer Output:**
 
@@ -421,7 +437,7 @@ The SpecFlow Analyzer should evaluate:
 
 ### 4. Choose Implementation Detail Level
 
-**Important for `/workflows:work` compatibility:** All detail levels can be executed, but the MORE and A LOT levels produce plans with structured execution chunks (per-task scope, success criteria, test commands, and file lists) that enable the subagent orchestration model in `/workflows:work`. MINIMAL plans work but may require the orchestrator to decompose tasks further before delegating to subagents and supply any missing containment details.
+**Important for `/workflows:work` compatibility:** All detail levels can be executed, but each level must still declare an execution shape and produce the matching packet section. `vertical-slices` is the default and usually the best choice. MORE and A LOT provide the richest packets (scope fence, dependencies, evidence, and safety notes) and therefore give the most predictable subagent orchestration.
 
 **All detail levels include WHY sections.** The Problem Narrative, User Story, Architectural Context, and Success Criteria are mandatory at every level -- they are the contract that downstream phases depend on. The difference between levels is how much implementation detail surrounds them.
 
@@ -437,7 +453,7 @@ Select how comprehensive you want the issue to be, simpler is mostly better.
 - Basic acceptance criteria
 - Essential context only
 
-**Note:** MINIMAL plans may need to be enriched with per-task success criteria before running `/workflows:work`. The orchestrator can handle this decomposition automatically, but providing structured tasks up front leads to more predictable execution.
+**Note:** MINIMAL plans may still contain only a few units, but they must include at least one execution-ready packet from the selected mode before `/workflows:work` should execute them. When in doubt, choose a tracer-bullet slice.
 
 **Structure:**
 
@@ -468,6 +484,9 @@ tdd:
     unit: inherit # inherit | required | optional
     e2e: inherit # inherit | required | optional
   exceptions: [] # [{ scope, reason, replacement_evidence }]
+execution_shape:
+  mode: vertical-slices # vertical-slices | infra-track | fix-batch
+  rationale: ""
 ---
 
 # [Issue Title]
@@ -500,6 +519,11 @@ which causes [impact].
 
 Use the exact section shape from `commands/workflows/references/tdd-evidence-contract.md` with the resolved values for this plan. Do not omit any bullet, and make every deviation explicit with `replacement_evidence`.
 
+## Execution Shape
+
+- **Mode:** vertical-slices
+- **Why:** The work has a real tracer-bullet path, so default to end-to-end slices.
+
 ## Constitution Alignment
 
 - **Relevant principles:** [Project rules that apply to this work]
@@ -509,6 +533,34 @@ Use the exact section shape from `commands/workflows/references/tdd-evidence-con
 ## Implementation
 
 [Brief description of what to build and how]
+
+## Execution Slices
+
+Use this default section only when `execution_shape.mode` is `vertical-slices`. If the selected mode is `infra-track` or `fix-batch`, replace this section with the matching packet section from `commands/workflows/references/execution-shape.md`.
+
+##### Slice 1.1: [Tracer Bullet Slice Title]
+**Slice type:** tracer-bullet
+**Serves:** [Which aspect of the user story / which success criterion this slice proves]
+**Demo scenario:** [Describe the smallest end-to-end behavior this slice makes observable]
+**Files:** `path/to/file1.php`, `path/to/file2.php`
+**Depends on:** None
+**Dependency type:** real | stub-available | parallel-safe
+
+###### What to build
+[Brief description of the thin end-to-end path]
+
+###### Scope
+- **Owns:** [What this slice is responsible for]
+- **Non-goals:** [What this slice intentionally does not solve yet]
+- **Scope fence:** [What would count as widening the slice too far]
+
+###### Acceptance criteria
+- [ ] Criterion 1
+- [ ] Criterion 2
+
+###### Evidence
+- **Test command:** `<project-appropriate test command>`
+- **Evidence focus:** [What this command proves for the tracer bullet]
 
 ## References
 
@@ -524,7 +576,7 @@ Use the exact section shape from `commands/workflows/references/tdd-evidence-con
 
 - Detailed background and motivation
 - Technical considerations
-- Phased implementation with story tracing
+- Issue-shaped execution slices with story tracing
 - Success metrics
 - Dependencies and risks
 
@@ -557,6 +609,9 @@ tdd:
     unit: inherit # inherit | required | optional
     e2e: inherit # inherit | required | optional
   exceptions: [] # [{ scope, reason, replacement_evidence }]
+execution_shape:
+  mode: vertical-slices # vertical-slices | infra-track | fix-batch
+  rationale: ""
 ---
 
 # [Issue Title]
@@ -593,6 +648,11 @@ which causes [impact].
 
 Use the exact section shape from `commands/workflows/references/tdd-evidence-contract.md` with the resolved values for this plan. Do not omit any bullet, and make every deviation explicit with `replacement_evidence`.
 
+## Execution Shape
+
+- **Mode:** vertical-slices
+- **Why:** The default tracer-bullet decomposition matches the real behavior being delivered.
+
 ## Constitution Alignment
 
 - **Relevant principles:** [Project rules that apply to this work]
@@ -610,37 +670,88 @@ Use the exact section shape from `commands/workflows/references/tdd-evidence-con
 - Performance implications
 - Security considerations
 
-## Implementation Phases
+## Execution Slices
 
-#### Phase 1: [Phase Name]
-**Serves:** [Which aspect of the user story / which success criterion this phase delivers]
+Use this default section only when `execution_shape.mode` is `vertical-slices`. If the selected mode is `infra-track` or `fix-batch`, replace this section with the matching packet section from `commands/workflows/references/execution-shape.md`.
 
-##### Task 1.1: [Task Name]
+#### Phase 1: [Optional grouping / milestone]
+**Purpose:** [Why these slices belong together or why this track exists]
+**Not executable by itself:** `/workflows:work` executes the slices below, not the phase wrapper.
+
+##### Slice 1.1: [Tracer Bullet Slice Title]
+**Slice type:** tracer-bullet
+**Serves:** [Which aspect of the user story / which success criterion this slice proves]
+**Demo scenario:** [Describe the smallest end-to-end behavior this slice makes observable]
 **Files:** `path/to/file1.php`, `path/to/file2.php`
 **Depends on:** None
-**Success criteria:**
+**Dependency type:** parallel-safe
+
+###### What to build
+[Describe the thin vertical cut through the system]
+
+###### Scope
+- **Owns:** [What this slice is responsible for]
+- **Non-goals:** [What it intentionally does not solve yet]
+- **Scope fence:** [What would widen the slice too far]
+
+###### Acceptance criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
-**Test command:** `<project-appropriate test command>`
 
-##### Task 1.2: [Task Name]
+###### Evidence
+- **Test command:** `<project-appropriate test command>`
+- **Evidence focus:** [What the command proves]
+
+##### Slice 1.2: [Expansion Slice Title]
+**Slice type:** expansion
+**Serves:** [Which aspect of the user story / which success criterion this slice extends]
+**Demo scenario:** [Describe the next observable behavior]
 **Files:** `path/to/file3.php`
-**Depends on:** Task 1.1
-**Success criteria:**
+**Depends on:** Slice 1.1
+**Dependency type:** real
+
+###### What to build
+[Describe the next thin vertical cut]
+
+###### Scope
+- **Owns:** [What this slice changes]
+- **Non-goals:** [What stays out]
+- **Scope fence:** [Boundary for this expansion]
+
+###### Acceptance criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
-**Test command:** `<project-appropriate test command>`
 
-#### Phase 2: [Phase Name]
-**Serves:** [Which aspect of the user story / which success criterion this phase delivers]
+###### Evidence
+- **Test command:** `<project-appropriate test command>`
+- **Evidence focus:** [What the command proves]
 
-##### Task 2.1: [Task Name]
+#### Phase 2: [Optional grouping / milestone]
+**Purpose:** [Why the next slices are grouped here]
+
+##### Slice 2.1: [Hardening or follow-on slice]
+**Slice type:** expansion | hardening
+**Serves:** [Which aspect of the user story / which success criterion this slice delivers]
+**Demo scenario:** [Describe the observable behavior or guardrail added here]
 **Files:** `path/to/file4.php`
-**Depends on:** Task 1.2
-**Success criteria:**
+**Depends on:** Slice 1.2
+**Dependency type:** real
+
+###### What to build
+[Describe the slice]
+
+###### Scope
+- **Owns:** [What this slice changes]
+- **Non-goals:** [What stays out]
+- **Scope fence:** [Boundary for this slice]
+
+###### Acceptance criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
-**Test command:** `<project-appropriate test command>`
+
+###### Evidence
+- **Test command:** `<project-appropriate test command>`
+- **Evidence focus:** [What the command proves]
 
 ## Acceptance Criteria
 
@@ -669,7 +780,7 @@ Use the exact section shape from `commands/workflows/references/tdd-evidence-con
 
 **Includes everything from MORE plus:**
 
-- Detailed implementation plan with phases
+- Detailed implementation plan with slice groups
 - Alternative approaches considered (traced to user story)
 - Extensive technical specifications
 - Resource requirements and timeline
@@ -706,6 +817,9 @@ tdd:
     unit: inherit # inherit | required | optional
     e2e: inherit # inherit | required | optional
   exceptions: [] # [{ scope, reason, replacement_evidence }]
+execution_shape:
+  mode: vertical-slices # vertical-slices | infra-track | fix-batch
+  rationale: ""
 ---
 
 # [Issue Title]
@@ -749,6 +863,11 @@ As a [persona 2], I need to [action] so that [outcome].
 
 Use the exact section shape from `commands/workflows/references/tdd-evidence-contract.md` with the resolved values for this plan. Do not omit any bullet, and make every deviation explicit with `replacement_evidence`.
 
+## Execution Shape
+
+- **Mode:** vertical-slices
+- **Why:** The plan delivers meaningful user-visible tracer bullets, so slices stay the best default.
+
 ## Constitution Alignment
 
 - **Relevant principles:** [Project rules that apply to this work]
@@ -777,65 +896,162 @@ Use the exact section shape from `commands/workflows/references/tdd-evidence-con
 
 [Detailed technical design, grounded in the architectural context map]
 
-### Implementation Phases
+### Execution Slices
 
-#### Phase 1: [Foundation]
-**Serves:** [Which aspect of the user story / which success criteria this phase delivers]
-**Rationale:** [Why this phase comes first -- what it enables for subsequent phases]
+Use this default section only when `execution_shape.mode` is `vertical-slices`. If the selected mode is `infra-track` or `fix-batch`, replace this section with the matching packet section from `commands/workflows/references/execution-shape.md`.
 
-##### Task 1.1: [Task Name]
+#### Phase 1: [Tracer bullet track]
+**Purpose:** [Why these slices come first]
+**Rationale:** [What this track proves before later widening]
+
+##### Slice 1.1: [Tracer Bullet Slice Title]
+**Slice type:** tracer-bullet
+**Serves:** [Which aspect of the user story / which success criteria this slice proves]
+**Demo scenario:** [Describe the smallest end-to-end behavior]
 **Files:** `path/to/file1.php`, `path/to/file2.php`
 **Depends on:** None
-**Success criteria:**
+**Dependency type:** real | stub-available | parallel-safe
+**Blast radius:** low | medium | high
+**Shared state changes:** [None, or list]
+**Rollback path:** [How to back out safely if risky]
+
+###### What to build
+[Describe the tracer bullet as an issue-sized vertical slice]
+
+###### Scope
+- **Owns:** [What this slice is responsible for]
+- **Non-goals:** [What intentionally waits for later slices]
+- **Scope fence:** [What would widen the slice too far]
+
+###### Acceptance criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
-**Test command:** `<project-appropriate test command>`
 
-##### Task 1.2: [Task Name]
+###### Evidence
+- **Test command:** `<project-appropriate test command>`
+- **Evidence focus:** [What the command proves]
+
+##### Slice 1.2: [Follow-on expansion slice]
+**Slice type:** expansion
+**Serves:** [Which aspect of the user story / which success criteria this slice extends]
+**Demo scenario:** [Describe the next observable behavior]
 **Files:** `path/to/file3.php`
-**Depends on:** Task 1.1
-**Success criteria:**
+**Depends on:** Slice 1.1
+**Dependency type:** real
+**Blast radius:** low | medium | high
+**Shared state changes:** [None, or list]
+**Rollback path:** [How to back out safely if risky]
+
+###### What to build
+[Describe the slice]
+
+###### Scope
+- **Owns:** [What this slice changes]
+- **Non-goals:** [What stays out]
+- **Scope fence:** [Boundary for this slice]
+
+###### Acceptance criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
-**Test command:** `<project-appropriate test command>`
 
-#### Phase 2: [Core Implementation]
-**Serves:** [Which aspect of the user story / which success criteria this phase delivers]
-**Rationale:** [Why this phase order -- what it builds on from Phase 1]
+###### Evidence
+- **Test command:** `<project-appropriate test command>`
+- **Evidence focus:** [What the command proves]
 
-##### Task 2.1: [Task Name]
+#### Phase 2: [Core widening track]
+**Purpose:** [Why these slices come after the tracer bullet]
+**Rationale:** [What this track widens or hardens]
+
+##### Slice 2.1: [Core slice]
+**Slice type:** expansion | hardening
+**Serves:** [Which aspect of the user story / which success criteria this slice delivers]
+**Demo scenario:** [Describe the user-visible behavior]
 **Files:** `path/to/file4.php`, `path/to/file5.php`
-**Depends on:** Task 1.2
-**Success criteria:**
+**Depends on:** Slice 1.2
+**Dependency type:** real
+**Blast radius:** low | medium | high
+**Shared state changes:** [None, or list]
+**Rollback path:** [How to back out safely if risky]
+
+###### What to build
+[Describe the slice]
+
+###### Scope
+- **Owns:** [What this slice changes]
+- **Non-goals:** [What stays out]
+- **Scope fence:** [Boundary for this slice]
+
+###### Acceptance criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
-**Test command:** `<project-appropriate test command>`
 
-##### Task 2.2: [Task Name]
+###### Evidence
+- **Test command:** `<project-appropriate test command>`
+- **Evidence focus:** [What the command proves]
+
+##### Slice 2.2: [Parallel-safe or stub-removal slice]
+**Slice type:** expansion | hardening
+**Serves:** [Which aspect of the user story / which success criteria this slice delivers]
+**Demo scenario:** [Describe the observable outcome]
 **Files:** `path/to/file6.php`
-**Depends on:** Task 2.1
-**Success criteria:**
+**Depends on:** Slice 2.1
+**Dependency type:** real | stub-available | parallel-safe
+**Blast radius:** low | medium | high
+**Shared state changes:** [None, or list]
+**Rollback path:** [How to back out safely if risky]
+
+###### What to build
+[Describe the slice]
+
+###### Scope
+- **Owns:** [What this slice changes]
+- **Non-goals:** [What stays out]
+- **Scope fence:** [Boundary for this slice]
+
+###### Acceptance criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
-**Test command:** `<project-appropriate test command>`
 
-#### Phase 3: [Polish & Optimization]
-**Serves:** [Which success criteria / quality aspects this phase delivers]
+###### Evidence
+- **Test command:** `<project-appropriate test command>`
+- **Evidence focus:** [What the command proves]
 
-##### Task 3.1: [Task Name]
+#### Phase 3: [Hardening / rollout track]
+**Purpose:** [Why these slices close the loop]
+
+##### Slice 3.1: [Hardening slice]
+**Slice type:** hardening
+**Serves:** [Which success criteria / quality aspects this slice delivers]
+**Demo scenario:** [Describe the behavior or safety improvement]
 **Files:** `path/to/file7.php`
-**Depends on:** Task 2.2
-**Success criteria:**
+**Depends on:** Slice 2.2
+**Dependency type:** real
+**Blast radius:** low | medium | high
+**Shared state changes:** [None, or list]
+**Rollback path:** [How to back out safely if risky]
+
+###### What to build
+[Describe the slice]
+
+###### Scope
+- **Owns:** [What this slice changes]
+- **Non-goals:** [What stays out]
+- **Scope fence:** [Boundary for this slice]
+
+###### Acceptance criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
-**Test command:** `<project-appropriate test command>`
 
-### Phase-to-Story Traceability
+###### Evidence
+- **Test command:** `<project-appropriate test command>`
+- **Evidence focus:** [What the command proves]
 
-| Success Criterion | Delivered by Phase(s) | Key Tasks |
+### Slice-to-Story Traceability
+
+| Success Criterion | Delivered by Slice(s) | Demo scenarios |
 |---|---|---|
-| [Criterion 1 from Success Criteria] | Phase 1, Phase 2 | Task 1.1, Task 2.1 |
-| [Criterion 2 from Success Criteria] | Phase 2 | Task 2.1, Task 2.2 |
+| [Criterion 1 from Success Criteria] | Slice 1.1, Slice 2.1 | [Scenario names] |
+| [Criterion 2 from Success Criteria] | Slice 2.1, Slice 2.2 | [Scenario names] |
 
 ## Alternative Approaches Considered
 
@@ -970,10 +1186,12 @@ public function processUser(User $user): array
 - [ ] Architectural Context is grounded in actual repo research (not hypothetical)
 - [ ] Success Criteria are tied to user outcomes, not just technical checkboxes
 - [ ] If `docs/constitution.md` exists, Constitution Alignment names the applicable rules, approvals, and any waivers explicitly
-- [ ] Every implementation phase states which user story aspect / success criterion it serves
+- [ ] Every execution slice states which user story aspect / success criterion it serves
 - [ ] `handoff` frontmatter fields are all `true`
 - [ ] `tdd` frontmatter is present and the precedence rule is explicit
 - [ ] `## TDD & Evidence Contract` names the effective loop, required evidence, and any justified exceptions
+- [ ] `execution_shape` frontmatter is present and matches the body section
+- [ ] Non-default execution shapes include an explicit rationale
 
 **Content Quality:**
 
@@ -987,14 +1205,17 @@ public function processUser(User $user): array
 
 **Execution Readiness (for `/workflows:work`):**
 
-- [ ] Each task is a self-contained execution unit once dependencies are met
-- [ ] Each task has: Files, Depends on, Success criteria, Test command
-- [ ] Each task scope is explicit enough that an executor does not need to infer missing boundaries from adjacent phases
-- [ ] Task success criteria are testable (not vague)
-- [ ] Dependencies between tasks are explicit
+- [ ] The selected execution shape matches the real work instead of forcing fake verticality
+- [ ] The plan includes the packet section required by the selected mode
+- [ ] Every packet includes the required fields from `commands/workflows/references/execution-shape.md`
+- [ ] If mode is `vertical-slices`, the first slice is a tracer bullet, not a broad foundation phase
+- [ ] If mode is `vertical-slices`, no slice is a disguised horizontal layer bucket unless it still delivers a demoable outcome
+- [ ] Packet scope is explicit enough that an executor does not need to infer missing boundaries from adjacent packets
+- [ ] Packet success criteria are testable (not vague)
+- [ ] Dependencies are explicit wherever ordering matters
 - [ ] Architectural context is specific enough to fill `{{ARCHITECTURAL_CONTEXT}}` in execution agent prompts
 - [ ] The plan declares unit + e2e evidence by default, or records a justified exception with replacement evidence
-- [ ] Task test commands collectively satisfy the resolved TDD contract
+- [ ] Validation/test commands collectively satisfy the resolved TDD contract
 
 ## Directory Setup & Gitignore
 
@@ -1080,12 +1301,12 @@ The plan document is a structured contract consumed by all downstream phases. He
 
 **`/workflows:architecture`** reads:
 - Problem Narrative, User Story, Success Criteria, and Architectural Context -- the WHY/WHERE contract it must preserve
-- Implementation phases and tasks -- identifies the deepening candidates that need structural clarification
+- Execution shape plus execution packets -- identifies the deepening candidates and boundaries that need structural clarification
 - Constitution Alignment / waivers / brainstorm decisions -- keeps architecture decisions inside approved project guardrails
 - **Must write**: a dedicated artifact in `docs/architecture/` plus an `architecture_ref` back into the plan
 
 **`/deepen-plan`** reads:
-- Implementation phases and tasks -- enriches each with parallel research (best practices, performance, UI patterns)
+- Execution shape plus execution packets -- enriches each with parallel research and splits, merges, or reshapes packets when the current mode is weak
 - Success criteria -- validates they are testable and complete
 - Architectural Context -- uses it to ground research in the right part of the system
 - `tdd` frontmatter and `## TDD & Evidence Contract` -- preserves the effective Ralph/default loop, evidence requirements, and any justified exceptions
@@ -1093,12 +1314,12 @@ The plan document is a structured contract consumed by all downstream phases. He
 - **Must preserve**: Problem Narrative, User Story, and handoff contract unchanged
 
 **`/workflows:work`** reads:
-- **Problem Narrative & User Story** -- the orchestrator uses these to validate task outcomes make sense in context, not just pass tests
+- **Problem Narrative & User Story** -- the orchestrator uses these to validate slice outcomes make sense in context, not just pass tests
 - **Architectural Context** -- feeds directly into `{{ARCHITECTURAL_CONTEXT}}` in each execution agent's prompt. This is WHY grounded arch context matters -- every subagent gets system-level awareness
 - **`architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract** -- feeds deletion-test decisions, interfaces as test surfaces, seams, adapters, and contracts into execution so subagents do not invent structure ad hoc
 - **`tdd` frontmatter + `## TDD & Evidence Contract`** -- plan-level values win; `inherit` falls back to `compound-engineering.local.md`; if neither exists, execution should assume Ralph-driven unit + e2e evidence
-- **Implementation phases & tasks** -- the execution chunk structure (Files, Depends on, Success criteria, Test command)
-- **Success Criteria** -- the orchestrator checks final outcomes against these, not just individual task passes
+- **`execution_shape` + execution packets** -- tells the orchestrator whether to execute slices, infrastructure packets, or fix-batch items, and which fields each unit must respect
+- **Success Criteria** -- the orchestrator checks final outcomes against these, not just individual unit passes
 - **`constitution_version` / `constitution_waivers` / Constitution Alignment** -- the execution phase enforces repo-wide guardrails and knows which exceptions were approved
 - **`brainstorm_ref`** -- if present, the orchestrator can read the original brainstorm for additional context
 
@@ -1108,6 +1329,7 @@ The plan document is a structured contract consumed by all downstream phases. He
 - **Architectural Context** -- used to evaluate whether the implementation respects system boundaries and integration points
 - **`architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract** -- supplies the architecture intent, deletion-test outcomes, interfaces, seams, adapters, and contracts that reviewers must verify or flag as drift
 - **`tdd` frontmatter + `## TDD & Evidence Contract`** -- review must verify the declared evidence exists and that any deviation from Ralph/unit+e2e is explicitly justified
+- **`execution_shape` + execution packets** -- review uses the chosen mode to judge whether the work was decomposed honestly and executed completely
 - **Constitution Alignment and waivers** -- used to distinguish approved exceptions from blocking constitution violations
 - **Stakeholder Impact** (A LOT level) -- informs stakeholder-perspective review
 

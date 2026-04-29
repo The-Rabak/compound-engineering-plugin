@@ -212,7 +212,7 @@ options:
 - `tdd.evidence.unit`: `required` or `optional`
 - `tdd.evidence.e2e`: `required` or `optional`
 - `tdd.exceptions`: `[]` by default. Plans must carry any justified exceptions.
-- `review_mode`: "bulk" (default), "inline", or "both" (controls per-task review in workflows:work)
+- `review_mode`: "bulk" (default), "inline", or "both" (controls per-slice review in workflows:work)
 
 Write `compound-engineering.local.md`:
 

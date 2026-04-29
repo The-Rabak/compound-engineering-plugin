@@ -14,17 +14,17 @@ Execute a work plan while maintaining WHY tracing from problem narrative through
 
 ## Introduction
 
-This command takes a work document (plan, specification, or todo file) and executes it systematically using a **subagent orchestration model**. The orchestrator (this conversation) decomposes the plan into scoped chunks and delegates each to a focused subagent. Each subagent follows a standardized 4-phase protocol (understand, implement, self-review, report) defined in the execution agent prompt template.
+This command takes a work document (plan, specification, or todo file) and executes it systematically using a **subagent orchestration model**. The orchestrator (this conversation) loads or adapts the plan into execution units and delegates each unit to a focused subagent. `vertical-slices` is the default execution shape, but `infra-track` and `fix-batch` are also valid when declared by the plan. Each subagent follows a standardized 4-phase protocol (understand, implement, self-review, report) defined in the execution agent prompt template.
 
-**WHY-grounded execution:** Every subagent receives the plan's WHY context -- the problem narrative, user story, architectural context, the architecture handoff contract, and which success criterion their specific task serves. This prevents implementation drift where technically correct code fails to deliver the user's actual need. The orchestrator is the guardian of WHY: it extracts purpose from the plan, threads it through every task prompt, and validates that the combined output delivers the stated user story.
+**WHY-grounded execution:** Every subagent receives the plan's WHY context -- the problem narrative, user story, architectural context, the architecture handoff contract, and which success criterion their specific unit serves. This prevents implementation drift where technically correct code fails to deliver the user's actual need. The orchestrator is the guardian of WHY: it extracts purpose from the plan, threads it through every unit prompt, and validates that the combined output delivers the stated user story.
 
 ### Review Mode
 
 This command supports a `--review-mode` argument that controls when code review happens:
 
-- **`bulk`** (default) -- Review happens after ALL tasks complete, using `/workflows-review`. This is the standard behavior and is fastest for most work.
-- **`inline`** -- After each task, a lightweight two-stage review (spec compliance then code quality) runs automatically. Catches spec drift early but adds 2-4 extra subagent calls per task.
-- **`both`** -- Inline review per task AND comprehensive `/workflows-review` at the end. Maximum quality assurance.
+- **`bulk`** (default) -- Review happens after ALL units complete, using `/workflows-review`. This is the standard behavior and is fastest for most work.
+- **`inline`** -- After each unit, a lightweight two-stage review (spec compliance then code quality) runs automatically. Catches spec drift early but adds 2-4 extra subagent calls per unit.
+- **`both`** -- Inline review per unit AND comprehensive `/workflows-review` at the end. Maximum quality assurance.
 
 If no `--review-mode` is specified, check `compound-engineering.local.md` for a `review_mode` setting. If not found there either, default to `bulk`.
 
@@ -38,15 +38,16 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
 
 1. **Read Plan and Extract WHY + Guardrail Context**
 
-   - Read the work document completely
-   - **Extract WHY artifacts** from the plan (these ground everything that follows):
-     - **Problem Narrative** -- why this work exists, what pain it solves
-     - **User Story** -- who benefits and what outcome they get
-     - **Architectural Context** -- how the solution fits in the system
-     - **Success Criteria** -- measurable conditions that define "done"
-     - **Phase-to-story tracing** -- each phase's "Serves:" line showing what user story aspect it delivers
-     - **Constitution alignment** -- relevant principles, required approvals, and any approved waivers
-     - **`tdd` frontmatter + `## TDD & Evidence Contract`** -- resolve the effective TDD contract using `references/tdd-evidence-contract.md` (plan overrides local, `inherit` falls back, and no-local-config defaults to Ralph-driven `red-green-refactor` with unit + e2e evidence required)
+    - Read the work document completely
+    - **Extract WHY artifacts** from the plan (these ground everything that follows):
+      - **Problem Narrative** -- why this work exists, what pain it solves
+      - **User Story** -- who benefits and what outcome they get
+      - **Architectural Context** -- how the solution fits in the system
+      - **Success Criteria** -- measurable conditions that define "done"
+      - **Execution shape** -- resolve it using `references/execution-shape.md`
+      - **Unit tracing** -- each packet's `Serves`, `Consumers`, or equivalent purpose line showing what outcome it delivers or unlocks
+      - **Constitution alignment** -- relevant principles, required approvals, and any approved waivers
+      - **`tdd` frontmatter + `## TDD & Evidence Contract`** -- resolve the effective TDD contract using `references/tdd-evidence-contract.md` (plan overrides local, `inherit` falls back, and no-local-config defaults to Ralph-driven `red-green-refactor` with unit + e2e evidence required)
    - Check for `handoff:` frontmatter in the plan. If present, verify all flags are `true` (problem_narrative, user_story, architectural_context, success_criteria). If any are `false`, warn the user that WHY context is incomplete and suggest running `/workflows-brainstorm` or `/workflows-plan` first.
    - If the resolved contract weakens Ralph/unit+e2e without a justified exception in the plan, stop and ask for the plan contract to be corrected before execution
    - If `docs/constitution.md` exists, read it and extract the active constitution version, applicable principles, execution baselines, and approval rules. If the plan lists `constitution_waivers`, honor only those explicit exceptions.
@@ -55,7 +56,8 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
    - If no architecture artifact is recorded, assemble an explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and execution constraints. Tell the user this is a fallback and recommend `/workflows-architecture` if boundaries are still unsettled.
    - Review any other references or links provided in the plan
    - If the constitution requires explicit approval for any part of the planned work (for example, risky writes, schema changes, auth changes, or scope expansions), surface that before execution starts
-   - If anything is unclear or ambiguous, ask clarifying questions now
+     - If the document is not already in a declared execution shape, treat it as **legacy input**. Before spawning subagents, adapt it into execution units in STATE.md. If that adaptation materially changes scope or ordering, ask the user to approve the adapted unit backlog before proceeding.
+    - If anything is unclear or ambiguous, ask clarifying questions now
    - Get user approval to proceed
    - **Do not skip this** - better to ask questions now than build the wrong thing
 
@@ -103,27 +105,27 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
    - You want to keep the default branch clean while experimenting
    - You plan to switch between branches frequently
 
-3. **Preview Task Breakdown**
-   - Mentally identify the major tasks from the plan
+3. **Preview Unit Breakdown**
+   - Mentally identify the major execution units from the plan
    - Note any questions about dependencies or scope
-   - The formal task decomposition happens in Phase 2 Step 4 (STATE.md), which is the persistent record of progress
+   - The formal unit decomposition happens in Phase 2 Step 4 (STATE.md), which is the persistent record of progress
    - TodoWrite can be used for in-conversation progress tracking if helpful, but STATE.md is the source of truth
 
 ### Phase 2: Orchestrated Execution
 
-Phase 2 is where the orchestrator (this conversation) decomposes the plan into scoped chunks and delegates each to a focused subagent. The orchestrator does NOT implement code itself -- it decomposes, delegates, records, and routes.
+Phase 2 is where the orchestrator (this conversation) resolves the plan's execution shape, decomposes the work into execution units, and delegates each to a focused subagent. The orchestrator does NOT implement code itself -- it decomposes, delegates, records, and routes.
 
 #### Step 1: Validate Plan Readiness
 
-Before executing, validate four things: **structural readiness** (tasks are granular and testable), **WHY readiness** (the plan carries purpose context), **TDD readiness** (the execution contract is explicit and enforceable), and **guardrail readiness** (repo-wide rules are visible and actionable).
+Before executing, validate four things: **structural readiness** (the selected execution shape is honest and its units are testable), **WHY readiness** (the plan carries purpose context), **TDD readiness** (the execution contract is explicit and enforceable), and **guardrail readiness** (repo-wide rules are visible and actionable).
 
-**Structural readiness** -- each implementation task should have:
+**Structural readiness** -- first resolve `execution_shape` using `references/execution-shape.md`, then verify the units for that mode:
 
-- **Task description** -- what needs to be done
-- **Files to create/modify** -- specific file paths
-- **Success criteria** -- checkboxes that define "done"
-- **Test command** -- how to verify the task works
-- **Dependencies** -- which other tasks must complete first
+- **`vertical-slices`** -- slice type, serves, demo scenario, scope fence, files, success criteria, validation command, dependencies, dependency type
+- **`infra-track`** -- capability enabled, consumers / downstream work unlocked, scope, files, risk / rollback, success criteria, validation command, dependencies
+- **`fix-batch`** -- problem, repro / expected outcome, files, success criteria, validation command, dependencies
+- **Default rule** -- if `execution_shape` is missing, assume `vertical-slices`
+- **Anti-coercion rule** -- do not force infra or fix-batch work into slices if that would create fake verticality
 
 **Guardrail readiness** -- when the project has `docs/constitution.md`, the plan should make repo-wide rules visible:
 
@@ -138,25 +140,25 @@ Before executing, validate four things: **structural readiness** (tasks are gran
 - **`## TDD & Evidence Contract` present** -- states the resolved execution path in plain language
 - **Effective mode resolved** -- Ralph-driven by default unless the plan explicitly approves a standard-mode exception
 - **Required evidence resolved** -- unit + e2e by default, or justified replacement evidence when explicitly waived
-- **Report contract visible** -- Ralph-driven tasks must emit stable red, green, and post-refactor green evidence blocks
+- **Report contract visible** -- Ralph-driven units must emit stable red, green, and post-refactor green evidence blocks
 
 **WHY readiness** -- the plan should have:
 
 - **Problem Narrative** -- present and non-empty
 - **User Story** -- present with clear "As a... I want... So that..."
 - **Architectural Context** -- present, describing system fit
-- **Success Criteria** -- present at plan level (not just task level)
-- **Phase tracing** -- each phase has a "Serves:" line connecting it to the user story
+- **Success Criteria** -- present at plan level (not just unit level)
+- **Unit tracing** -- each execution unit has a purpose line connecting it to the user story or explicit enabling outcome
 
-If the plan lacks structural details, or if no architecture artifact / handoff contract can explain the boundaries, refuse to proceed and suggest running `/workflows-architecture` first if the boundaries are still fuzzy, then `/deepen-plan`, or manually breaking down the plan.
+If the plan lacks structural details, or if no architecture artifact / handoff contract can explain the boundaries, refuse to proceed and suggest running `/workflows-architecture` first if the boundaries are still fuzzy, then `/deepen-plan`, or manually breaking down the plan into execution units.
 
 If the plan lacks the `tdd` block or `## TDD & Evidence Contract`, or if the resolved contract is ambiguous, refuse to proceed and suggest `/workflows-plan` or `/deepen-plan` to repair the execution contract before spawning subagents.
 
 If the plan lacks WHY artifacts, the orchestrator should **construct minimal WHY context** before proceeding:
 1. Ask the user: "This plan doesn't include a problem narrative or user story. In one sentence, what problem are we solving and for whom?"
-2. Infer success criteria from the task-level criteria
+2. Infer success criteria from the unit-level criteria
 3. Infer architectural context from the file paths and technologies mentioned
-4. Record these in STATE.md (see Step 3) so they're available for all tasks
+4. Record these in STATE.md (see Step 3) so they're available for all units
 
 #### Step 2: Check for Resumable Session
 
@@ -169,7 +171,7 @@ ls docs/execution-sessions/work-*/state.md 2>/dev/null
 If a previous session exists for the same plan file and has `status: in_progress`:
 
 - Ask the user: "Found incomplete session `[session_id]` for this plan. Resume where you left off, or start fresh?"
-- **If resume**: Read STATE.md, load the WHY Context section plus the Architecture Handoff section, skip completed tasks, load the learnings brief, and continue from `current_task`
+- **If resume**: Read STATE.md, load the WHY Context section plus the Architecture Handoff section, skip completed units, load the learnings brief, and continue from `current_unit`
 - **If fresh**: Archive the old session directory (rename with `-archived` suffix), then start a new session
 
 If no resumable session exists, proceed to Step 3.
@@ -191,8 +193,9 @@ plan_file: [path to plan]
 brainstorm_ref: [path to brainstorm, if available]
 started: [ISO timestamp]
 status: in_progress
-current_task: 0
-total_tasks: [count]
+execution_shape: [vertical-slices | infra-track | fix-batch]
+current_unit: 0
+total_units: [count]
 session_id: [SESSION_ID]
 ---
 
@@ -227,57 +230,68 @@ session_id: [SESSION_ID]
 - Seams / adapters / contracts: [boundaries this execution must honor]
 - Review guidance: [what `/workflows-review` must verify later]
 
-## Task Status
-| # | Task | Serves | Status | Attempts | Session File |
-|---|------|--------|--------|----------|--------------|
-| 1 | [task name] | [which user story aspect] | pending | -- | -- |
-| 2 | [task name] | [which user story aspect] | pending | -- | -- |
+## Work Status
+| # | Unit | Kind | Serves / Unlocks | Status | Attempts | Session File |
+|---|------|------|------------------|--------|----------|--------------|
+| 1 | [unit title] | tracer-bullet | [which user story aspect or enabling outcome] | pending | -- | -- |
+| 2 | [unit title] | expansion | [which user story aspect or enabling outcome] | pending | -- | -- |
 ...
 
 ## Learnings Brief
 _No learnings yet._
 ```
 
-#### Step 4: Decompose Plan into Execution Chunks
+#### Step 4: Load or Adapt Execution Units
 
-The orchestrator parses the plan and creates a list of execution chunks. Each chunk is a self-contained unit of work. The orchestrator does the heavy lifting here:
+The orchestrator parses the plan and creates a list of execution units. Each unit is a self-contained packet of work defined by the selected execution shape. The orchestrator does the heavy lifting here:
 
-- **Break large phases** into smaller tasks if needed (each task should be completable in one subagent session)
-- **Preserve WHY tracing** -- when splitting a phase, each resulting task inherits the parent phase's "Serves:" line. Never create an orphan task with no connection to the user story.
-- **Identify file dependencies** between tasks (Task B modifies a file created by Task A)
-- **Determine parallelizable tasks** -- tasks with non-overlapping file sets can run simultaneously
-- **Ensure each chunk has clear success criteria** -- if the plan already defines them, use them directly; otherwise, the orchestrator must create them
-- **Map each task to its purpose** -- record which success criterion or user story aspect each task delivers (this goes in STATE.md's "Serves" column)
+- **Prefer plan-defined units directly** -- if the plan already declares a coherent execution shape, execute those packets as written
+- **Adapt legacy phase/task plans into units before coding** -- do not execute raw task lists directly once the shape contract is available
+- **Break oversized units** into smaller units if needed (each unit should be completable in one subagent session)
+- **Preserve WHY tracing** -- when splitting a unit, each resulting unit inherits or refines the parent unit's purpose line. Never create an orphan unit with no connection to the user story.
+- **Identify file dependencies** between units
+- **Determine parallelizable units** -- only units with non-overlapping file sets and compatible dependencies can run simultaneously
+- **Ensure each unit has clear success criteria** -- if the plan already defines them, use them directly; otherwise, the orchestrator must create them
+- **Map each unit to its purpose** -- record which success criterion or enabling outcome each unit delivers (this goes in STATE.md's "Serves / Unlocks" column)
 
-If the plan already has well-defined tasks with success criteria, use them directly. If not, the orchestrator must create them before proceeding.
+Mode-specific rules:
+- **`vertical-slices`** -- execute slices directly; keep the first unit a tracer bullet
+- **`infra-track`** -- execute infrastructure work packets directly; do not coerce them into fake slices
+- **`fix-batch`** -- execute fix items directly; keep each one narrow and independently verifiable
 
-#### Step 5: Execute Task Loop
+If the plan already has well-defined units with success criteria, use them directly. If not, the orchestrator must create them before proceeding.
 
-For each task (or parallel batch of tasks), follow this cycle:
+#### Step 5: Execute Unit Loop
+
+For each unit (or parallel batch of units), follow this cycle:
 
 ##### a. Build Scoped Prompt
 
-For each task, the orchestrator constructs a focused prompt by loading the **execution agent prompt template** from `references/execution-agent-prompt.md` and filling in the context blocks.
+For each unit, the orchestrator constructs a focused prompt by loading the **execution agent prompt template** from `references/execution-agent-prompt.md` and filling in the context blocks.
 
 Before building `scoped_prompt`, apply the shared `Reference Template Loading` protocol in `references/orchestration-protocol.md` to `execution-agent-prompt.md`. Fill the placeholders from the loaded template and do not reconstruct the prompt from memory.
 
-- **{{TASK_NAME}}** and **{{TASK_DESCRIPTION}}** -- from the plan
+- **{{UNIT_TITLE}}** and **{{UNIT_DESCRIPTION}}** -- from the plan
+- **{{UNIT_KIND}}** -- from the plan (`tracer-bullet`, `infra-packet`, `fix-item`, etc.)
+- **{{OUTCOME_SCENARIO}}** -- the observable behavior or enabling outcome this unit proves
+- **{{UNIT_SCOPE}}** -- what the unit owns and excludes
+- **{{UNIT_SCOPE_FENCE}}** -- the boundary that keeps the unit thin
 - **{{FILE_LIST}}** -- files to create/modify from the plan
 - **{{SUCCESS_CRITERIA}}** -- checkboxes that define "done"
-- **{{TEST_COMMAND}}** -- how to verify the task works
-- **{{COMPLETED_DEPENDENCIES}}** -- list of already-completed tasks this depends on
+- **{{VALIDATION_COMMAND}}** -- how to verify the unit works
+- **{{COMPLETED_DEPENDENCIES}}** -- list of already-completed units this depends on
 - **{{WHY_CONTEXT}}** -- the purpose grounding block (constructed by orchestrator):
   ```
-  ## Why This Task Exists
+  ## Why This Unit Exists
   **Problem:** [problem narrative from plan -- 1-2 sentences]
   **User Story:** [user story from plan]
-  **This task serves:** [the "Serves:" line from this task's parent phase -- which user story aspect or success criterion this delivers]
+  **This unit serves:** [the packet purpose line from this unit -- which user story aspect, success criterion, or enabling outcome this delivers]
   **Overall success criteria:** [plan-level success criteria list]
   **Guardrails:** [relevant constitution principles, approval rules, and approved waivers]
   ```
-- **{{ARCHITECTURAL_CONTEXT}}** -- from the plan's Architectural Context section, filtered to what's relevant for this task's files and domain
-- **{{ARCHITECTURE_HANDOFF}}** -- from the `docs/architecture/` artifact or explicit plan-derived handoff contract; include deletion-test decisions, interfaces as test surfaces, seams, adapters, contracts, and downstream review guidance relevant to this task
-- **{{LEARNINGS_BRIEF}}** -- from previous tasks, filtered by domain relevance (only include backend learnings for backend tasks, frontend learnings for frontend tasks, etc.)
+- **{{ARCHITECTURAL_CONTEXT}}** -- from the plan's Architectural Context section, filtered to what's relevant for this unit's files and domain
+- **{{ARCHITECTURE_HANDOFF}}** -- from the `docs/architecture/` artifact or explicit plan-derived handoff contract; include deletion-test decisions, interfaces as test surfaces, seams, adapters, contracts, and downstream review guidance relevant to this unit
+- **{{LEARNINGS_BRIEF}}** -- from previous units, filtered by domain relevance
 - **{{PROJECT_CONVENTIONS}}** -- from CLAUDE.md plus relevant constitution baselines
 - **{{TDD_CONTRACT}}** -- the resolved execution contract: effective mode, Ralph/default loop, required unit/e2e evidence, and any explicit exceptions
 - **{{TDD_SECTION}}** -- if the resolved effective mode is Ralph-driven, include the Ralph/TDD Implementation Section from the template; otherwise include the Standard Implementation Section. Do not treat Ralph as an adjacent side command when it is the resolved default.
@@ -290,7 +304,7 @@ The execution agent template instructs each subagent to follow a 4-phase protoco
 
 ##### b. Spawn Subagent
 
-Delegate the task to a focused subagent:
+Delegate the unit to a focused subagent:
 
 ```
 Task(general-purpose, prompt=scoped_prompt)
@@ -312,23 +326,23 @@ The subagent prompt is constructed from the loaded execution agent template (`re
    - Final test results (pass/fail)
    - Attempt count
 
-**For parallel tasks**: Spawn multiple subagents simultaneously. Only parallelize tasks with non-overlapping file sets. Before parallelizing, verify file sets do not overlap.
+**For parallel units**: Spawn multiple subagents simultaneously only when their file sets do not overlap and their dependency types allow parallel work. Before parallelizing, verify file sets do not overlap and no unit claims shared mutable state without an explicit guard.
 
 **Example scoped prompt:**
 
 ```
-You are implementing Task 3 of a feature plan. Here is your scoped context:
+You are implementing Unit 3 of a feature plan. Here is your scoped context:
 
-## Why This Task Exists
+## Why This Unit Exists
 **Problem:** Users currently cannot authenticate, forcing manual session management that's error-prone and insecure.
 **User Story:** As a user, I want to log in with my credentials so that I can access my personalized dashboard securely.
-**This task serves:** "Secure authentication flow" -- implementing the core token generation that enables the login experience.
+**This unit serves:** "Secure authentication flow" -- implementing the first thin end-to-end login path.
 **Overall success criteria:**
 - Users can log in and receive a JWT token
 - Invalid credentials are rejected with clear error messages
 - Tokens expire after the configured TTL
 
-## Task
+## Unit
 Create the UserAuthService with JWT token generation and validation.
 
 ## Files to Create/Modify
@@ -342,11 +356,11 @@ Create the UserAuthService with JWT token generation and validation.
 - [ ] authenticate() throws AuthenticationError for invalid credentials
 - [ ] Token validation works for valid and expired tokens
 
-## Test Command
+## Validation Command
 npm test -- --filter UserAuthService
 
 ## Architectural Context
-JWT-based stateless auth. Tokens issued by UserAuthService, validated by middleware (Task 4). No server-side session storage.
+JWT-based stateless auth. Tokens issued by UserAuthService, validated by middleware (Unit 4). No server-side session storage.
 
 ## TDD Execution Contract
 - Effective mode: Ralph-driven TDD
@@ -359,7 +373,7 @@ JWT-based stateless auth. Tokens issued by UserAuthService, validated by middlew
 - Variables are camelCase
 - Type annotations on all parameters and return types
 
-## Learnings from Previous Tasks
+## Learnings from Previous Units
 - [backend] Use jest.mock() for module mocking
 - [backend] Factory pattern: createUser() helper not new User()
 - [testing] Use expect().toThrow() for error assertions
@@ -377,15 +391,16 @@ JWT-based stateless auth. Tokens issued by UserAuthService, validated by middlew
 
 When the subagent returns, the orchestrator processes the results:
 
-**0. Validate the execution contract evidence** -- audit the report against `references/tdd-evidence-contract.md`. If a Ralph-driven task is missing stable `Red`, `Green`, and `Post-Refactor Green` evidence blocks, treat the report as incomplete and send it back for correction before marking the task complete.
+**0. Validate the execution contract evidence** -- audit the report against `references/tdd-evidence-contract.md`. If a Ralph-driven unit is missing stable `Red`, `Green`, and `Post-Refactor Green` evidence blocks, treat the report as incomplete and send it back for correction before marking the unit complete.
 
-**1. Write session file** to `docs/execution-sessions/${SESSION_ID}/task-{nn}-{slug}.md`:
+**1. Write session file** to `docs/execution-sessions/${SESSION_ID}/unit-{nn}-{slug}.md`:
 
 ```markdown
 ---
-task: "[task name]"
-task_number: [n]
-serves: "[which user story aspect / success criterion this task delivers]"
+unit: "[unit title]"
+unit_number: [n]
+unit_kind: [tracer-bullet|expansion|hardening|infra-packet|fix-item]
+serves: "[which user story aspect / success criterion / enabling outcome this unit delivers]"
 status: [completed|failed]
 attempt_count: [n]
 domains: [backend, frontend, testing, database, etc.]
@@ -422,22 +437,22 @@ session_id: [SESSION_ID]
 
 **2. Inline Review (when `--review-mode inline` or `--review-mode both`)**
 
-   If the `--review-mode` argument is `inline` or `both`, perform a two-stage inline review before proceeding to the next task. If `--review-mode` is `bulk` (the default), skip this step.
+If the `--review-mode` argument is `inline` or `both`, perform a two-stage inline review before proceeding to the next unit. If `--review-mode` is `bulk` (the default), skip this step.
 
    **Stage 1: Spec Compliance Review**
 
    Apply the shared `Reference Template Loading` protocol from `references/orchestration-protocol.md`, substituting `spec-review-prompt.md`. If the template cannot be loaded and quoted, stop the inline review loop and report the missing template instead of improvising. Then fill in:
-   - `{{TASK_REQUIREMENTS}}` -- the task description and success criteria
+   - `{{UNIT_REQUIREMENTS}}` -- the unit description, outcome scenario, scope fence, and success criteria
    - `{{SUCCESS_CRITERIA}}` -- the success criteria checkboxes
    - `{{IMPLEMENTER_REPORT}}` -- the execution report from the subagent
-   - `{{TASK_SERVES}}` -- what user story aspect this task delivers (from the task's "Serves:" line)
+   - `{{UNIT_PURPOSE}}` -- what user story aspect or enabling outcome this unit delivers (from the unit's purpose line)
 
    Spawn a spec reviewer subagent:
    ```
    Task(general-purpose, prompt=filled_spec_review_prompt)
    ```
 
-   The spec reviewer should check not just checkbox compliance but whether the implementation actually delivers on the purpose stated in "Serves:". A task can pass all checkboxes but miss the intent.
+   The spec reviewer should check not just checkbox compliance but whether the implementation actually delivers on the recorded purpose. A unit can pass all checkboxes but miss the intent.
 
    - If **PASS**: proceed to Stage 2
    - If **FAIL**: spawn a new execution subagent with the specific issues to fix, then re-run the spec reviewer (max 2 fix-review cycles). If still failing after 2 cycles, log the issues and ask the user how to proceed.
@@ -455,26 +470,26 @@ session_id: [SESSION_ID]
 
    - If **PASS**: proceed to next steps
    - If **FAIL** with Critical issues: spawn fix subagent, re-review (max 2 cycles)
-   - If **FAIL** with only Important/Minor issues: log them for the orchestrator's attention but proceed to next task (these will also be caught by `/workflows-review` if run later)
+   - If **FAIL** with only Important/Minor issues: log them for the orchestrator's attention but proceed to next unit (these will also be caught by `/workflows-review` if run later)
 
-   **Note:** Inline review is a lightweight per-task check. It does NOT replace the comprehensive `/workflows-review` multi-agent review. When `--review-mode both` is active, inline review runs per-task AND `/workflows-review` runs after all tasks complete.
+   **Note:** Inline review is a lightweight per-unit check. It does NOT replace the comprehensive `/workflows-review` multi-agent review. When `--review-mode both` is active, inline review runs per-unit AND `/workflows-review` runs after all units complete.
 
-**3. Update STATE.md** -- mark the task status, increment `current_task`, update the task status table
+**3. Update STATE.md** -- mark the unit status, increment `current_unit`, update the work status table
 
-**4. Update learnings brief** -- add new learnings from this task, tagged by domain, deduplicated against existing learnings
+**4. Update learnings brief** -- add new learnings from this unit, tagged by domain, deduplicated against existing learnings
 
 **5. Update plan file** -- check off completed items (`[ ]` to `[x]`) in the original plan document
 
-**6. Regression guard** -- run test commands from ALL previously completed tasks. If any regress:
-   - Log the regression in the current task's session file
+**6. Regression guard** -- run validation commands from ALL previously completed units. If any regress:
+   - Log the regression in the current unit's session file
    - Spawn a fix subagent with context about what broke and why
-   - Do not proceed to the next task until the regression is fixed
+   - Do not proceed to the next unit until the regression is fixed
 
 **7. Incremental commit** if appropriate (logical unit complete, tests pass):
 
    | Commit when... | Don't commit when... |
    |----------------|---------------------|
-   | Logical unit complete (model, service, component) | Small part of a larger unit |
+   | Logical unit complete (one observable outcome) | Small part of a larger unit |
    | Tests pass + meaningful progress | Tests failing |
    | About to switch contexts (backend to frontend) | Purely scaffolding with no behavior |
    | About to attempt risky/uncertain changes | Would need a "WIP" commit message |
@@ -495,10 +510,10 @@ session_id: [SESSION_ID]
 
 If a subagent fails after its internal retries:
 
-1. **Reframe**: Can the task be broken down differently? Try spawning a new subagent with a different approach or smaller scope.
-2. **Ask user**: Use AskUserQuestion -- "Task [name] failed after 3 attempts. [error summary]. How should I proceed?"
-   - Options: "Retry with different approach", "Skip and continue", "Stop pipeline", "I'll fix it manually"
-3. **Skip and continue**: Mark task as `skipped` in STATE.md. Note it as a blocker for any dependent tasks. Dependent tasks are also skipped automatically.
+1. **Reframe**: Can the unit be broken down differently? Try spawning a new subagent with a different approach or smaller scope.
+2. **Ask user**: Use AskUserQuestion -- "Unit [name] failed after 3 attempts. [error summary]. How should I proceed?"
+    - Options: "Retry with different approach", "Skip and continue", "Stop pipeline", "I'll fix it manually"
+3. **Skip and continue**: Mark the unit as `skipped` in STATE.md. Note it as a blocker for any dependent units. Dependent units are also skipped automatically.
 4. **Stop pipeline**: Save all state to STATE.md with `status: paused`, present a summary of what was completed and what remains.
 
 ### Phase 3: Quality Check
@@ -519,11 +534,11 @@ If a subagent fails after its internal retries:
 
    Before mechanical quality checks, validate that the combined work delivers on the WHY:
 
-    - **User story delivered?** -- Review the user story from STATE.md. Can a user actually achieve the stated outcome with what was built? If any success criterion is unmet or any task was skipped, note the gap.
-    - **Architectural integrity?** -- Does the implementation match the architectural context from the plan? Flag any deviations (e.g., plan said "stateless JWT" but implementation uses server sessions).
-     - **Constitution honored?** -- Does the implementation respect the constitution baselines and approval rules captured in STATE.md? Flag any unwaived violations.
-     - **Ralph evidence complete?** -- For Ralph-driven tasks, does every session file include Red, Green, and Post-Refactor Green evidence aligned to the resolved unit/e2e contract or an explicitly approved exception?
-     - **No orphan code** -- Is there any implemented code that doesn't trace back to the user story or success criteria? This may indicate scope creep during execution.
+      - **User story delivered?** -- Review the user story from STATE.md. Can a user actually achieve the stated outcome with what was built? If any success criterion is unmet or any unit was skipped, note the gap.
+     - **Architectural integrity?** -- Does the implementation match the architectural context from the plan? Flag any deviations (e.g., plan said "stateless JWT" but implementation uses server sessions).
+      - **Constitution honored?** -- Does the implementation respect the constitution baselines and approval rules captured in STATE.md? Flag any unwaived violations.
+       - **Ralph evidence complete?** -- For Ralph-driven units, does every session file include Red, Green, and Post-Refactor Green evidence aligned to the resolved unit/e2e contract or an explicitly approved exception?
+      - **No orphan code** -- Is there any implemented code that doesn't trace back to the user story or success criteria? This may indicate scope creep during execution.
 
    If purpose validation reveals gaps, present them to the user before proceeding to PR.
 
@@ -536,8 +551,8 @@ If a subagent fails after its internal retries:
     Run configured agents in parallel with Task tool. **Pass the WHY context (problem narrative, user story, success criteria) to reviewer agents** so they can evaluate fitness for purpose, not just code quality. Present findings and address critical issues.
 
 4. **Final Validation**
-   - All tasks in STATE.md marked `completed` (or explicitly `skipped` with user approval)
-   - All tests pass (including regression tests from every completed task)
+   - All units in STATE.md marked `completed` (or explicitly `skipped` with user approval)
+   - All tests pass (including regression tests from every completed unit)
    - Linting passes
    - Code follows existing patterns
    - Purpose validation passed (user story deliverable, architecture intact)
@@ -632,8 +647,8 @@ If the `finishing-branch` skill is not available, follow the manual steps below:
    - **Key decisions made:** [architectural or design choices]
 
    ## Success Criteria Status
-   - [x] [criterion 1 from plan] -- delivered by Task N
-   - [x] [criterion 2 from plan] -- delivered by Task N
+    - [x] [criterion 1 from plan] -- delivered by Unit N
+    - [x] [criterion 2 from plan] -- delivered by Unit N
    - [ ] [criterion 3 if skipped] -- skipped: [reason]
 
    ## Testing
@@ -692,7 +707,7 @@ If the `finishing-branch` skill is not available, follow the manual steps below:
 5. **Notify User**
    - Summarize what was completed
    - Link to PR
-   - Highlight any tasks that were skipped and why
+    - Highlight any units that were skipped and why
    - Reference the execution session directory for detailed logs
    - Note any follow-up work needed
    - Suggest next steps if applicable
@@ -707,7 +722,7 @@ For complex plans with multiple independent workstreams, enable swarm mode for p
 
 | Use Swarm Mode when... | Use Standard Mode when... |
 |------------------------|---------------------------|
-| Plan has 5+ independent tasks | Plan is linear/sequential |
+| Plan has 5+ independent units | Plan is linear/sequential |
 | Multiple specialists needed (review + test + implement) | Single-focus work |
 | Want maximum parallelism | Simpler mental model preferred |
 | Large feature with clear phases | Small feature or bug fix |
@@ -716,7 +731,7 @@ For complex plans with multiple independent workstreams, enable swarm mode for p
 
 To trigger swarm execution, say:
 
-> "Make a Task list and launch an army of agent swarm subagents to build the plan"
+> "Make a unit list and launch an army of agent swarm subagents to build the plan"
 
 Or explicitly request: "Use swarm mode for this work"
 
@@ -729,10 +744,10 @@ When swarm mode is enabled, the workflow changes:
    Teammate({ operation: "spawnTeam", team_name: "work-{timestamp}" })
    ```
 
-2. **Create Task List with Dependencies**
-   - Parse plan into TaskCreate items
+2. **Create Unit List with Dependencies**
+    - Parse plan into execution work items
    - Set up blockedBy relationships for sequential dependencies
-   - Independent tasks have no blockers (can run in parallel)
+   - Independent units have no blockers (can run in parallel)
 
 3. **Spawn Specialized Teammates**
    ```
@@ -740,7 +755,7 @@ When swarm mode is enabled, the workflow changes:
      team_name: "work-{timestamp}",
      name: "implementer",
      subagent_type: "general-purpose",
-     prompt: "Claim implementation tasks, execute, mark complete",
+      prompt: "Claim implementation units, execute, mark complete",
      run_in_background: true
    })
 
@@ -748,13 +763,13 @@ When swarm mode is enabled, the workflow changes:
      team_name: "work-{timestamp}",
      name: "tester",
      subagent_type: "general-purpose",
-     prompt: "Claim testing tasks, run tests, mark complete",
+      prompt: "Claim testing units, run tests, mark complete",
      run_in_background: true
    })
    ```
 
 4. **Coordinate and Monitor**
-   - Team lead monitors task completion
+    - Team lead monitors unit completion
    - Spawn additional workers as phases unblock
    - Handle plan approval if required
 
@@ -775,7 +790,7 @@ See the `orchestrating-swarms` skill for detailed swarm patterns and best practi
 
 ### WHY Grounds Everything
 
-- Every subagent knows why its task exists, not just what to build
+- Every subagent knows why its unit exists, not just what to build
 - The orchestrator is the guardian of WHY: it extracts, threads, and validates purpose
 - Purpose drift is caught by inline reviews and Phase 3 validation, not just at the end
 - If the combined work doesn't deliver the user story, passing tests don't matter
@@ -784,7 +799,7 @@ See the `orchestrating-swarms` skill for detailed swarm patterns and best practi
 
 - The orchestrator decomposes, delegates, records, and routes. It does NOT implement code itself.
 - Each subagent gets only the context it needs. No conversation history pollution.
-- Learnings compound: each task benefits from everything learned in previous tasks.
+- Learnings compound: each unit benefits from everything learned in previous units.
 
 ### Start Fast, Execute Faster
 
@@ -814,7 +829,7 @@ See the `orchestrating-swarms` skill for detailed swarm patterns and best practi
 
 ### Ship Complete Features
 
-- Mark all tasks completed before moving on
+- Mark all units completed before moving on
 - Don't leave features 80% done
 - A finished feature that ships beats a perfect feature that doesn't
 
@@ -822,7 +837,7 @@ See the `orchestrating-swarms` skill for detailed swarm patterns and best practi
 
 - Escalation path (reframe, ask user, skip, stop) -- not infinite loops
 - Progress is persistent: STATE.md means you can resume after crashes
-- Regression is caught early: previous tests re-run after each task
+- Regression is caught early: previous tests re-run after each unit
 - When debugging unexpected errors, use the `systematic-debugging` skill for structured root-cause analysis instead of trial-and-error
 
 ## Quality Checklist
@@ -830,12 +845,12 @@ See the `orchestrating-swarms` skill for detailed swarm patterns and best practi
 Before creating PR, verify:
 
 - [ ] All clarifying questions asked and answered
-- [ ] All tasks in STATE.md marked completed (or explicitly skipped with user approval)
+- [ ] All units in STATE.md marked completed (or explicitly skipped with user approval)
 - [ ] **User story deliverable** -- the combined work enables the stated user outcome
 - [ ] **Success criteria met** -- every plan-level success criterion addressed (or gap documented)
 - [ ] **Architecture intact** -- implementation matches the plan's architectural context
 - [ ] Tests pass (run project's test command)
-- [ ] Regression tests from all completed tasks pass
+- [ ] Regression tests from all completed units pass
 - [ ] Linting passes (use linting-agent)
 - [ ] Code follows existing patterns
 - [ ] Figma designs match implementation (if applicable)
@@ -861,14 +876,14 @@ For most features: tests + linting + following patterns is sufficient.
 ## Common Pitfalls to Avoid
 
 - **Losing the WHY** - Subagents build what's specified but miss the intent. Always pass WHY context.
-- **Purpose drift** - Tasks individually pass but combined output doesn't deliver the user story. Validate at Phase 3.
+- **Purpose drift** - Units individually pass but combined output doesn't deliver the user story. Validate at Phase 3.
 - **Analysis paralysis** - Don't overthink, read the plan and execute
 - **Skipping clarifying questions** - Ask now, not after building wrong thing
 - **Ignoring plan references** - The plan has links for a reason
 - **Testing at the end** - Test continuously or suffer later
 - **Orchestrator doing implementation** - Delegate to subagents, don't implement inline
-- **Skipping regression checks** - A passing task that breaks previous work is not progress
-- **Losing session state** - Always write to STATE.md before and after each task
+- **Skipping regression checks** - A passing unit that breaks previous work is not progress
+- **Losing session state** - Always write to STATE.md before and after each unit
 - **Dumping all session files into subagent context** - Use the learnings brief, filtered by domain
 - **Over-reviewing simple changes** - Save reviewer agents for complex work
 - **80% done syndrome** - Finish the feature, don't move on early

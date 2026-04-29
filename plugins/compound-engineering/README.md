@@ -15,6 +15,7 @@ This repository also ships generated Copilot assets under the repo root `.github
 ## Workflow contract highlights
 
 - `/workflows:architecture` is the architecture-improvement handoff between planning and `/deepen-plan`.
+- `/workflows:plan`, `/deepen-plan`, and `/workflows:work` now default to issue-shaped execution slices, with the first slice acting as the tracer bullet, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake.
 - `/workflows:work` is the Ralph-first execution path; `/ralph-loop` and `/cancel-ralph` are helpers, not a detached workflow.
 - Plans default to unit + e2e evidence unless an explicit exception documents replacement evidence.
 
@@ -107,10 +108,10 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/workflows:constitution` | Create or update the repo-level constitution that governs downstream workflows |
 | `/workflows:ideate` | Generate and rank grounded improvement ideas before selecting one to brainstorm |
 | `/workflows:brainstorm` | Explore requirements and approaches before planning |
-| `/workflows:plan` | Create implementation plans with structured project inputs (tickets, docs, designs) |
+| `/workflows:plan` | Create implementation plans with issue-shaped execution slices and structured project inputs |
 | `/workflows:architecture` | Produce a dedicated architecture improvement artifact before deepening and execution |
 | `/workflows:review` | Run comprehensive code reviews |
-| `/workflows:work` | Execute work items systematically |
+| `/workflows:work` | Execute execution slices systematically |
 | `/workflows:compound` | Document solved problems to compound team knowledge |
 | `/workflows:compound-refresh` | Refresh stale learnings and pattern docs in `docs/solutions/` |
 
@@ -120,7 +121,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 |---------|-------------|
 | `/lrj` | Full autonomous engineering workflow |
 | `/slrj` | Full autonomous workflow with swarm mode for parallel execution |
-| `/deepen-plan` | Enhance plans with parallel research agents for each section |
+| `/deepen-plan` | Enhance plans and harden execution slices with parallel research |
 | `/changelog` | Create engaging changelogs for recent merges |
 | `/create-agent-skill` | Create or edit Claude Code skills |
 | `/generate_command` | Generate new slash commands |

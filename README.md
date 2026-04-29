@@ -20,6 +20,8 @@ The core value is the workflow:
 
 Each phase has a defined purpose, handoff, and artifact. The system is designed to reduce drift between what you intended, what you built, and what got reviewed.
 
+Planning, deepening, and execution now default to **issue-shaped vertical slices**. The first slice should be a tracer bullet, and later slices widen or harden the feature without regressing into layer-by-layer planning. When the work is honestly better represented as enablement or a tiny-fix batch, the workflow can switch to explicit `infra-track` or `fix-batch` execution shapes instead of faking verticality.
+
 ### 2. Architecture happens before execution hardening
 
 `/workflows:architecture` is a first-class phase, not an afterthought. It creates an architecture artifact in `docs/architecture/` that captures deletion tests, interfaces, seams, adapters, contracts, and deepening candidates.
@@ -84,10 +86,10 @@ This repo is built for:
 | `/workflows:constitution` | repo-wide principles and guardrails | keeps project-wide policy out of feature-specific docs |
 | `/workflows:ideate` | grounded candidate directions | avoids rushing into the first idea |
 | `/workflows:brainstorm` | feature-level WHY / WHAT / WHERE handoff | clarifies the problem and intended outcome |
-| `/workflows:plan` | execution-ready HOW | breaks work into phases, tasks, dependencies, and success criteria |
+| `/workflows:plan` | execution-ready HOW | chooses an execution shape, then breaks work into slices or other execution packets with dependencies and success criteria |
 | `/workflows:architecture` | architecture artifact in `docs/architecture/` | forces the important structural decisions into the open |
-| `/deepen-plan` | stronger plan with research and review input | hardens the plan before execution |
-| `/workflows:work` | executed implementation with session state and learnings | drives the Ralph-first build loop through scoped subagents |
+| `/deepen-plan` | stronger plan with research and review input | hardens the selected execution backlog before execution |
+| `/workflows:work` | executed implementation with session state and learnings | drives the Ralph-first build loop by executing the selected units through scoped subagents |
 | `/workflows:review` | purpose-aware review against code, architecture, and evidence | checks fit, not just syntax |
 | `/workflows:compound` | reusable solution docs and refreshed learnings | turns one solved problem into future leverage |
 
@@ -107,6 +109,7 @@ For most serious work:
 
 - `/technical_review` is gone
 - `/workflows:architecture` is now the supported architecture handoff
+- plan/deepen/work now default to issue-shaped vertical slices and tracer-bullet sequencing, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake
 - Ralph-driven TDD is explicit across setup, planning, execution, and review
 - workflow prompts are slimmer because shared contracts now live in reusable references
 - heavyweight agent and skill prompts were tightened around a shared concise structure
