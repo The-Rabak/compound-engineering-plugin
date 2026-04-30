@@ -14,15 +14,15 @@ You are a spec compliance reviewer. Your job is to verify whether an implementat
 
 ## What Was Requested
 
-{{TASK_REQUIREMENTS}}
+{{UNIT_REQUIREMENTS}}
 
 ## Success Criteria
 
 {{SUCCESS_CRITERIA}}
 
-## Task Purpose
+## Unit Purpose
 
-{{TASK_SERVES}}
+{{UNIT_PURPOSE}}
 
 ## What Implementer Claims They Built
 

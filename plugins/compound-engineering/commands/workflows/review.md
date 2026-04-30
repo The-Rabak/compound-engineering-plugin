@@ -141,7 +141,7 @@ This context is passed to EVERY review agent below. It is not optional.
 
 #### TDD Evidence Gate (BEFORE reviewer dispatch)
 
-If a `docs/execution-sessions/work-*/STATE.md` file exists for this branch, read the completed task session files before dispatching review agents and build a terse evidence ledger.
+If a `docs/execution-sessions/work-*/STATE.md` file exists for this branch, read the completed execution unit session files before dispatching review agents and build a terse evidence ledger.
 
 Apply `commands/workflows/references/tdd-evidence-contract.md` as the source of truth for the Ralph evidence block and review-gate classifications. Verify the plan's approved exception contract instead of improvising replacement evidence rules.
 
@@ -519,8 +519,8 @@ After creating all todo files, present comprehensive summary:
 
 ### TDD Evidence Gate
 
-- **Behavior coverage:** PASS / FAIL — [task/session refs with weak or missing `Red`/`Green` evidence]
-- **Cleanup after refactor:** PASS / FAIL — [task/session refs with weak or missing `Post-Refactor Green` evidence]
+- **Behavior coverage:** PASS / FAIL — [unit/session refs with weak or missing `Red`/`Green` evidence]
+- **Cleanup after refactor:** PASS / FAIL — [unit/session refs with weak or missing `Post-Refactor Green` evidence]
 
 [If PARTIALLY or NO:]
 **Gaps:**

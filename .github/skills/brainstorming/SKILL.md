@@ -11,7 +11,7 @@ This skill provides detailed process knowledge for effective brainstorming sessi
 The brainstorm produces three lynchpin artifacts that anchor all downstream phases:
 1. **Problem Narrative & User Story** -- the WHY (consumed by plan, work, and review)
 2. **Architectural Context Map** -- the WHERE (consumed by execution agents and reviewers)
-3. **Design Decisions** -- the WHAT (consumed by plan for task decomposition)
+3. **Design Decisions** -- the WHAT (consumed by plan for execution-slice decomposition)
 
 ## When to Use This Skill
 
@@ -306,18 +306,18 @@ This prevents wasted effort on misaligned designs.
 The brainstorm document is the **feature-level spec and handoff contract** for downstream work. The project constitution, when present, remains the repo-wide governing artifact:
 
 **`/workflows-plan` consumes:**
-- Problem narrative and user story -> structures phases around the WHY
-- Architectural context -> informs task decomposition, file mapping, dependencies
+- Problem narrative and user story -> structures execution slices around the WHY
+- Architectural context -> informs slice decomposition, file mapping, dependencies
 - Success criteria -> becomes the plan's acceptance criteria foundation
 - Key decisions -> preserved and enriched, not re-decided
 
 **`/deepen-plan` consumes:**
-- Problem narrative -> evaluates whether deepened tasks still serve the original intent
+- Problem narrative -> evaluates whether deepened slices still serve the original intent
 - Success criteria -> grounds best-practice research in actual goals
 
 **`/workflows-work` consumes:**
 - Architectural context -> populates `{{ARCHITECTURAL_CONTEXT}}` for every execution agent
-- User story -> orchestrator validates each task contributes to the story
+- User story -> orchestrator validates each slice contributes to the story
 - Problem narrative -> included in scoped prompts so agents understand purpose
 
 **`/workflows-review` consumes:**

@@ -5,6 +5,22 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.5.0] - 2026-04-29
+
+### Changed
+
+- **Vertical-slice workflow contract** -- `/workflows:plan`, `/deepen-plan`, and `/workflows:work` now default to issue-shaped execution slices as the canonical unit of planning and execution. Phases remain optional grouping wrappers, while slices carry the real handoff contract: slice type, serves, demo scenario, scope fence, files, dependency type, success criteria, and test command.
+- **Tracer-bullet planning rules** -- Planning and deepening now explicitly require the first slice to be the thinnest demoable tracer bullet, forbid horizontal layer-only slices unless they still prove an observable outcome, and allow thin cross-layer backend/frontend slices when they improve testability and feedback loops.
+- **Execution-shape flexibility** -- Planning, deepening, and execution now share a compact `execution_shape` contract with `vertical-slices` as the default and explicit `infra-track` / `fix-batch` modes for infrastructure-heavy or tiny-fix work where forcing slices would be misleading.
+- **Execution session state** -- `/workflows:work` now tracks generic execution units in `## Work Status`, writes `unit-*.md` execution logs, and executes the declared plan shape instead of assuming every packet is a slice.
+- **Execution/review prompt handoff** -- The execution agent prompt now receives explicit `## Architecture Handoff` context, inline review prompts consume unit-specific placeholders, and `/workflows:review` reads completed execution session files when building the TDD evidence ledger.
+
+### Migration notes
+
+- **Plan shape** -- Prefer `## Execution Slices` with issue-shaped slice blocks, but switch to `## Infrastructure Work Packets` or `## Fix Batch Items` when that better matches the real work.
+- **Execution semantics** -- `/workflows:work` executes the declared execution units directly; any legacy phase/task input should be translated into the selected shape before spawning subagents.
+- **Review mode semantics** -- `inline` and `both` review modes now operate per execution unit, not per task.
+
 ## [4.4.0] - 2026-04-27
 
 ### Added
