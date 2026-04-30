@@ -2,7 +2,7 @@
 
 Portable source-of-truth and release repository for the `compound-engineering` plugin.
 
-The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **29 specialized agents, 25 commands, and 24 skills** built from one portable definition set and emitted into multiple agent harnesses.
+The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **31 specialized agents, 25 commands, and 24 skills** built from one portable definition set and emitted into multiple agent harnesses.
 
 ## What this repository ships
 

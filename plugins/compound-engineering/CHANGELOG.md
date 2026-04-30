@@ -5,6 +5,18 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.5.0] - 2026-04-30
+
+### Added
+
+- **`rabak-java-reviewer` agent** -- Java/JVM specialist reviewer with a high bar for deep modules, clear interfaces, modern Java design, and maintainable performance-aware code.
+- **`constitution-guardian` agent** -- Repo-governance reviewer that derives standards from governing markdown, architecture docs, and repo instructions, then raises any unjustified rule violation as a P1.
+
+### Changed
+
+- **`code-simplicity-reviewer`** -- Rewritten into a shorter, stricter reviewer focused on DRY failures, branching complexity, dead weight, readability regressions, and bad abstractions.
+- **`setup` skill** -- Now auto-detects Java projects, configures `rabak-java-reviewer`, and treats `constitution-guardian` as a baseline review agent in default review suites.
+
 ## [4.4.0] - 2026-04-27
 
 ### Added

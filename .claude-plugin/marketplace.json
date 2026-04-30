@@ -11,8 +11,8 @@
   "plugins": [
     {
       "name": "compound-engineering",
-      "description": "AI-powered development tools. Includes 29 specialized agents, 25 commands, and 24 skills for code review, research, design, and workflow automation.",
-      "version": "4.4.0",
+      "description": "AI-powered development tools. Includes 31 specialized agents, 25 commands, and 24 skills for code review, research, design, and workflow automation.",
+      "version": "4.5.0",
       "author": {
         "name": "The Rabak",
         "email": "arielvaron@gmail.com",
@@ -27,6 +27,7 @@
         "workflow-automation",
         "code-review",
         "rust",
+        "java",
         "laravel",
         "vue",
         "nestjs",
