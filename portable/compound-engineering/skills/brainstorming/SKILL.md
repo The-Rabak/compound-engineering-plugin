@@ -6,7 +6,7 @@ description: >-
   brainstorm", "help me think through", "what should we build", "explore approaches", ambiguous
   feature requests, or when the user's request has multiple valid interpretations that need
   clarification.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 platforms:
   copilot:
     model: gpt-5.3-codex

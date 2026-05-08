@@ -4,7 +4,7 @@ description: >-
   Reviews Java code with a ruthless bar for deep modules, clear interfaces, modern JVM practices,
   and maintainable object design. Use after implementing features, refactoring services, or adding
   Java modules.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 platforms:
   copilot:
     model: gpt-5.3-codex

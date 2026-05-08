@@ -11,7 +11,7 @@ const fixturePlugin: ClaudePlugin = {
       name: "Security Reviewer",
       description: "Security-focused code review agent",
       capabilities: ["Threat modeling", "OWASP"],
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       body: "Focus on vulnerabilities.",
       sourcePath: "/tmp/plugin/agents/security-reviewer.md",
     },

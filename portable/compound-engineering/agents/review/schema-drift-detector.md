@@ -4,7 +4,7 @@ description: >-
   Detects unrelated schema snapshot and generated schema artifact drift in PRs by cross-referencing
   migrations or schema source changes against changed schema outputs. Use when reviewing PRs with
   database schema changes.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 platforms:
   copilot:
     model: gpt-5.3-codex

@@ -20,11 +20,13 @@ This command takes a work document (plan, specification, or todo file) and execu
 
 This command supports a `--review-mode` argument that controls when code review happens:
 
-- **`bulk`** (default) -- Review happens after ALL tasks complete, using `/workflows-review`. This is the standard behavior and is fastest for most work.
-- **`inline`** -- After each task, a lightweight two-stage review (spec compliance then code quality) runs automatically. Catches spec drift early but adds 2-4 extra subagent calls per task.
+- **`bulk`** (default) -- Review happens after ALL tasks complete, using `/workflows-review`. This is the standard behavior and the only mode where named review agents run.
+- **`inline`** -- After each task, a lightweight two-stage review (spec compliance then code quality) runs automatically using prompt templates and `general-purpose` subagents only. Inline mode must NOT spawn named review agents directly.
 - **`both`** -- Inline review per task AND comprehensive `/workflows-review` at the end. Maximum quality assurance.
 
 If no `--review-mode` is specified, check `compound-engineering.local.md` for a `review_mode` setting. If not found there either, default to `bulk`.
+
+**Hard rule:** Named review agents belong to `/workflows-review`. `/workflows-work` may coordinate inline template-based checks, but it must never bypass `/workflows-review` by dispatching named reviewers directly.
 
 ## Input Document
 
@@ -234,7 +236,9 @@ Before building `scoped_prompt`, complete this template-load protocol for `execu
 2. Use the file-read tool to load the full template.
 3. Before continuing, quote the first non-empty line of the loaded template and record which file you used.
 4. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not spawn the subagent.
-5. Fill the placeholders from the loaded template. Do not reconstruct the prompt from memory.
+5. Fill the placeholders from the loaded template. Do not reconstruct the prompt from memory, paraphrase it into a shorter prompt, or drop any mandatory section.
+6. Every execution, retry, fix, and regression-repair subagent in this workflow must start from a freshly loaded copy of this same template.
+7. If any placeholder input is unavailable or any `{{PLACEHOLDER}}` remains unresolved after filling, stop and resolve the missing context before spawning the subagent.
 
 - **{{TASK_NAME}}** and **{{TASK_DESCRIPTION}}** -- from the plan
 - **{{FILE_LIST}}** -- files to create/modify from the plan
@@ -269,7 +273,7 @@ Delegate the task to a focused subagent:
 Task(general-purpose, prompt=scoped_prompt)
 ```
 
-The subagent prompt is constructed from the loaded execution agent template (`references/execution-agent-prompt.md`). The template already includes instructions for the 4-phase protocol (understand, implement, self-review, report). The orchestrator fills in the context blocks and passes the result:
+The subagent prompt is constructed from the loaded execution agent template (`references/execution-agent-prompt.md`). The template already includes instructions for the 4-phase protocol (understand, implement, self-review, report). The orchestrator fills in the context blocks and passes the result. Do not substitute a custom summary prompt for any execution worker:
 
 1. Read referenced files and understand existing patterns
 2. Implement the task following conventions
@@ -401,7 +405,7 @@ session_id: [SESSION_ID]
    The spec reviewer should check not just checkbox compliance but whether the implementation actually delivers on the purpose stated in "Serves:". A task can pass all checkboxes but miss the intent.
 
    - If **PASS**: proceed to Stage 2
-   - If **FAIL**: spawn a new execution subagent with the specific issues to fix, then re-run the spec reviewer (max 2 fix-review cycles). If still failing after 2 cycles, log the issues and ask the user how to proceed.
+   - If **FAIL**: reload `execution-agent-prompt.md`, rebuild the scoped execution prompt with the review findings added as fix context, then spawn a new execution subagent. Re-run the spec reviewer afterward (max 2 fix-review cycles). If still failing after 2 cycles, log the issues and ask the user how to proceed.
 
    **Stage 2: Code Quality Review** (only after spec compliance passes)
 
@@ -415,7 +419,7 @@ session_id: [SESSION_ID]
    ```
 
    - If **PASS**: proceed to next steps
-   - If **FAIL** with Critical issues: spawn fix subagent, re-review (max 2 cycles)
+   - If **FAIL** with Critical issues: reload `execution-agent-prompt.md`, rebuild the scoped execution prompt with the quality findings added as fix context, spawn a fix subagent, then re-review (max 2 cycles)
    - If **FAIL** with only Important/Minor issues: log them for the orchestrator's attention but proceed to next task (these will also be caught by `/workflows-review` if run later)
 
    **Note:** Inline review is a lightweight per-task check. It does NOT replace the comprehensive `/workflows-review` multi-agent review. When `--review-mode both` is active, inline review runs per-task AND `/workflows-review` runs after all tasks complete.
@@ -428,7 +432,7 @@ session_id: [SESSION_ID]
 
 **6. Regression guard** -- run test commands from ALL previously completed tasks. If any regress:
    - Log the regression in the current task's session file
-   - Spawn a fix subagent with context about what broke and why
+   - Reload `execution-agent-prompt.md`, rebuild the scoped execution prompt with context about what broke and why, and spawn a fix subagent
    - Do not proceed to the next task until the regression is fixed
 
 **7. Incremental commit** if appropriate (logical unit complete, tests pass):
@@ -487,20 +491,11 @@ If a subagent fails after its internal retries:
 
    If purpose validation reveals gaps, present them to the user before proceeding to PR.
 
-3. **Consider Reviewer Agents** (Optional)
+3. **Run `/workflows-review` when named reviewers are needed**
 
-   Use for complex, risky, or large changes. Read agents from `compound-engineering.local.md` frontmatter (`review_agents`). If no settings file, invoke the `setup` skill to create one.
+   Use `/workflows-review` for complex, risky, or large changes, and whenever `review_mode` requires final reviewer-agent coverage (`bulk` or `both`). Do not dispatch named review agents directly from `/workflows-work`.
 
-    Before dispatching any named reviewer agent from `review_agents`, complete this protocol:
-    1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.
-    2. If the bundled template exists, use the file-read tool to load the full template.
-    3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent "<agent-name>"`.
-    4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.
-    5. Include the loaded template's rules in the delegated prompt.
-    6. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch the agent.
-    Never dispatch a named agent by name alone.
-
-    Run configured agents in parallel with Task tool. **Pass the WHY context (problem narrative, user story, success criteria) to reviewer agents** so they can evaluate fitness for purpose, not just code quality. Present findings and address critical issues.
+   `/workflows-work` may only run the inline template-based reviewers described above. All named agents from `compound-engineering.local.md` frontmatter (`review_agents`) must be coordinated by `/workflows-review`, which owns the template-loading protocol, WHY-context injection, mandatory always-on reviewers, and conditional reviewer rules.
 
 4. **Final Validation**
    - All tasks in STATE.md marked `completed` (or explicitly `skipped` with user approval)

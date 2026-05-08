@@ -5,7 +5,7 @@ description: >-
   fill forms, take screenshots, or scrape data. Alternative to Playwright MCP - uses Bash commands
   with ref-based element selection. Triggers on "browse website", "fill form", "click button", "take
   screenshot", "scrape page", "web automation".
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 platforms:
   copilot:
     model: gpt-5.3-codex

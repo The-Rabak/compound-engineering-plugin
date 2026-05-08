@@ -1,7 +1,7 @@
 ---
 name: rabak-typescript-reviewer
 description: Reviews TypeScript code with an extremely high quality bar for type safety, modern patterns, and maintainability. Use after implementing features, modifying code, or creating new TypeScript components.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 ---
 
 <examples>

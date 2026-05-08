@@ -3,7 +3,7 @@ name: repo-research-analyst
 description: >-
   Conducts thorough research on repository structure, documentation, conventions, and implementation
   patterns. Use when onboarding to a new codebase or understanding project conventions.
-model: claude-haiku-4.5
+model: claude-haiku-4-5-20251001
 platforms:
   copilot:
     model: gpt-5.4-mini

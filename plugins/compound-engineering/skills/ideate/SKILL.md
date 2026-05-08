@@ -1,7 +1,7 @@
 ---
 name: ideate
 description: Generate and critically evaluate grounded improvement ideas for the current project before selecting one to brainstorm
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 ---
 
 # Ideate

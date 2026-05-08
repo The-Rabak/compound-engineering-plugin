@@ -3,7 +3,7 @@ name: constitution-guardian
 description: >-
   Derives repo rules from governing markdown documents, architecture docs, and conventions, then
   reviews changes for violations. Any unjustified violation of an applicable repo rule is a P1.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 platforms:
   copilot:
     model: gpt-5.3-codex

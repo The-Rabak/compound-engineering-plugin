@@ -1023,7 +1023,7 @@ The plan document is a structured contract consumed by all downstream phases. He
 
 **`/workflows:work`** reads:
 - **Problem Narrative & User Story** -- the orchestrator uses these to validate task outcomes make sense in context, not just pass tests
-- **Architectural Context** -- feeds directly into `{{ARCHITECTURAL_CONTEXT}}` in each execution agent's prompt. This is WHY grounded arch context matters -- every subagent gets system-level awareness
+- **Architectural Context** -- feeds directly into `{{ARCHITECTURAL_CONTEXT}}` in each execution agent's prompt loaded from the canonical execution-agent template. This is WHY grounded arch context matters -- every subagent gets system-level awareness
 - **Implementation phases & tasks** -- the execution chunk structure (Files, Depends on, Success criteria, Test command)
 - **Success Criteria** -- the orchestrator checks final outcomes against these, not just individual task passes
 - **`constitution_version` / `constitution_waivers` / Constitution Alignment** -- the execution phase enforces repo-wide guardrails and knows which exceptions were approved
@@ -1035,5 +1035,6 @@ The plan document is a structured contract consumed by all downstream phases. He
 - **Architectural Context** -- used to evaluate whether the implementation respects system boundaries and integration points
 - **Constitution Alignment and waivers** -- used to distinguish approved exceptions from blocking constitution violations
 - **Stakeholder Impact** (A LOT level) -- informs stakeholder-perspective review
+- **Named reviewer ownership** -- `/workflows:review` owns named review-agent coordination, template loading, and WHY-context injection for reviewer prompts
 
 NEVER CODE! Just research and write the plan.

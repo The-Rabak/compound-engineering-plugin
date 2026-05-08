@@ -62,7 +62,7 @@ All fields are optional. Only `description` is recommended.
 | `disable-model-invocation` | No | Set `true` to prevent Claude auto-loading. Use for manual workflows like `/deploy`, `/commit`. Default: `false`. |
 | `user-invocable` | No | Set `false` to hide from `/` menu. Use for background knowledge. Default: `true`. |
 | `allowed-tools` | No | Tools Claude can use without permission prompts. Example: `Read, Bash(git *)` |
-| `model` | No | Model to use. Prefer explicit IDs. In this repo, default reasoning work to `claude-sonnet-4.6`, GPT code/review work to `gpt-5.3-codex` via platform overrides, and reserve `claude-haiku-4.5` / `gpt-5.4-mini` for lightweight search or research tasks. |
+| `model` | No | Model to use. Prefer explicit IDs. In this repo, default reasoning work to `claude-sonnet-4-6`, GPT code/review work to `gpt-5.3-codex` via platform overrides, and reserve `claude-haiku-4-5-20251001` / `gpt-5.4-mini` for lightweight search or research tasks. |
 | `context` | No | Set `fork` to run in isolated subagent context. |
 | `agent` | No | Subagent type when `context: fork`. Options: `Explore`, `Plan`, `general-purpose`, or custom agent name. |
 
@@ -149,6 +149,14 @@ my-skill/
 Link from SKILL.md: `For API details, see [reference.md](reference.md).`
 
 Keep references **one level deep** from SKILL.md. Avoid nested chains.
+
+## Orchestration Guardrails
+
+If your skill or command launches subagents, be explicit about the source of truth for their prompts:
+
+- **Named review agents** must be coordinated through `/workflows-review`, not spawned directly from ad hoc prompts.
+- **Execution workers** must load the `workflows:work` workflow's bundled `execution-agent-prompt.md` reference file before dispatch. Require the orchestrator to quote the first non-empty line, record the source, and stop if the template cannot be loaded.
+- If a subagent prompt depends on a bundled reference file, say so directly. "Load this file, quote it, fill placeholders, stop on failure" is stronger than "use this as guidance."
 
 ## Effective Descriptions
 

@@ -5,6 +5,15 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.6.0] - 2026-05-07
+
+### Changed
+
+- **Anthropic model IDs** -- Updated explicit Claude Sonnet and Claude Haiku references to the current documented IDs used by Claude Code, including the OpenCode alias map and authoring guidance.
+- **`/workflows:review`** -- Tightened reviewer dispatch rules so named review agents remain owned by the review workflow, missing reviewer templates hard-stop the run, and mandatory reviewers cannot be silently skipped.
+- **`/workflows:work` and execution template** -- Execution subagents must now originate from the canonical `execution-agent-prompt.md` template for initial runs, retries, fix loops, and regression repairs. The template now enforces reuse-first implementation, deliberate DRY/SOLID decisions, and explicit variable naming.
+- **Orchestration guidance** -- `orchestrating-swarms`, `setup`, `create-agent-skills`, and workflow handoff docs now explicitly forbid ad hoc named-reviewer dispatch and reinforce template-source loading requirements for execution workers.
+
 ## [4.5.0] - 2026-04-30
 
 ### Added

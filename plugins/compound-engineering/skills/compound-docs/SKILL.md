@@ -1,7 +1,7 @@
 ---
 name: compound-docs
 description: Capture solved problems as categorized documentation with YAML frontmatter for fast lookup
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 disable-model-invocation: true
 ---
 

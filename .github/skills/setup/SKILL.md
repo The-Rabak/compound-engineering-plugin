@@ -178,11 +178,11 @@ question: "When should reviews run during /workflows:work?"
 header: "Review mode"
 options:
   - label: "Bulk (Default)"
-    description: "Review runs once at the end of all tasks. Faster, less interruption."
+    description: "Runs /workflows-review once at the end of all tasks. This is where named review agents run."
   - label: "Inline"
-    description: "Review runs after each task. Slower, but catches issues earlier."
+    description: "Runs template-based inline checks after each task. Does not authorize direct named review-agent dispatch."
   - label: "Both"
-    description: "Inline review per task AND bulk review at the end."
+    description: "Inline checks per task plus /workflows-review at the end."
 ```
 
 ## Step 4: Build Agent List and Write File
@@ -214,7 +214,7 @@ options:
 
 **Execution settings:**
 - `tdd_enabled`: false (default) or true (enables TDD mode in execution agent template)
-- `review_mode`: "bulk" (default), "inline", or "both" (controls per-task review in workflows:work)
+- `review_mode`: "bulk" (default), "inline", or "both" (`bulk`/`both` invoke `/workflows-review`; `inline` stays template-based and must not spawn named review agents directly)
 
 Write `compound-engineering.local.md`:
 
@@ -229,7 +229,7 @@ review_mode: bulk
 # Review Context
 
 Add project-specific review instructions here.
-These notes are passed to all review agents during /workflows-review and /workflows-work.
+These notes are passed to `/workflows-review` and to the template-based review steps inside `/workflows-work`. They do not authorize direct named review-agent dispatch outside `/workflows-review`.
 
 Examples:
 - "We use Turbo Frames heavily -- check for frame-busting issues"

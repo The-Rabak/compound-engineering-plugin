@@ -292,7 +292,7 @@ This brainstorm document is consumed alongside the project constitution:
 
 - **`/workflows:plan`** -- Reads user story and architectural context to structure phases, while also checking constitution rules and recording any waivers or amendment proposals.
 - **`/deepen-plan`** -- Uses problem narrative and success criteria to evaluate whether deepened tasks still serve the original intent.
-- **`/workflows:work`** -- Feeds architectural context into each execution agent's `{{ARCHITECTURAL_CONTEXT}}` block, while constitution rules act as guardrails for implementation and approvals.
-- **`/workflows:review`** -- Uses problem narrative, user story, success criteria, and constitution baselines as the frame for evaluating whether the implementation actually solves the stated problem without policy drift.
+- **`/workflows:work`** -- Feeds architectural context into each execution agent's `{{ARCHITECTURAL_CONTEXT}}` block via the canonical execution-agent template, while constitution rules act as guardrails for implementation and approvals.
+- **`/workflows:review`** -- Uses problem narrative, user story, success criteria, and constitution baselines as the frame for evaluating whether the implementation actually solves the stated problem without policy drift. Named review agents are coordinated there, not dispatched ad hoc from other workflows.
 
 NEVER CODE! Just explore, understand, and document the WHY, WHAT, and WHERE.

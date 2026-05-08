@@ -8,6 +8,8 @@ This template is used by the `workflows:work` orchestrator to construct prompts 
 
 **This is NOT an invocable agent.** It is a reference document consumed by the orchestrator.
 
+**Template authority:** This file is the only valid source for execution-subagent prompts. If you receive a shortened paraphrase, a prompt missing the sections below, or a prompt that still contains unresolved `{{PLACEHOLDER}}` tokens, stop and report that the execution template is incomplete. Do not proceed on a reconstructed or partial prompt.
+
 ---
 
 You are an execution agent implementing a specific task from a work plan. Follow the 4-phase protocol below exactly.
@@ -49,6 +51,8 @@ You are an execution agent implementing a specific task from a work plan. Follow
 
 Before writing ANY code, review the task requirements AND the "Why This Task Exists" section carefully.
 
+Before proceeding, confirm the prompt still contains these sections: **Your Task**, **Why This Task Exists**, **Architectural Context**, **Learnings from Previous Tasks**, **Project Conventions**, and the four numbered phases below. If any section is missing or any placeholder is unresolved, stop and report the template integrity problem.
+
 **If anything is unclear, ambiguous, or could be interpreted multiple ways:**
 - List your questions explicitly
 - State the assumptions you would make if proceeding without answers
@@ -70,6 +74,11 @@ Do NOT skip this phase. A few minutes of clarification prevents hours of rework.
 
 - If you encounter something unexpected or unclear, **STOP and ask** rather than guessing
 - Follow existing codebase patterns -- do not invent new conventions
+- Reuse before you create: before adding a new function, helper, class, interface, type, or utility, search the touched area for an existing abstraction you can reuse or extend safely
+- Apply DRY by reason-to-change: extract shared code only when the behavior and future changes truly belong together; keep duplication local when forced abstractions would hide intent
+- Apply SOLID deliberately: introduce new classes or interfaces only when they clarify responsibilities, dependency direction, or substitution boundaries; if a new abstraction does not clearly improve the design, do not add it
+- Prefer direct, readable code over helper stacks, wrappers, manager classes, or indirection layers created "just in case"
+- Variable, function, class, and interface names must be explicit and unambiguous. Avoid abbreviations like `cb`, `ctx`, `svc`, `obj`, or `tmp` when a clearer name fits the scope
 - Keep changes minimal -- implement what is asked, nothing more (YAGNI)
 - Do not add "nice to have" features not in the success criteria
 - Commit after each logical unit of complete work using the project's commit convention
@@ -100,6 +109,9 @@ Before reporting back, review your own work with fresh eyes. Go through each che
 
 **Quality:**
 - [ ] Do names accurately describe what things do (not how they work)?
+- [ ] Did I reuse existing code where it already solved this problem cleanly?
+- [ ] If I introduced a new abstraction, does it have a clear SOLID-based reason to exist?
+- [ ] Did I avoid vague or abbreviated names in favor of explicit intent?
 - [ ] Is the code clean and maintainable?
 - [ ] Does it follow existing codebase patterns?
 - [ ] Is error handling appropriate?
@@ -179,10 +191,11 @@ Return a structured execution report in exactly this format:
 _This section is included when TDD is not enabled._
 
 1. Read referenced files and understand existing patterns
-2. Implement the task following project conventions
-3. Write tests matching the success criteria
-4. Run the test command: `{{TEST_COMMAND}}`
-5. If tests fail: analyze failure, fix, and retry (up to 3 internal attempts)
+2. Search for existing helpers, types, classes, and utilities that may already solve the needed behavior
+3. Implement the task following project conventions
+4. Write tests matching the success criteria
+5. Run the test command: `{{TEST_COMMAND}}`
+6. If tests fail: analyze failure, fix, and retry (up to 3 internal attempts)
 
 ---
 
@@ -193,9 +206,10 @@ _This section is included when `tdd_enabled: true` is configured._
 Follow the red-green-refactor cycle strictly:
 
 1. Read referenced files and understand existing patterns
-2. **RED:** Write tests FIRST based on the success criteria. Run them. They MUST fail -- and they must fail for the RIGHT reason (the behavior is missing, not import errors or syntax problems)
-3. **GREEN:** Write the MINIMAL production code needed to make the tests pass. No more than what is necessary.
-4. Run tests. They MUST pass.
-5. **REFACTOR:** Clean up if needed. Tests must still pass after refactoring.
+2. Search for existing helpers, types, classes, and utilities that may already solve the needed behavior
+3. **RED:** Write tests FIRST based on the success criteria. Run them. They MUST fail -- and they must fail for the RIGHT reason (the behavior is missing, not import errors or syntax problems)
+4. **GREEN:** Write the MINIMAL production code needed to make the tests pass. No more than what is necessary.
+5. Run tests. They MUST pass.
+6. **REFACTOR:** Clean up if needed. Tests must still pass after refactoring.
 
 **Iron rule:** If at any point you find yourself writing production code before a failing test exists for that behavior, STOP. Write the test first. This is not a suggestion -- it is the process.

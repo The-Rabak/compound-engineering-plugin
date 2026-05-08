@@ -4,7 +4,7 @@ description: >-
   Reviews Laravel/PHP code enforcing modern Laravel 11+ and PHP 8.3+ best practices with P1/P2/P3
   severity levels. Use after implementing features, modifying code, or creating new Laravel
   components.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 platforms:
   copilot:
     model: gpt-5.3-codex

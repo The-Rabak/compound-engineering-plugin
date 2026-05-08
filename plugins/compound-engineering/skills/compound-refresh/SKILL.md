@@ -1,7 +1,7 @@
 ---
 name: compound-refresh
 description: Refresh stale or drifting learnings and pattern docs in docs/solutions/ against the current codebase
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 disable-model-invocation: true
 ---
 

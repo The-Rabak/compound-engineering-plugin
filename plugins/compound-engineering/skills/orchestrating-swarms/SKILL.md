@@ -1,7 +1,7 @@
 ---
 name: orchestrating-swarms
 description: This skill should be used when orchestrating multi-agent swarms using Claude Code's TeammateTool and Task system. It applies when coordinating multiple agents, running parallel code reviews, creating pipeline workflows with dependencies, building self-organizing task queues, or any task benefiting from divide-and-conquer patterns.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 disable-model-invocation: true
 ---
 
@@ -159,7 +159,7 @@ A swarm consists of:
       "agentId": "worker-1@my-project",
       "name": "worker-1",
       "agentType": "Explore",
-      "model": "claude-haiku-4.5",
+      "model": "claude-haiku-4-5-20251001",
       "prompt": "Analyze the codebase structure...",
       "color": "#D94A4A",
       "planModeRequired": false,
@@ -185,7 +185,7 @@ Task({
   subagent_type: "Explore",
   description: "Find auth files",
   prompt: "Find all authentication-related files in this codebase",
-  model: "claude-haiku-4.5"  // Lightweight search/research; use sonnet/codex for reasoning-heavy workers
+  model: "claude-haiku-4-5-20251001"  // Lightweight search/research; use sonnet/codex for reasoning-heavy workers
 })
 ```
 
@@ -254,7 +254,7 @@ Task({
   subagent_type: "Explore",
   description: "Find API endpoints",
   prompt: "Find all API endpoints in this codebase. Be very thorough.",
-  model: "claude-haiku-4.5"  // Fast and cheap for basic exploration
+  model: "claude-haiku-4-5-20251001"  // Fast and cheap for basic exploration
 })
 ```
 - **Tools:** All read-only tools (no Edit, Write, NotebookEdit, Task)
@@ -316,42 +316,15 @@ Task({
 From the `compound-engineering` plugin (examples):
 
 ### Review Agents
-```javascript
-// Security review
-Task({
-  subagent_type: "compound-engineering:review:security-sentinel",
-  description: "Security audit",
-  prompt: "Audit this PR for security vulnerabilities"
-})
+Do **not** spawn compound-engineering named review agents directly from ad hoc swarm prompts. Route named review-agent work through `/workflows:review`, which loads the agent template, injects WHY context, enforces mandatory reviewers, and applies conditional reviewer rules consistently.
 
-// Performance review
-Task({
-  subagent_type: "compound-engineering:review:performance-oracle",
-  description: "Performance check",
-  prompt: "Analyze this code for performance bottlenecks"
-})
+Use patterns like:
 
-// Laravel code review
-Task({
-  subagent_type: "compound-engineering:review:rabak-laravel-reviewer",
-  description: "Laravel review",
-  prompt: "Review this Laravel code for best practices and conventions"
-})
-
-// Architecture review
-Task({
-  subagent_type: "compound-engineering:review:architecture-strategist",
-  description: "Architecture review",
-  prompt: "Review the system architecture of the authentication module"
-})
-
-// Code simplicity
-Task({
-  subagent_type: "compound-engineering:review:code-simplicity-reviewer",
-  description: "Simplicity check",
-  prompt: "Check if this implementation can be simplified"
-})
+```text
+/workflows:review [branch-or-target]
 ```
+
+If you are authoring an internal workflow that coordinates named review agents, the workflow must load and quote the canonical reviewer template before dispatch. Never dispatch a named review agent by name alone.
 
 **All review agents from compound-engineering:**
 - `agent-native-reviewer` - Ensures features work for agents too
@@ -369,6 +342,16 @@ Task({
 - `pattern-recognition-specialist` - Design patterns and anti-patterns
 - `performance-oracle` - Performance analysis
 - `security-sentinel` - Security vulnerabilities
+
+### Execution Worker Guardrails
+
+When your swarm needs implementation workers rather than reviewers:
+
+1. Load the canonical execution prompt from the `workflows:work` workflow's bundled `execution-agent-prompt.md` reference file.
+2. Quote the first non-empty line and record the source before spawning the worker.
+3. Fill placeholders from the loaded template. Do not reconstruct a shorter prompt from memory.
+4. Reuse the same template for retries, fix passes, and regression repairs.
+5. If the template cannot be loaded, quoted, or fully filled, stop instead of improvising.
 
 ### Research Agents
 ```javascript
@@ -790,34 +773,18 @@ TaskUpdate({ taskId: "4", addBlockedBy: ["3"] })   // #4 waits for #3
 
 ### Pattern 1: Parallel Specialists (Leader Pattern)
 
-Multiple specialists review code simultaneously:
+When you need compound-engineering's named review specialists, delegate the review workflow itself rather than reproducing its internal reviewer fan-out by hand:
 
 ```javascript
 // 1. Create team
 Teammate({ operation: "spawnTeam", team_name: "code-review" })
 
-// 2. Spawn specialists in parallel (single message, multiple Task calls)
+// 2. Spawn a review coordinator that runs the canonical workflow
 Task({
   team_name: "code-review",
-  name: "security",
-  subagent_type: "compound-engineering:review:security-sentinel",
-  prompt: "Review the PR for security vulnerabilities. Focus on: SQL injection, XSS, auth bypass. Send findings to team-lead.",
-  run_in_background: true
-})
-
-Task({
-  team_name: "code-review",
-  name: "performance",
-  subagent_type: "compound-engineering:review:performance-oracle",
-  prompt: "Review the PR for performance issues. Focus on: N+1 queries, memory leaks, slow algorithms. Send findings to team-lead.",
-  run_in_background: true
-})
-
-Task({
-  team_name: "code-review",
-  name: "simplicity",
-  subagent_type: "compound-engineering:review:code-simplicity-reviewer",
-  prompt: "Review the PR for unnecessary complexity. Focus on: over-engineering, premature abstraction, YAGNI violations. Send findings to team-lead.",
+  name: "review-coordinator",
+  subagent_type: "general-purpose",
+  prompt: "Run /workflows:review on the target branch. Let that workflow coordinate the named review agents, then send the synthesized findings to team-lead.",
   run_in_background: true
 })
 
@@ -825,9 +792,7 @@ Task({
 // cat ~/.claude/teams/code-review/inboxes/team-lead.json
 
 // 4. Synthesize findings and cleanup
-Teammate({ operation: "requestShutdown", target_agent_id: "security" })
-Teammate({ operation: "requestShutdown", target_agent_id: "performance" })
-Teammate({ operation: "requestShutdown", target_agent_id: "simplicity" })
+Teammate({ operation: "requestShutdown", target_agent_id: "review-coordinator" })
 // Wait for approvals...
 Teammate({ operation: "cleanup" })
 ```
@@ -1428,54 +1393,12 @@ tail -f ~/.claude/teams/{team}/inboxes/team-lead.json
 // === STEP 1: Setup ===
 Teammate({ operation: "spawnTeam", team_name: "pr-review-123", description: "Reviewing PR #123" })
 
-// === STEP 2: Spawn reviewers in parallel ===
-// (Send all these in a single message for parallel execution)
+// === STEP 2: Spawn a review coordinator ===
 Task({
   team_name: "pr-review-123",
-  name: "security",
-  subagent_type: "compound-engineering:review:security-sentinel",
-  prompt: `Review PR #123 for security vulnerabilities.
-
-  Focus on:
-  - SQL injection
-  - XSS vulnerabilities
-  - Authentication/authorization bypass
-  - Sensitive data exposure
-
-  When done, send your findings to team-lead using:
-  Teammate({ operation: "write", target_agent_id: "team-lead", value: "Your findings here" })`,
-  run_in_background: true
-})
-
-Task({
-  team_name: "pr-review-123",
-  name: "perf",
-  subagent_type: "compound-engineering:review:performance-oracle",
-  prompt: `Review PR #123 for performance issues.
-
-  Focus on:
-  - N+1 queries
-  - Missing indexes
-  - Memory leaks
-  - Inefficient algorithms
-
-  Send findings to team-lead when done.`,
-  run_in_background: true
-})
-
-Task({
-  team_name: "pr-review-123",
-  name: "arch",
-  subagent_type: "compound-engineering:review:architecture-strategist",
-  prompt: `Review PR #123 for architectural concerns.
-
-  Focus on:
-  - Design pattern adherence
-  - SOLID principles
-  - Separation of concerns
-  - Testability
-
-  Send findings to team-lead when done.`,
+  name: "review-coordinator",
+  subagent_type: "general-purpose",
+  prompt: `Run /workflows:review for PR #123. Let that workflow load the named reviewer templates, inject WHY context, and coordinate the review-agent fan-out. Send the final synthesized review to team-lead.`,
   run_in_background: true
 })
 
@@ -1487,9 +1410,7 @@ Task({
 // Combine all reviewer findings into a cohesive report
 
 // === STEP 5: Cleanup ===
-Teammate({ operation: "requestShutdown", target_agent_id: "security" })
-Teammate({ operation: "requestShutdown", target_agent_id: "perf" })
-Teammate({ operation: "requestShutdown", target_agent_id: "arch" })
+Teammate({ operation: "requestShutdown", target_agent_id: "review-coordinator" })
 // Wait for approvals...
 Teammate({ operation: "cleanup" })
 ```
@@ -1549,8 +1470,8 @@ Task({
 Task({
   team_name: "feature-oauth",
   name: "reviewer",
-  subagent_type: "compound-engineering:review:security-sentinel",
-  prompt: "Wait for task #5 to unblock. Review the complete OAuth implementation for security. Send final assessment to team-lead.",
+  subagent_type: "general-purpose",
+  prompt: "Wait for task #5 to unblock. Run /workflows:review on the completed OAuth branch and send the final assessment to team-lead.",
   run_in_background: true
 })
 

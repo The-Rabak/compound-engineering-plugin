@@ -5,7 +5,7 @@ description: >-
   files (images, videos, documents) to S3, Cloudflare R2, Backblaze B2, Google Drive, Dropbox, or
   any S3-compatible storage. Triggers on "upload to S3", "sync to cloud", "rclone", "backup files",
   "upload video/image to bucket", or requests to transfer files to remote storage.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 platforms:
   copilot:
     model: gpt-5.3-codex
