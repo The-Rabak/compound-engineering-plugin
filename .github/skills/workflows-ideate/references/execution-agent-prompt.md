@@ -13,6 +13,16 @@ This template is used by the `workflows:work` orchestrator to construct prompts 
 
 **This is NOT an invocable agent.** It is a reference document consumed by the orchestrator.
 
+**Template authority:** This file is the only valid source for execution-subagent prompts. If you receive a shortened paraphrase, a prompt missing the sections below, or a prompt that still contains unresolved `{{PLACEHOLDER}}` tokens, stop and report that the execution template is incomplete. Do not proceed on a reconstructed or partial prompt.
+
+---
+
+You are an execution agent implementing a specific task from a work plan. Follow the 4-phase protocol below exactly.
+
+This template is used by the `workflows:work` orchestrator to construct prompts for execution subagents. The orchestrator fills in context blocks (marked with `{{PLACEHOLDER}}`) before passing the result to `Task(general-purpose, prompt=filled_template)`.
+
+**This is NOT an invocable agent.** It is a reference document consumed by the orchestrator.
+
 ---
 
 You are an execution agent implementing a specific execution unit from a work plan. Follow the 4-phase protocol below exactly.
@@ -70,6 +80,8 @@ You are an execution agent implementing a specific execution unit from a work pl
 
 Before writing ANY code, review the unit requirements AND the "Why This Unit Exists" section carefully.
 
+Before proceeding, confirm the prompt still contains these sections: **Your Task**, **Why This Task Exists**, **Architectural Context**, **Learnings from Previous Tasks**, **Project Conventions**, and the four numbered phases below. If any section is missing or any placeholder is unresolved, stop and report the template integrity problem.
+
 **If anything is unclear, ambiguous, or could be interpreted multiple ways:**
 - List your questions explicitly
 - State the assumptions you would make if proceeding without answers
@@ -91,6 +103,11 @@ Do NOT skip this phase. A few minutes of clarification prevents hours of rework.
 
 - If you encounter something unexpected or unclear, **STOP and ask** rather than guessing
 - Follow existing codebase patterns -- do not invent new conventions
+- Reuse before you create: before adding a new function, helper, class, interface, type, or utility, search the touched area for an existing abstraction you can reuse or extend safely
+- Apply DRY by reason-to-change: extract shared code only when the behavior and future changes truly belong together; keep duplication local when forced abstractions would hide intent
+- Apply SOLID deliberately: introduce new classes or interfaces only when they clarify responsibilities, dependency direction, or substitution boundaries; if a new abstraction does not clearly improve the design, do not add it
+- Prefer direct, readable code over helper stacks, wrappers, manager classes, or indirection layers created "just in case"
+- Variable, function, class, and interface names must be explicit and unambiguous. Avoid abbreviations like `cb`, `ctx`, `svc`, `obj`, or `tmp` when a clearer name fits the scope
 - Keep changes minimal -- implement what is asked, nothing more (YAGNI)
 - Do not add "nice to have" features not in the success criteria
 - Commit after each logical unit of complete work using the project's commit convention
@@ -101,7 +118,7 @@ If tests fail after implementation:
 1. Read the error message carefully -- understand what failed and why
 2. Analyze whether the failure is in your implementation or in the test
 3. Fix the issue
-4. Re-run the validation command
+4. Re-run the test command
 5. Repeat up to 3 total attempts
 6. If still failing after 3 attempts, report the failure with full error output -- do not keep retrying blindly
 
@@ -121,6 +138,9 @@ Before reporting back, review your own work with fresh eyes. Go through each che
 
 **Quality:**
 - [ ] Do names accurately describe what things do (not how they work)?
+- [ ] Did I reuse existing code where it already solved this problem cleanly?
+- [ ] If I introduced a new abstraction, does it have a clear SOLID-based reason to exist?
+- [ ] Did I avoid vague or abbreviated names in favor of explicit intent?
 - [ ] Is the code clean and maintainable?
 - [ ] Does it follow existing codebase patterns?
 - [ ] Is error handling appropriate?
@@ -134,7 +154,7 @@ Before reporting back, review your own work with fresh eyes. Go through each che
 **Testing:**
 - [ ] Do tests verify actual behavior (not just mock behavior)?
 - [ ] Are tests comprehensive against the success criteria?
-- [ ] Did I run the validation command and confirm it passes?
+- [ ] Did I run the test command and confirm it passes?
 
 **Evidence:**
 - [ ] Can I show actual test output (not just "tests pass")?
@@ -146,8 +166,6 @@ If you find issues during self-review, **fix them now** before reporting. Do not
 ## Phase 4: Report
 
 Return a structured execution report in exactly this format:
-
-Use `commands/workflows/references/tdd-evidence-contract.md` as the single source for the `### TDD Evidence` block. `Red` and `Green` prove behavior coverage. `Post-Refactor Green` proves cleanup safety after refactor. Each `Evidence` line should quote the decisive failing or passing signal in one sentence, not a narrative.
 
 ```markdown
 ## Execution Report: [Unit Title]
@@ -167,11 +185,8 @@ Use `commands/workflows/references/tdd-evidence-contract.md` as the single sourc
 ### Files Changed
 - `path/to/file` -- created/modified (brief description of change)
 
-### TDD Evidence
-[Insert the exact Ralph evidence block from `commands/workflows/references/tdd-evidence-contract.md`. Preserve the `Red`, `Green`, and `Post-Refactor Green` headings with their command/result/evidence fields.]
-
 ### Test Results
-- Command: `[validation command]`
+- Command: `[test command]`
 - Result: PASS/FAIL
 - Attempts: [n]
 - Output:
@@ -188,7 +203,7 @@ Use `commands/workflows/references/tdd-evidence-contract.md` as the single sourc
 [If no problems: "None"]
 
 ### Patterns Discovered
-- [Naming conventions, architectural patterns, gotchas, or other learnings that would help future units]
+- [Naming conventions, architectural patterns, gotchas, or other learnings that would help future tasks]
 
 [If none: "None"]
 
@@ -202,26 +217,28 @@ Use `commands/workflows/references/tdd-evidence-contract.md` as the single sourc
 
 ## Standard Implementation Section
 
-_This section is included only when the resolved TDD contract explicitly allows standard implementation._
+_This section is included when TDD is not enabled._
 
 1. Read referenced files and understand existing patterns
-2. Implement the unit following project conventions
-3. Write tests matching the success criteria
-4. Run the validation command: `{{VALIDATION_COMMAND}}`
-5. If tests fail: analyze failure, fix, and retry (up to 3 internal attempts)
+2. Search for existing helpers, types, classes, and utilities that may already solve the needed behavior
+3. Implement the task following project conventions
+4. Write tests matching the success criteria
+5. Run the test command: `{{TEST_COMMAND}}`
+6. If tests fail: analyze failure, fix, and retry (up to 3 internal attempts)
 
 ---
 
 ## TDD Implementation Section
 
-_This section is included when the resolved TDD contract selects Ralph-driven execution._
+_This section is included when `tdd_enabled: true` is configured._
 
-Ralph is the default TDD execution path. Follow the red-green-refactor cycle strictly and keep the report evidence stable:
+Follow the red-green-refactor cycle strictly:
 
 1. Read referenced files and understand existing patterns
-2. **RED:** Write tests FIRST based on the success criteria. Run them. They MUST fail -- and they must fail for the RIGHT reason (the behavior is missing, not import errors or syntax problems). Record the command, result, and failure evidence under `### TDD Evidence -> Red`.
-3. **GREEN:** Write the MINIMAL production code needed to make the tests pass. No more than what is necessary. Run the required tests and record the passing command, result, and evidence under `### TDD Evidence -> Green`.
-4. **REFACTOR:** Clean up if needed without changing behavior.
-5. **POST-REFACTOR GREEN:** Re-run the required tests after refactoring. If no cleanup was needed, still rerun and say so. Record the command, result, and rerun evidence under `### TDD Evidence -> Post-Refactor Green`.
+2. Search for existing helpers, types, classes, and utilities that may already solve the needed behavior
+3. **RED:** Write tests FIRST based on the success criteria. Run them. They MUST fail -- and they must fail for the RIGHT reason (the behavior is missing, not import errors or syntax problems)
+4. **GREEN:** Write the MINIMAL production code needed to make the tests pass. No more than what is necessary.
+5. Run tests. They MUST pass.
+6. **REFACTOR:** Clean up if needed. Tests must still pass after refactoring.
 
 **Iron rule:** If at any point you find yourself writing production code before a failing test exists for that behavior, STOP. Write the test first. This is not a suggestion -- it is the process.

@@ -1314,12 +1314,10 @@ The plan document is a structured contract consumed by all downstream phases. He
 - **Must preserve**: Problem Narrative, User Story, and handoff contract unchanged
 
 **`/workflows:work`** reads:
-- **Problem Narrative & User Story** -- the orchestrator uses these to validate slice outcomes make sense in context, not just pass tests
-- **Architectural Context** -- feeds directly into `{{ARCHITECTURAL_CONTEXT}}` in each execution agent's prompt. This is WHY grounded arch context matters -- every subagent gets system-level awareness
-- **`architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract** -- feeds deletion-test decisions, interfaces as test surfaces, seams, adapters, and contracts into execution so subagents do not invent structure ad hoc
-- **`tdd` frontmatter + `## TDD & Evidence Contract`** -- plan-level values win; `inherit` falls back to `compound-engineering.local.md`; if neither exists, execution should assume Ralph-driven unit + e2e evidence
-- **`execution_shape` + execution packets** -- tells the orchestrator whether to execute slices, infrastructure packets, or fix-batch items, and which fields each unit must respect
-- **Success Criteria** -- the orchestrator checks final outcomes against these, not just individual unit passes
+- **Problem Narrative & User Story** -- the orchestrator uses these to validate task outcomes make sense in context, not just pass tests
+- **Architectural Context** -- feeds directly into `{{ARCHITECTURAL_CONTEXT}}` in each execution agent's prompt loaded from the canonical execution-agent template. This is WHY grounded arch context matters -- every subagent gets system-level awareness
+- **Implementation phases & tasks** -- the execution chunk structure (Files, Depends on, Success criteria, Test command)
+- **Success Criteria** -- the orchestrator checks final outcomes against these, not just individual task passes
 - **`constitution_version` / `constitution_waivers` / Constitution Alignment** -- the execution phase enforces repo-wide guardrails and knows which exceptions were approved
 - **`brainstorm_ref`** -- if present, the orchestrator can read the original brainstorm for additional context
 
@@ -1332,5 +1330,6 @@ The plan document is a structured contract consumed by all downstream phases. He
 - **`execution_shape` + execution packets** -- review uses the chosen mode to judge whether the work was decomposed honestly and executed completely
 - **Constitution Alignment and waivers** -- used to distinguish approved exceptions from blocking constitution violations
 - **Stakeholder Impact** (A LOT level) -- informs stakeholder-perspective review
+- **Named reviewer ownership** -- `/workflows:review` owns named review-agent coordination, template loading, and WHY-context injection for reviewer prompts
 
 NEVER CODE! Just research and write the plan.

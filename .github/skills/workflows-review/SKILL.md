@@ -171,15 +171,23 @@ Read `compound-engineering.local.md` in the project root. If found, use `review_
 
 If no settings file exists, invoke the `setup` skill to create one. Then read the newly created file and continue.
 
+`review_agents` only decides **which** named review agents `/workflows-review` coordinates. It does **not** authorize direct reviewer dispatch from other workflows or ad hoc prompts. If any other workflow or skill needs named review-agent analysis, route that request through `/workflows-review` instead of spawning the reviewers directly.
+
 #### Parallel Agents to review the branch changes:
 
 <parallel_tasks>
 
 Run all configured review agents in parallel using Task tool. For each agent in the `review_agents` list:
 
-Before dispatching any named review agent below, apply the shared `Named Agent Dispatch` protocol in `references/orchestration-protocol.md`.
-
-##### CRITICAL: You must always pass the full agent template to the task tool, no questions asked, no summarizing or abbreviating the templates is allowed.
+Before dispatching any named review agent below, complete this protocol:
+1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.
+2. If the bundled template exists, use the file-read tool to load the full template.
+3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent "<agent-name>"`.
+4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.
+5. Include the loaded template's rules in the delegated prompt. Do not paraphrase away mandatory constraints.
+6. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch the agent.
+7. If any configured or mandatory reviewer cannot be loaded and quoted, report that the review is incomplete and stop rather than substituting a different reviewer or continuing with a reduced reviewer set.
+Never dispatch a named agent by name alone.
 
 ```
 Task {agent-name}(branch diff content + review context from settings body + WHY context block)
@@ -207,7 +215,7 @@ Branch diff:
 [diff content]
 ```
 
-Additionally, always run these regardless of settings:
+Additionally, always run these regardless of settings. These mandatory reviewers cannot be disabled by `review_agents`:
 - Apply the protocol above to `agent-native-reviewer`, then dispatch it with branch diff content + WHY context - Verify new features are agent-accessible
 - Apply the protocol above to `learnings-researcher`, then dispatch it with branch diff content + WHY context - Search docs/solutions/ for past issues related to this PR's modules and patterns
 
@@ -219,7 +227,7 @@ Additionally, always run these regardless of settings:
 
 These agents are run ONLY when the branch changes match specific criteria. Check the changed files list to determine if they apply. **Pass the WHY context block to all conditional agents as well.**
 
-Apply the same shared `Named Agent Dispatch` protocol to every named conditional agent below. Never dispatch them by name alone.
+Apply the same template-loading rule to every named conditional agent below. Never dispatch them by name alone, and do not silently skip a required conditional reviewer once its trigger conditions are met.
 
 **MIGRATIONS: If PR contains database migrations or data backfills:**
 

@@ -3,7 +3,7 @@ name: deployment-verification-agent
 description: >-
   Produces Go/No-Go deployment checklists with SQL verification queries, rollback procedures, and
   monitoring plans. Use when PRs touch production data, migrations, or risky data changes.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 platforms:
   copilot:
     model: gpt-5.3-codex

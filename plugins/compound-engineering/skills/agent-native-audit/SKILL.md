@@ -1,7 +1,7 @@
 ---
 name: agent-native-audit
 description: Run a comprehensive scored audit of agent-native architecture principles
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 disable-model-invocation: true
 ---
 

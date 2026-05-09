@@ -2,7 +2,7 @@
 
 Portable source-of-truth and OpenCode-first release repository for the `compound-engineering` plugin.
 
-This is not just a prompt pack. It is a **spec-driven AI engineering system** for real product work: **29 specialized agents, 26 commands, and 24 skills** built from one portable definition set and distributed through a tiered support model:
+The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **31 specialized agents, 25 commands, and 24 skills** built from one portable definition set and emitted into multiple agent harnesses.
 
 - **OpenCode** -- first-class authoring and daily-driver surface
 - **GitHub Copilot** -- second-class generated output

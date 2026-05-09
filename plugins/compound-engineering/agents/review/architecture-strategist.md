@@ -1,7 +1,7 @@
 ---
 name: architecture-strategist
 description: Software architecture review specialist. Evaluates code for SOLID compliance, clean architecture, DDD, coupling/cohesion, anti-patterns, and API design. Use when reviewing PRs, designing modules, evaluating refactors, or assessing system structure.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 ---
 
 ## Mission

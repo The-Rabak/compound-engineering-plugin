@@ -293,9 +293,8 @@ explicit downstream handoff.
 This brainstorm document is consumed alongside the project constitution:
 
 - **`/workflows:plan`** -- Reads user story and architectural context to structure phases, while also checking constitution rules and recording any waivers or amendment proposals.
-- **`/workflows:architecture`** -- Turns the plan into a dedicated architecture artifact that names deepening candidates, deletion tests, interfaces, seams, adapters, and contracts.
-- **`/deepen-plan`** -- Uses the problem narrative, success criteria, and architecture artifact to deepen tasks without losing the original intent.
-- **`/workflows:work`** -- Feeds architectural context plus the architecture artifact into execution so agents do not guess at structural boundaries.
-- **`/workflows:review`** -- Uses problem narrative, user story, success criteria, architecture artifact, and constitution baselines as the frame for evaluating whether the implementation actually solves the stated problem without policy drift.
+- **`/deepen-plan`** -- Uses problem narrative and success criteria to evaluate whether deepened tasks still serve the original intent.
+- **`/workflows:work`** -- Feeds architectural context into each execution agent's `{{ARCHITECTURAL_CONTEXT}}` block via the canonical execution-agent template, while constitution rules act as guardrails for implementation and approvals.
+- **`/workflows:review`** -- Uses problem narrative, user story, success criteria, and constitution baselines as the frame for evaluating whether the implementation actually solves the stated problem without policy drift. Named review agents are coordinated there, not dispatched ad hoc from other workflows.
 
 NEVER CODE! Just explore, understand, and document the WHY, WHAT, and WHERE.

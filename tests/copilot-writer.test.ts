@@ -57,6 +57,13 @@ describe("writeCopilotBundle", () => {
       "utf8",
     )
     expect(workflowContent).toContain("references/execution-agent-prompt.md")
+
+    const copiedReferenceContent = await fs.readFile(
+      path.join(githubRoot, "skills", "create-agent-skills", "references", "official-spec.md"),
+      "utf8",
+    )
+    expect(copiedReferenceContent).not.toContain(".claude/")
+    expect(copiedReferenceContent).toContain(".github/")
   })
 
   test("rejects unsafe generated output names", async () => {

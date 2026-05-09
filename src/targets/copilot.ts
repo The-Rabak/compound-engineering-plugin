@@ -1,5 +1,14 @@
 import path from "path"
-import { backupFile, copyDir, ensureDir, pathExists, readText, writeJson, writeText } from "../utils/files"
+import {
+  backupFile,
+  copyDir,
+  ensureDir,
+  pathExists,
+  readText,
+  walkFiles,
+  writeJson,
+  writeText,
+} from "../utils/files"
 import { transformContentForCopilot } from "../converters/claude-to-copilot"
 import type { CopilotBundle } from "../types/copilot"
 import { formatFrontmatter, parseFrontmatter } from "../utils/frontmatter"
@@ -35,6 +44,7 @@ export async function writeCopilotBundle(outputRoot: string, bundle: CopilotBund
       assertSafeOutputName(skill.name, "skill")
       const targetDir = path.join(skillsDir, skill.name)
       await copyDir(skill.sourceDir, targetDir)
+      await transformCopiedMarkdownForCopilot(targetDir)
 
       const raw = await readText(skill.skillPath)
       const parsed = parseFrontmatter(raw)
@@ -63,7 +73,24 @@ export async function writeCopilotBundle(outputRoot: string, bundle: CopilotBund
 async function copyCommandReferenceDocs(commandSourcePath: string, targetDir: string): Promise<void> {
   const sourceReferencesDir = path.join(path.dirname(commandSourcePath), "references")
   if (!(await pathExists(sourceReferencesDir))) return
-  await copyDir(sourceReferencesDir, path.join(targetDir, "references"))
+  const targetReferencesDir = path.join(targetDir, "references")
+  await copyDir(sourceReferencesDir, targetReferencesDir)
+  await transformCopiedMarkdownForCopilot(targetReferencesDir)
+}
+
+async function transformCopiedMarkdownForCopilot(targetDir: string): Promise<void> {
+  if (!(await pathExists(targetDir))) return
+
+  const files = await walkFiles(targetDir)
+  for (const filePath of files) {
+    if (path.extname(filePath) !== ".md") continue
+    if (path.basename(filePath) === "SKILL.md") continue
+
+    const original = await readText(filePath)
+    const transformed = transformContentForCopilot(original.trim())
+    if (transformed === original.trim()) continue
+    await writeText(filePath, transformed + "\n")
+  }
 }
 
 function resolveCopilotPaths(outputRoot: string) {

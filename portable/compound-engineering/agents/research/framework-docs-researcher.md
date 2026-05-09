@@ -3,7 +3,7 @@ name: framework-docs-researcher
 description: >-
   Gathers comprehensive documentation and best practices for frameworks, libraries, or dependencies.
   Use when you need official docs, version-specific constraints, or implementation patterns.
-model: claude-haiku-4.5
+model: claude-haiku-4-5-20251001
 platforms:
   copilot:
     model: gpt-5.4-mini

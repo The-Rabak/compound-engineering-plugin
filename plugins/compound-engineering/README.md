@@ -1,8 +1,6 @@
 # Compounding Engineering Plugin
 
-Generated Claude Code compatibility output for the OpenCode-first `compound-engineering` repo. AI-powered development tools that get smarter with every use. Includes 29 specialized agents, 26 commands, and 24 skills.
-
-> Support order for the canonical repo: OpenCode first-class, GitHub Copilot second, Claude Code third. Non-core exporters (Codex, Droid, Pi, Gemini, Kiro) are de-emphasized compatibility surfaces, and legacy assets such as `.github_gpt/` plus dormant Cursor-specific code have been removed to stop unsupported workflow drift.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 31 specialized agents, 25 commands, and 24 skills.
 
 This repository also ships generated Copilot assets under the repo root `.github/`, built from the canonical portable source in `portable/compound-engineering/`.
 
@@ -38,8 +36,8 @@ bun test
 
 | Component | Count |
 |-----------|-------|
-| Agents | 29 |
-| Commands | 26 |
+| Agents | 31 |
+| Commands | 25 |
 | Skills | 24 |
 | Hooks | 1 |
 | MCP Servers | 1 |
@@ -48,17 +46,19 @@ bun test
 
 Agents are organized into categories for easier discovery.
 
-### Review (17)
+### Review (19)
 
 | Agent | Description |
 |-------|-------------|
 | `agent-native-reviewer` | Verify features are agent-native (action + context parity) |
 | `architecture-strategist` | Analyze architectural decisions and compliance |
-| `code-simplicity-reviewer` | Final pass for simplicity and minimalism |
+| `code-simplicity-reviewer` | Eliminate complexity, wrong abstractions, and readability regressions |
+| `constitution-guardian` | Enforce repo rules derived from constitutions, architecture docs, and governing markdown |
 | `data-integrity-guardian` | Database migrations and data integrity |
 | `data-migration-expert` | Validate data migrations and ID mappings |
 | `deployment-verification-agent` | Create Go/No-Go deployment checklists for risky data changes |
 | `rabak-frontend-races-reviewer` | Review React, Vue, and async UI code for race conditions and stale state bugs |
+| `rabak-java-reviewer` | Java/JVM code review with a high bar for deep modules, contracts, and maintainable performance |
 | `rabak-laravel-reviewer` | Modern Laravel 11+ code review (architecture, Eloquent, testing) |
 | `rabak-nest-reviewer` | NestJS code review enforcing simplicity, performance, and security |
 | `rabak-python-reviewer` | Python code review with strict conventions |

@@ -1,7 +1,7 @@
 ---
 name: rabak-frontend-races-reviewer
 description: Reviews frontend async UI code for race conditions, stale state, cancellation bugs, and lifecycle hazards across React, Vue, and browser APIs. Use after implementing components, hooks, stores, or async interactions.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 ---
 
 ## Mission

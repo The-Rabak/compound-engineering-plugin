@@ -39,7 +39,7 @@ All fields are optional. Only `description` is recommended.
 | `disable-model-invocation` | No | Set `true` to prevent Claude from auto-loading. Use for manual workflows. Default: `false` |
 | `user-invocable` | No | Set `false` to hide from `/` menu. Use for background knowledge. Default: `true` |
 | `allowed-tools` | No | Tools Claude can use without permission prompts. Example: `Read, Bash(git *)` |
-| `model` | No | Model to use. Prefer explicit IDs such as `claude-sonnet-4.6`, and use platform-specific overrides like `platforms.copilot.model: gpt-5.3-codex` when GPT routing should differ. |
+| `model` | No | Model to use. Prefer explicit IDs such as `claude-sonnet-4-6`, and use platform-specific overrides like `platforms.copilot.model: gpt-5.3-codex` when GPT routing should differ. |
 | `context` | No | Set `fork` to run in isolated subagent context |
 | `agent` | No | Subagent type when `context: fork`. Options: `Explore`, `Plan`, `general-purpose`, or custom agent name |
 | `hooks` | No | Hooks scoped to this skill's lifecycle |

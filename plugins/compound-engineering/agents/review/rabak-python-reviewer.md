@@ -1,7 +1,7 @@
 ---
 name: rabak-python-reviewer
 description: Reviews Python code with an extremely high quality bar for Pythonic patterns, type safety, and maintainability. Use after implementing features, modifying code, or creating new Python modules.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 ---
 
 ## Mission

@@ -1,7 +1,7 @@
 ---
 name: agent-native-architecture
-description: Build applications where agents are first-class citizens. Use this skill when designing autonomous agents, creating MCP tools, implementing self-modifying systems, or defining architecture artifacts around deletion tests, interfaces, seams, adapters, and explicit contracts.
-model: claude-sonnet-4.6
+description: Build applications where agents are first-class citizens. Use this skill when designing autonomous agents, creating MCP tools, implementing self-modifying systems, or building apps where features are outcomes achieved by agents operating in a loop.
+model: claude-sonnet-4-6
 ---
 
 # agent-native-architecture Skill

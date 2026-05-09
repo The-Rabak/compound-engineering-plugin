@@ -1,7 +1,7 @@
 {
   "name": "compound-engineering",
-  "version": "4.5.0",
-  "description": "OpenCode-first AI-powered development tools. Includes 29 specialized agents, 26 commands, and 24 skills spanning code review, research, design, and workflow automation, with generated Copilot support and Claude Code compatibility outputs.",
+  "version": "4.6.0",
+  "description": "AI-powered development tools. Includes 31 specialized agents, 25 commands, and 24 skills for code review, research, design, and workflow automation.",
   "author": {
     "name": "The Rabak",
     "email": "arielvaron@gmail.com",
@@ -16,6 +16,7 @@
     "workflow-automation",
     "code-review",
     "rust",
+    "java",
     "laravel",
     "vue",
     "nestjs",

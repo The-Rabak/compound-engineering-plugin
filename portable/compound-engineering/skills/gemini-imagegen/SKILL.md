@@ -6,7 +6,7 @@ description: >-
   transfers, generating logos with text, creating stickers, product mockups, or any image
   generation/manipulation task. Supports text-to-image, image editing, multi-turn refinement, and
   composition from multiple reference images.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 platforms:
   copilot:
     model: gpt-5.3-codex

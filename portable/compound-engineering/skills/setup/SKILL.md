@@ -3,7 +3,7 @@ name: setup
 description: >-
   Configure which review agents run for your project. Auto-detects stack and writes
   compound-engineering.local.md.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 platforms:
   claude:
     disable-model-invocation: true
@@ -48,6 +48,8 @@ elif [ -f "Cargo.toml" ]; then
   echo "rust"
 elif [ -f "nest-cli.json" ] || grep -q '"@nestjs/core"' package.json 2>/dev/null; then
   echo "nestjs"
+elif [ -f "pom.xml" ] || [ -f "build.gradle" ] || [ -f "build.gradle.kts" ] || [ -d "src/main/java" ]; then
+  echo "java"
 elif [ -f "nuxt.config.ts" ] || [ -f "nuxt.config.js" ]; then
   echo "nuxt"
 elif [ -f "next.config.ts" ] || [ -f "next.config.js" ] || [ -f "next.config.mjs" ]; then
@@ -87,18 +89,19 @@ options:
 
 ### If Auto-configure -> Skip stack/focus/depth and continue with Step 3d and Step 3e using these defaults:
 
-- **Laravel:** `[rabak-laravel-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
-- **PHP:** `[rabak-laravel-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
-- **Vue/Nuxt:** `[rabak-vue-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
-- **React/Next.js:** `[rabak-typescript-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
-- **Angular:** `[rabak-typescript-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
-- **NestJS:** `[rabak-nest-reviewer, rabak-typescript-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
-- **TypeScript:** `[rabak-typescript-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
-- **JavaScript:** `[rabak-typescript-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
-- **Python:** `[rabak-python-reviewer, code-simplicity-reviewer, security-sentinel, performance-oracle]`
-- **Rust:** `[code-simplicity-reviewer, security-sentinel, performance-oracle, architecture-strategist]`
-- **Go:** `[code-simplicity-reviewer, security-sentinel, performance-oracle, architecture-strategist]`
-- **General:** `[code-simplicity-reviewer, security-sentinel, performance-oracle, architecture-strategist]`
+- **Laravel:** `[rabak-laravel-reviewer, constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle]`
+- **PHP:** `[rabak-laravel-reviewer, constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle]`
+- **Vue/Nuxt:** `[rabak-vue-reviewer, constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle]`
+- **React/Next.js:** `[rabak-typescript-reviewer, constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle]`
+- **Angular:** `[rabak-typescript-reviewer, constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle]`
+- **NestJS:** `[rabak-nest-reviewer, rabak-typescript-reviewer, constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle]`
+- **Java:** `[rabak-java-reviewer, constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle]`
+- **TypeScript:** `[rabak-typescript-reviewer, constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle]`
+- **JavaScript:** `[rabak-typescript-reviewer, constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle]`
+- **Python:** `[rabak-python-reviewer, constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle]`
+- **Rust:** `[constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle, architecture-strategist]`
+- **Go:** `[constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle, architecture-strategist]`
+- **General:** `[constitution-guardian, code-simplicity-reviewer, security-sentinel, performance-oracle, architecture-strategist]`
 
 ### If Customize -> Step 3 (all questions)
 
@@ -122,6 +125,8 @@ options:
     description: "Angular -- adds TypeScript reviewer"
   - label: "NestJS"
     description: "NestJS -- adds NestJS and TypeScript reviewers"
+  - label: "Java"
+    description: "Java / JVM -- adds Java reviewer"
   - label: "Python"
     description: "Python -- adds Pythonic pattern reviewer"
   - label: "Rust"
@@ -139,14 +144,14 @@ question: "Which review areas matter most?"
 header: "Focus"
 multiSelect: true
 options:
-  - label: "Security"
-    description: "Vulnerability scanning, auth, input validation (security-sentinel)"
-  - label: "Performance"
-    description: "N+1 queries, memory leaks, complexity (performance-oracle)"
-  - label: "Architecture"
-    description: "Design patterns, SOLID, separation of concerns (architecture-strategist)"
-  - label: "Code simplicity"
-    description: "Over-engineering, YAGNI violations (code-simplicity-reviewer)"
+   - label: "Security"
+     description: "Vulnerability scanning, auth, input validation (security-sentinel)"
+   - label: "Performance"
+     description: "N+1 queries, memory leaks, complexity (performance-oracle)"
+   - label: "Architecture"
+     description: "Design patterns, SOLID, separation of concerns (architecture-strategist)"
+   - label: "Code simplicity"
+     description: "Over-engineering, DRY failures, readability regressions (code-simplicity-reviewer)"
 ```
 
 **c. Depth:**
@@ -155,12 +160,12 @@ options:
 question: "How thorough should reviews be?"
 header: "Depth"
 options:
-  - label: "Thorough (Recommended)"
-    description: "Stack reviewers + all selected focus agents."
-  - label: "Fast"
-    description: "Stack reviewers + code simplicity only. Less context, quicker."
-  - label: "Comprehensive"
-    description: "All above + git history, data integrity, agent-native checks."
+   - label: "Thorough (Recommended)"
+     description: "Stack reviewers + constitution guardrails + all selected focus agents."
+   - label: "Fast"
+     description: "Stack reviewers + constitution guardrails + code simplicity only."
+   - label: "Comprehensive"
+     description: "All above + git history, data integrity, and agent-native checks."
 ```
 
 **d. Delivery loop:**
@@ -182,11 +187,11 @@ question: "When should reviews run during /workflows:work?"
 header: "Review mode"
 options:
   - label: "Bulk (Default)"
-    description: "Review runs once at the end of all tasks. Faster, less interruption."
+    description: "Runs /workflows:review once at the end of all tasks. This is where named review agents run."
   - label: "Inline"
-    description: "Review runs after each task. Slower, but catches issues earlier."
+    description: "Runs template-based inline checks after each task. Does not authorize direct named review-agent dispatch."
   - label: "Both"
-    description: "Inline review per task AND bulk review at the end."
+    description: "Inline checks per task plus /workflows:review at the end."
 ```
 
 ## Step 4: Build Agent List and Write File
@@ -196,8 +201,12 @@ options:
 - Vue/Nuxt -> `rabak-vue-reviewer`
 - React/Next.js/Angular/TypeScript/JavaScript -> `rabak-typescript-reviewer`
 - NestJS -> `rabak-nest-reviewer, rabak-typescript-reviewer`
+- Java -> `rabak-java-reviewer`
 - Python -> `rabak-python-reviewer`
 - Rust/Go/General -> (none)
+
+**Always-on baseline agent:**
+- Constitution and repo standards -> `constitution-guardian`
 
 **Focus area agents:**
 - Security -> `security-sentinel`
@@ -206,21 +215,15 @@ options:
 - Code simplicity -> `code-simplicity-reviewer`
 
 **Depth:**
-- Thorough: stack + selected focus areas
-- Fast: stack + `code-simplicity-reviewer` only
+- Thorough: stack + `constitution-guardian` + selected focus areas
+- Fast: stack + `constitution-guardian` + `code-simplicity-reviewer`
 - Comprehensive: all above + `git-history-analyzer, data-integrity-guardian, agent-native-reviewer`
 
-**Plan review agents:** stack-specific reviewer + `code-simplicity-reviewer`.
+**Plan review agents:** stack-specific reviewer + `constitution-guardian` + `code-simplicity-reviewer`.
 
 **Execution settings:**
-- `tdd_enabled`: compatibility mirror for current execution templates. `true` when `tdd.mode` is `ralph`, otherwise `false`.
-- `tdd.precedence`: `plan_overrides_local` (any concrete plan `tdd` value beats this file; `inherit` falls back here)
-- `tdd.mode`: `ralph` or `standard`
-- `tdd.loop`: `red-green-refactor` or `implementation-first`
-- `tdd.evidence.unit`: `required` or `optional`
-- `tdd.evidence.e2e`: `required` or `optional`
-- `tdd.exceptions`: `[]` by default. Plans must carry any justified exceptions.
-- `review_mode`: "bulk" (default), "inline", or "both" (controls per-slice review in workflows:work)
+- `tdd_enabled`: false (default) or true (enables TDD mode in execution agent template)
+- `review_mode`: "bulk" (default), "inline", or "both" (`bulk`/`both` invoke `/workflows:review`; `inline` stays template-based and must not spawn named review agents directly)
 
 Write `compound-engineering.local.md`:
 
@@ -243,7 +246,7 @@ review_mode: bulk
 # Review Context
 
 Add project-specific review instructions here.
-These notes are passed to all review agents during /workflows:review and /workflows:work.
+These notes are passed to `/workflows:review` and to the template-based review steps inside `/workflows:work`. They do not authorize direct named review-agent dispatch outside `/workflows:review`.
 
 ## TDD Defaults
 

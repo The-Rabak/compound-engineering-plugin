@@ -1,7 +1,7 @@
 ---
 name: performance-oracle
 description: Analyzes code for performance bottlenecks, algorithmic complexity, database queries, caching, memory usage, and scalability. Use after implementing features or when performance concerns arise.
-model: claude-sonnet-4.6
+model: claude-sonnet-4-6
 ---
 
 ## Mission

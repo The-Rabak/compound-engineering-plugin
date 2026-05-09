@@ -11,7 +11,7 @@ const fixturePlugin: ClaudePlugin = {
       name: "Security Reviewer",
       description: "Security-focused agent",
       capabilities: ["Threat modeling", "OWASP"],
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       body: "Focus on vulnerabilities.",
       sourcePath: "/tmp/plugin/agents/security-reviewer.md",
     },
@@ -71,7 +71,7 @@ describe("convertClaudeToDroid", () => {
     const parsed = parseFrontmatter(droid.content)
     expect(parsed.data.name).toBe("security-reviewer")
     expect(parsed.data.description).toBe("Security-focused agent")
-    expect(parsed.data.model).toBe("claude-sonnet-4-20250514")
+    expect(parsed.data.model).toBe("claude-sonnet-4-6")
     expect(parsed.body).toContain("Capabilities")
     expect(parsed.body).toContain("Threat modeling")
     expect(parsed.body).toContain("Focus on vulnerabilities.")
