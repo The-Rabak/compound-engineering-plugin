@@ -3,7 +3,13 @@ import { promises as fs } from "fs"
 import os from "os"
 import path from "path"
 import { loadPluginForTargetConversion } from "../parsers/conversion-source"
-import { targets } from "../targets"
+import {
+  convertInstallTargetHelp,
+  extraCompatibilityTargetHelp,
+  getDeEmphasizedTargetNamesForSurface,
+  getSurfaceTargetNotice,
+  resolveTargetHandler,
+} from "../targets"
 import { pathExists } from "../utils/files"
 import type { PermissionMode } from "../converters/claude-to-opencode"
 import { ensureCodexAgentsFile } from "../utils/codex-agents"
@@ -14,7 +20,7 @@ const permissionModes: PermissionMode[] = ["none", "broad", "from-commands"]
 export default defineCommand({
   meta: {
     name: "install",
-    description: "Install and convert a Claude plugin",
+    description: "Install a plugin into the OpenCode-first support matrix",
   },
   args: {
     plugin: {
@@ -25,7 +31,7 @@ export default defineCommand({
     to: {
       type: "string",
       default: "opencode",
-      description: "Target format (opencode | codex | droid | cursor | pi | copilot | gemini | kiro)",
+      description: convertInstallTargetHelp,
     },
     output: {
       type: "string",
@@ -44,7 +50,7 @@ export default defineCommand({
     },
     also: {
       type: "string",
-      description: "Comma-separated extra targets to generate (ex: codex)",
+      description: extraCompatibilityTargetHelp,
     },
     permissions: {
       type: "string",
@@ -64,13 +70,8 @@ export default defineCommand({
   },
   async run({ args }) {
     const targetName = String(args.to)
-    const target = targets[targetName]
-    if (!target) {
-      throw new Error(`Unknown target: ${targetName}`)
-    }
-    if (!target.implemented) {
-      throw new Error(`Target ${targetName} is registered but not implemented yet.`)
-    }
+    const target = resolveTargetHandler(targetName, "install")
+    warnIfDeEmphasizedTarget(targetName)
 
     const permissions = String(args.permissions)
     if (!permissionModes.includes(permissions as PermissionMode)) {
@@ -100,18 +101,11 @@ export default defineCommand({
       await target.write(primaryOutputRoot, bundle)
       console.log(`Installed ${plugin.manifest.name} to ${primaryOutputRoot}`)
 
-      const extraTargets = parseExtraTargets(args.also)
+      const extraTargets = parseExtraTargets(args.also, targetName)
       const allTargets = [targetName, ...extraTargets]
       for (const extra of extraTargets) {
-        const handler = targets[extra]
-        if (!handler) {
-          console.warn(`Skipping unknown target: ${extra}`)
-          continue
-        }
-        if (!handler.implemented) {
-          console.warn(`Skipping ${extra}: not implemented yet.`)
-          continue
-        }
+        const handler = resolveTargetHandler(extra, "install")
+        warnIfDeEmphasizedTarget(extra)
         const extraBundle = handler.convert(plugin, options)
         if (!extraBundle) {
           console.warn(`Skipping ${extra}: no output returned.`)
@@ -151,12 +145,31 @@ async function resolvePluginPath(input: string): Promise<ResolvedPluginPath> {
   return await resolveGitHubPluginPath(input)
 }
 
-function parseExtraTargets(value: unknown): string[] {
+function parseExtraTargets(value: unknown, primaryTarget?: string): string[] {
   if (!value) return []
-  return String(value)
+
+  const allowedTargets = new Set(getDeEmphasizedTargetNamesForSurface("install"))
+  const parsedTargets: string[] = []
+
+  for (const entry of String(value)
     .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean)
+    .map((targetName) => targetName.trim())
+    .filter(Boolean)) {
+    if (entry === primaryTarget || parsedTargets.includes(entry)) {
+      continue
+    }
+
+    if (!allowedTargets.has(entry)) {
+      console.warn(
+        `Skipping ${entry}: --also only supports de-emphasized compatibility targets (${[...allowedTargets].join(", ")}).`,
+      )
+      continue
+    }
+
+    parsedTargets.push(entry)
+  }
+
+  return parsedTargets
 }
 
 
@@ -180,10 +193,6 @@ function resolveTargetOutputRoot(
   if (targetName === "codex") return codexHome
   if (targetName === "pi") return piHome
   if (targetName === "droid") return path.join(os.homedir(), ".factory")
-  if (targetName === "cursor") {
-    const base = hasExplicitOutput ? outputRoot : process.cwd()
-    return path.join(base, ".cursor")
-  }
   if (targetName === "gemini") {
     const base = hasExplicitOutput ? outputRoot : process.cwd()
     return path.join(base, ".gemini")
@@ -238,5 +247,12 @@ async function cloneGitHubRepo(source: string, destination: string): Promise<voi
   const stderr = await new Response(proc.stderr).text()
   if (exitCode !== 0) {
     throw new Error(`Failed to clone ${source}. ${stderr.trim()}`)
+  }
+}
+
+function warnIfDeEmphasizedTarget(targetName: string): void {
+  const notice = getSurfaceTargetNotice(targetName, "install")
+  if (notice) {
+    console.warn(`[support-tier] ${notice}`)
   }
 }

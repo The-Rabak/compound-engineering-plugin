@@ -10,7 +10,7 @@ description: Explore the WHY and WHAT of a feature through collaborative dialogu
 
 **Note: The current year is 2026.** Use this when dating brainstorm documents.
 
-Brainstorming answers **WHY** we're building something and **WHAT** it is. It produces the lynchpin artifacts -- a problem narrative, user story, and architectural context -- that thread through every downstream phase (`/workflows-plan` -> `/deepen-plan` -> `/workflows-work` -> `/workflows-review`).
+Brainstorming answers **WHY** we're building something and **WHAT** it is. It produces the lynchpin artifacts -- a problem narrative, user story, and architectural context -- that thread through every downstream phase (`/workflows-plan` -> `/workflows-architecture` -> `/deepen-plan` -> `/workflows-work` -> `/workflows-review`).
 
 When `docs/constitution.md` exists, brainstorming must work **within** that project-level constitution. The brainstorm can propose a constitution amendment when a durable repo-wide rule needs to change, but it must not silently override project baselines.
 
@@ -243,7 +243,7 @@ Use **AskUserQuestion tool** to present next steps:
 
 **Options:**
 1. **Review and refine** - Improve the document through structured self-review
-2. **Proceed to planning** - Run `/workflows-plan` (will auto-detect this brainstorm and use its lynchpin artifacts)
+2. **Proceed to planning** - Run `/workflows-plan` (will auto-detect this brainstorm, then route through `/workflows-architecture` before `/deepen-plan`)
 3. **Ask more questions** - I have more questions to clarify before moving on
 4. **Done for now** - Return later
 
@@ -255,7 +255,7 @@ Load the `document-review` skill and apply it to the brainstorm document.
 
 When document-review returns "Review complete", present next steps:
 
-1. **Move to planning** - Continue to `/workflows-plan` with this document
+1. **Move to planning** - Continue to `/workflows-plan` with this document, then use `/workflows-architecture` as the supported next handoff before deepening
 2. **Done for now** - Brainstorming complete. To start planning later: `/workflows-plan [document-path]`
 
 ## Output Summary
@@ -275,9 +275,11 @@ Key decisions:
 - [Decision 1]
 - [Decision 2]
 
-Next: Run `/workflows-plan` when ready to implement.
+Next: Run `/workflows-plan`, then `/workflows-architecture` before
+`/deepen-plan` or `/workflows-work`.
 The plan will use this brainstorm's user story and architectural context
-as its foundation.
+as its foundation, and the architecture phase will turn that into an
+explicit downstream handoff.
 ```
 
 ## Important Guidelines

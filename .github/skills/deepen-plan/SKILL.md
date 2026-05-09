@@ -12,7 +12,7 @@ description: Enhance a plan with parallel research agents grounded in user story
 
 **Note: The current year is 2026.** Use this when searching for recent documentation and best practices.
 
-This command takes an existing plan (from `/workflows-plan`) and enhances each section with parallel research agents. Every enhancement is **grounded in the plan's WHY artifacts** -- the problem narrative, user story, architectural context, and success criteria -- so that deepening adds purpose-aligned depth, not generic complexity.
+This command takes an existing plan (from `/workflows-plan`) and, when available, the architecture improvement artifact from `/workflows-architecture`. If no artifact exists yet, it must assemble an **explicit architecture handoff contract** from the plan instead of treating architecture as hidden context. Every enhancement is **grounded in the plan's WHY artifacts** -- the problem narrative, user story, architectural context, success criteria, the explicit architecture contract, and the plan's TDD/evidence contract -- so that deepening adds purpose-aligned depth, not generic complexity.
 
 Each major element gets its own dedicated research sub-agent to find:
 - Best practices and industry patterns **relevant to the user story**
@@ -21,7 +21,7 @@ Each major element gets its own dedicated research sub-agent to find:
 - Quality enhancements and edge cases **that could threaten success criteria**
 - Real-world implementation examples **in similar architectural contexts**
 
-The result is a deeply grounded, production-ready plan that remains tightly coupled to WHY we're building it.
+The result is a deeply grounded, production-ready plan that remains tightly coupled to WHY we're building it while honoring the deletion-test, interface, seam, and adapter decisions captured in the architecture artifact or explicit architecture handoff contract.
 
 ## Plan File
 
@@ -48,6 +48,10 @@ First, read and parse the plan to extract the WHY artifacts (problem narrative, 
 - [ ] **Architectural Context** -- the WHERE map (lives in, interacts with, entry point, data, dependencies)
 - [ ] **Success Criteria** -- the DONE definition (measurable outcomes tied to user story)
 - [ ] **`handoff` frontmatter** -- check all fields are `true`; if any are `false` or missing, flag: "Plan is missing [X]. Deepening may add technically correct but purpose-misaligned enhancements. Consider running `/workflows-plan` to fill gaps first."
+- [ ] **`tdd` frontmatter + `## TDD & Evidence Contract`** -- extract precedence, mode, loop, unit/e2e evidence expectations, and any exceptions
+- [ ] Use `references/tdd-evidence-contract.md` to resolve the effective TDD contract: plan values override local defaults, `inherit` falls back, and no-local-config falls back to Ralph-driven `red-green-refactor` with unit + e2e evidence required
+- [ ] If the plan weakens Ralph/unit+e2e without a justification, flag it and add a justified exception before continuing
+- [ ] If the plan is missing the `tdd` block or the `## TDD & Evidence Contract` section, add them using the resolved local/fallback defaults before deepening other sections
 
 **Check for brainstorm reference:**
 
@@ -59,11 +63,26 @@ First, read and parse the plan to extract the WHY artifacts (problem narrative, 
   - Resolved Questions (context that informed decisions)
 - [ ] This additional context helps research agents make purpose-aligned recommendations
 
+**Check for architecture artifact or explicit handoff contract:**
+
+- [ ] Read `architecture_ref` from plan frontmatter
+- [ ] If an architecture path exists, read it and extract:
+  - Deepening Candidates
+  - Deletion Test decisions
+  - Interfaces as test surfaces
+  - Seams, Adapters, and Contracts
+  - Recommendations for `/deepen-plan`, `/workflows-work`, and `/workflows-review`
+- [ ] If no `architecture_ref` exists, check `docs/architecture/*.md` for a recent artifact that matches the plan topic
+- [ ] If no architecture artifact exists, build an explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and any `## Related Artifacts` section
+- [ ] Record whether deepening used a real artifact or a plan-derived handoff contract so `/workflows-work` and `/workflows-review` inherit the same structural guidance
+- [ ] If no architecture artifact exists, continue but flag: "No architecture artifact found. Consider running `/workflows-architecture` before deepening so structural decisions are explicit."
+
 **Then extract plan structure:**
 
 - [ ] Overview/Proposed Solution sections
 - [ ] Technical Approach/Architecture
-- [ ] Implementation phases/steps (noting which user story aspect each phase serves)
+- [ ] `execution_shape` frontmatter + `## Execution Shape` section
+- [ ] Execution packets / phase wrappers (noting which user story aspect each packet serves)
 - [ ] Code examples and file references
 - [ ] Acceptance criteria
 - [ ] Any UI/UX components mentioned
@@ -82,40 +101,60 @@ The "Serves" column ensures every deepening activity traces back to WHY we're bu
 ### 1.1 Validate Execution Readiness
 
 <thinking>
-Check if the plan has sufficiently structured execution chunks for the subagent orchestration model in /workflows-work. Plans need per-task success criteria, test commands, and file lists. Also validate that phases trace to the user story.
+Check if the plan has sufficiently structured execution packets for the subagent orchestration model in `/workflows-work`. Use `references/execution-shape.md` as the source of truth. Plans need packets that are independently executable, testable, and traceable back to the user story without forcing fake verticality.
 </thinking>
 
-**Scan each implementation task/phase for these required fields:**
+**Resolve execution shape first:**
 
-- [ ] **Files:** List of files to create or modify
-- [ ] **Depends on:** Dependencies on other tasks
-- [ ] **Success criteria:** Testable checkboxes defining "done"
-- [ ] **Test command:** Exact command to verify completion
+- [ ] Read `execution_shape.mode`; if missing, default it to `vertical-slices`
+- [ ] Read `execution_shape.rationale`; require it when the mode is not `vertical-slices`
+- [ ] Ensure the body includes a matching `## Execution Shape` section
+- [ ] If the chosen mode looks wrong for the real work, add a `### WHY Reassessment` note instead of silently changing it
+
+**Scan each execution packet using the required fields from `references/execution-shape.md`:**
+
+- [ ] **`vertical-slices`:** slice type, serves, demo scenario, scope + scope fence, files, depends on, dependency type, success criteria, test command
+- [ ] **`infra-track`:** capability enabled, consumers / downstream work unlocked, scope, files, depends on, risk / rollback, validation command, success criteria
+- [ ] **`fix-batch`:** problem, repro / expected outcome, files, depends on, validation command, success criteria
+- [ ] **TDD alignment:** packet-level validation commands collectively satisfy the resolved unit/e2e evidence contract, or the plan records a justified exception with replacement evidence
 
 **Validate WHY tracing:**
 
-- [ ] **Each phase has a "Serves:" line** stating which user story aspect or success criterion it delivers
-- [ ] **Success criteria trace to plan-level success criteria** -- task criteria should be decomposed from the plan's success criteria, not invented independently
-- [ ] **No orphan phases** -- every phase should trace to at least one success criterion. If a phase doesn't serve any success criterion, flag it: "Phase [X] doesn't trace to any success criterion. Is it necessary, or is a success criterion missing?"
+- [ ] **Each packet has a purpose line** (`Serves`, `Consumers`, or equivalent) tying it to user story value or explicit downstream unlocks
+- [ ] **Success criteria trace to plan-level success criteria** -- packet criteria should be decomposed from the plan's success criteria, not invented independently
+- [ ] **No orphan packets** -- every packet should trace to at least one success criterion or explicit enabling outcome
+- [ ] **Phase wrappers stay optional** -- if the plan uses phases or tracks, confirm they are grouping containers only and do not replace packet-level tracing
 
-**Expected task format:**
+**Expected packet format:**
 
 ```markdown
-##### Task N.1: [Task Name]
+##### Slice N.1: [Slice Title]
+**Slice type:** tracer-bullet | expansion | hardening
+**Serves:** [Which aspect of the user story / which success criterion this slice delivers]
+**Demo scenario:** [Smallest end-to-end behavior this slice proves]
 **Files:** `path/to/file1.php`, `path/to/file2.php`
-**Depends on:** Task N-1.2 (or "None")
-**Success criteria:**
+**Depends on:** Slice N-1.2 (or "None")
+**Dependency type:** real | stub-available | parallel-safe
+
+###### Scope
+- **Owns:** [What this slice changes]
+- **Non-goals:** [What intentionally waits]
+- **Scope fence:** [Boundary that keeps the slice thin]
+
+###### Acceptance criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
-**Test command:** `command to run`
+
+###### Evidence
+- **Test command:** `command to run`
 ```
 
 **Scoring:**
 
-Count how many implementation tasks have all four fields. Report:
+Count how many execution packets have the full structure. Report:
 
 ```
-Execution Readiness: X/Y tasks have complete structure (Z%)
+Execution Readiness: X/Y packets have complete structure (Z%)
 ```
 
 **Actions based on score:**
@@ -123,49 +162,56 @@ Execution Readiness: X/Y tasks have complete structure (Z%)
 | Score | Action |
 |-------|--------|
 | 80-100% | Plan is execution-ready. Proceed with deepening. |
-| 50-79% | Flag incomplete tasks. During deepening, add missing fields. |
-| 0-49% | Plan needs significant restructuring. Add an "Execution Readiness" enhancement pass that decomposes vague phases into structured tasks with all required fields. **Note:** `/workflows-work` will refuse to execute plans that lack this structure. |
+| 50-79% | Flag incomplete packets. During deepening, add missing fields. |
+| 0-49% | Plan needs significant restructuring. Add an "Execution Readiness" enhancement pass that decomposes vague phases/tasks into the packet shape required by the selected mode. **Note:** `/workflows-work` will refuse to execute plans that lack a coherent execution shape unless the user explicitly approves a mode change or legacy adaptation. |
 
-**For tasks missing structure, the deepening process should:**
+**For packets missing structure, the deepening process should:**
 
-1. Break vague phases into specific, scoped tasks
-2. Identify which files each task will create or modify
-3. Write concrete success criteria (not vague goals)
-4. Determine the test command (look at existing test patterns in the codebase)
-5. Map dependencies between tasks
-6. Add a suggested commit message per task (conventional format: `feat(scope): description`)
+1. Pick or confirm the execution shape that best matches the real work
+2. Break vague phases or legacy tasks into specific packets for that mode
+3. Identify the smallest honest outcome each packet proves or unlocks
+4. Identify which files each packet will create or modify
+5. Write concrete success criteria (not vague goals)
+6. Determine the validation command (look at existing test patterns in the codebase)
+7. Make it explicit whether the validation command contributes unit evidence, e2e evidence, or both
+8. Map dependencies between packets
+9. Add a suggested commit message per packet (conventional format: `feat(scope): description`)
 
-### 1.2 Task Complexity Check
+### 1.2 Execution Shape Complexity Check
 
 <thinking>
-Check if any tasks are too large for reliable subagent execution. Large tasks with many files or success criteria should be split.
+Check if any packets are too large, too vague, or shaped incorrectly for reliable subagent execution. Cross-layer work is allowed in `vertical-slices`; the failure mode is not "touches backend and frontend" but "tries to deliver multiple outcomes or no honest outcome at all."
 </thinking>
 
-**For each task, check complexity:**
+**For each packet, check complexity against the selected mode:**
 
 | Metric | Threshold | Action |
 |--------|-----------|--------|
-| Files touched | > 3 files | Flag for splitting |
+| Outcomes or unlocks | > 1 meaningful outcome | Flag for splitting |
+| Files touched | > 6 files | Flag for review; confirm the packet is still thin |
 | Success criteria | > 5 criteria | Flag for splitting |
-| Multiple concerns | Mixes backend + frontend | Flag for splitting |
-| Vague scope | "Implement the feature" | Flag for clarification |
+| Scope fence | Missing or vague | Flag for clarification |
+| Shape fit | `vertical-slices` used for horizontal-only work, or `infra-track` / `fix-batch` used to hide a real feature slice | Reassess mode |
+| Risk controls | `Blast radius: high` with no rollback path | Add safety fields before execution |
 
-**If any tasks exceed thresholds:**
+**Important:** A packet that touches backend + frontend is **not automatically too large**. If the same thin slice needs a migration, service method, API handler, and tiny UI change to prove one observable behavior, keep it intact.
+
+**If any slices exceed thresholds:**
 
 Report:
 ```
-Task Complexity Warning: X tasks may be too large for reliable subagent execution.
+Execution Shape Warning: X packets may be too large or incorrectly shaped for reliable subagent execution.
 
-Task 2.1: "Build user auth" -- touches 5 files, 7 success criteria
-  Suggestion: Split into "Create auth service" (3 files) and "Add auth middleware" (2 files)
+Slice 2.1: "User can complete first login tracer bullet" -- 2 demo scenarios, 7 success criteria
+  Suggestion: Split into "User submits credentials and receives success state" and "User sees first authenticated dashboard shell"
 
-Task 3.2: "Build dashboard UI" -- mixes backend API + frontend component
-  Suggestion: Split into "Create dashboard API endpoint" and "Build dashboard component"
+Packet 3.2: "Create auth schema foundation" -- no demo scenario, horizontal-only outcome
+  Suggestion: Either rewrite as "User can submit credentials and persist the first auth record" or switch this track to `infra-track` if it is truly enablement-only
 ```
 
-Suggest splits that create self-contained tasks with non-overlapping file sets. Each split task should be completable by one subagent in a single session. **When splitting, ensure each new task retains its "Serves:" tracing to the user story -- a split should never orphan a task from its purpose.**
+Suggest splits that create self-contained packets with clear ownership and non-overlapping file sets where possible. **When splitting, ensure each new packet retains its tracing to the user story or enabling outcome.**
 
-**This validation ensures the plan is ready for `/workflows-work`'s subagent orchestration model**, where each task is delegated to a focused subagent with clear scope and termination criteria.
+**This validation ensures the plan is ready for `/workflows-work`'s subagent orchestration model**, where each packet is delegated to a focused subagent with clear scope, proof, and termination criteria.
 
 ### 1.5 Re-fetch Source Documents (if available)
 
@@ -508,7 +554,7 @@ Read the first few lines of each agent file to understand what it reviews/analyz
 
 For EVERY agent discovered, launch a Task in parallel with WHY context:
 
-Before dispatching any named agent discovered in this step, use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`, then use the file-read tool to load the full template. Only if the bundled template cannot be loaded should you fall back to `ov_load_global_agent "<agent-name>"`. Before dispatching, quote the first non-empty line of the loaded template and record the source used. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch. Never dispatch a named agent by name alone.
+Before dispatching any named agent discovered in this step, apply the shared `Named Agent Dispatch` protocol in `references/orchestration-protocol.md`. Pass the WHY context block from this workflow together with the loaded template.
 
 ```
 Task [agent-name]: "Review this plan using your expertise.
@@ -587,17 +633,22 @@ Merge research findings back into the plan, adding depth without changing the or
 - User Story
 - Architectural Context
 - Success Criteria
-- Phase "Serves:" lines
+- Execution shape contract and packet tracing lines
 - Handoff frontmatter
 
 If research suggests changes to these, add a `### WHY Reassessment` note at the end of the plan for the user to review manually. Do not edit the originals.
+
+**RULE: Do not silently weaken the TDD contract.**
+- Preserve the plan's `tdd` frontmatter and `## TDD & Evidence Contract`
+- You may clarify commands, add missing precedence notes, or add missing justifications
+- Any relaxation from Ralph/unit+e2e must appear as an explicit justified exception with replacement evidence
 
 **Enhancement format for each section:**
 
 ```markdown
 ## [Original Section Title]
 
-[Original content preserved -- including any "Serves:" lines]
+[Original content preserved -- including any execution-shape and packet tracing lines]
 
 ### Research Insights
 
@@ -639,7 +690,14 @@ At the top of the plan, add a summary section:
 - User Story: [preserved / flagged for reassessment]
 - Architectural Context: [preserved / expanded / flagged for reassessment]
 - Success Criteria: [preserved / flagged for reassessment]
-- Phase tracing: [all phases still trace to user story: yes/no]
+- Execution shape: [preserved / flagged for reassessment]
+- Packet tracing: [all packets still trace to user story or enabling outcome: yes/no]
+
+### TDD Contract Check
+- Precedence: [plan overrides local / inherit uses local / fallback default noted]
+- Effective loop: [red-green-refactor / implementation-first]
+- Evidence: [unit required?] [e2e required?]
+- Exceptions: [none / justified and preserved]
 
 ### Key Improvements
 1. [Major improvement 1] (serves: [success criterion])
@@ -676,16 +734,19 @@ Before finalizing:
 - [ ] Links are valid and relevant
 - [ ] No contradictions between sections
 - [ ] Enhancement summary accurately reflects changes
-- [ ] Implementation tasks have execution-ready structure (files, success criteria, test commands, dependencies)
+- [ ] Execution packets have execution-ready structure for the selected mode
+- [ ] TDD contract is explicit, precedence is documented, and unit/e2e evidence stays aligned with packet validation commands unless an exception says otherwise
 
 **WHY integrity:**
 - [ ] Problem Narrative, User Story, Success Criteria, and Architectural Context are unmodified from the original plan
 - [ ] Handoff frontmatter is intact and still accurate
-- [ ] Every phase still has its "Serves:" tracing line
-- [ ] No new phases added without a "Serves:" line connecting them to the user story
+- [ ] `execution_shape` frontmatter and `## Execution Shape` still agree
+- [ ] Every packet still has its tracing line
+- [ ] No new packets were added without a tracing line connecting them to the user story or enabling outcome
 - [ ] Enhancements tagged with which success criterion they serve
-- [ ] Scope-expanding recommendations flagged in "Scope Warnings" rather than silently added to phases
+- [ ] Scope-expanding recommendations flagged in "Scope Warnings" rather than silently added to packets
 - [ ] If WHY reassessment was needed, it's in a clearly marked section at the end (not inline edits)
+- [ ] `tdd` frontmatter and `## TDD & Evidence Contract` still agree on precedence, effective loop, evidence, and exceptions
 
 ## Post-Enhancement Options
 
@@ -695,15 +756,15 @@ After writing the enhanced plan, use the **AskUserQuestion tool** to present the
 
 **Options:**
 1. **View diff** - Show what was added/changed
-2. **Run `/technical_review`** - Get feedback from reviewers on enhanced plan
-3. **Start `/workflows-work`** - Begin implementing this enhanced plan
+2. **Review and refine** - Improve the enhanced plan through structured document review
+3. **Start `/workflows-work`** - Begin implementing this enhanced plan with its architecture artifact or explicit handoff contract
 4. **Deepen further** - Run another round of research on specific sections
 5. **Revert** - Restore original plan (if backup exists)
 
 Based on selection:
 - **View diff** → Run `git diff [plan_path]` or show before/after
-- **`/technical_review`** → Call the /technical_review command with the plan file path
-- **`/workflows-work`** → Call the /workflows-work command with the plan file path
+- **Review and refine** → Load the `document-review` skill against the enhanced plan and the architecture artifact or explicit handoff contract that informed it
+- **`/workflows-work`** → Call the /workflows-work command with the plan file path so execution loads the same architecture artifact or explicit handoff contract
 - **Deepen further** → Ask which sections need more research, then re-run those agents
 - **Revert** → Restore from git or backup
 

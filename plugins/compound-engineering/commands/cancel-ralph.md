@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 Check for and cancel an active ralph loop.
 
+Use this when a Ralph-driven `/workflows:work` task or a manually started `/compound-engineering:ralph-loop` session needs to stop cleanly. This is an operational escape hatch for the default Ralph execution path.
+
 ```bash
 STATE_FILE=".claude/ralph-loop.local.md"
 

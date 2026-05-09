@@ -1,0 +1,179 @@
+import { describe, expect, test } from "bun:test"
+import { promises as fs } from "fs"
+import path from "path"
+
+const repoRoot = path.join(import.meta.dir, "..")
+
+async function readRepoFile(...segments: string[]): Promise<string> {
+  return fs.readFile(path.join(repoRoot, ...segments), "utf8")
+}
+
+describe("TDD contract surfaces", () => {
+  test("setup skill asks about the Ralph loop and writes visible config", async () => {
+    const setupSkill = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "setup",
+      "SKILL.md",
+    )
+
+    expect(setupSkill).toContain("What should the default delivery loop be for this repo?")
+    expect(setupSkill).toContain("Ralph-driven TDD (Recommended)")
+    expect(setupSkill).toContain("tdd:")
+    expect(setupSkill).toContain("precedence: plan_overrides_local")
+    expect(setupSkill).toContain("tdd_enabled")
+  })
+
+  test("plan command defines explicit TDD precedence, evidence, and exceptions", async () => {
+    const planPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "plan.md",
+    )
+
+    expect(planPrompt).toContain("## TDD & Evidence Contract")
+    expect(planPrompt).toContain("Plan-level `tdd` values override `compound-engineering.local.md`")
+    expect(planPrompt).toContain("unit + e2e evidence")
+    expect(planPrompt).toContain("replacement_evidence")
+    expect(planPrompt).toContain("commands/workflows/references/execution-shape.md")
+    expect(planPrompt).toContain("execution_shape:")
+    expect(planPrompt).toContain("## Execution Shape")
+    expect(planPrompt).toContain("vertical-slices")
+  })
+
+  test("deepen-plan preserves and validates the resolved TDD contract", async () => {
+    const deepenPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "deepen-plan.md",
+    )
+
+    expect(deepenPrompt).toContain("resolve the effective TDD contract")
+    expect(deepenPrompt).toContain("Do not silently weaken the TDD contract")
+    expect(deepenPrompt).toContain("unit + e2e evidence required")
+    expect(deepenPrompt).toContain("justified exception")
+  })
+
+  test("work command makes Ralph the default execution path and requires stable evidence", async () => {
+    const workPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "work.md",
+    )
+
+    expect(workPrompt).toContain("`/workflows:work` is the canonical Ralph red-green-refactor path")
+    expect(workPrompt).toContain("resolve the effective TDD contract")
+    expect(workPrompt).toContain("Ralph-driven `red-green-refactor` with unit + e2e evidence required")
+    expect(workPrompt).toContain("stable `Red`, `Green`, and `Post-Refactor Green` evidence blocks")
+  })
+
+  test("execution agent prompt requires a stable red-green-post-refactor report format", async () => {
+    const executionPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "execution-agent-prompt.md",
+    )
+
+    expect(executionPrompt).toContain("## TDD Execution Contract")
+    expect(executionPrompt).toContain("### TDD Evidence")
+    expect(executionPrompt).toContain("Post-Refactor Green")
+    expect(executionPrompt).toContain("Ralph is the default TDD execution path")
+    expect(executionPrompt).toContain("Red` and `Green` prove behavior coverage")
+    expect(executionPrompt).toContain("Post-Refactor Green` proves cleanup safety")
+    expect(executionPrompt).toContain("If no cleanup was needed, still rerun and say so")
+  })
+
+  test("review prompts reject weak evidence and separate behavior coverage from cleanup quality", async () => {
+    const reviewPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "review.md",
+    )
+    const specPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "spec-review-prompt.md",
+    )
+    const qualityPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "quality-review-prompt.md",
+    )
+
+    expect(reviewPrompt).toContain("#### TDD Evidence Gate (BEFORE reviewer dispatch)")
+    expect(reviewPrompt).toContain("Missing behavior coverage")
+    expect(reviewPrompt).toContain("Missing cleanup after refactor")
+    expect(reviewPrompt).toContain("Keep the gate output terse and evidence-based")
+
+    expect(specPrompt).toContain("## TDD Evidence Gate")
+    expect(specPrompt).toContain("Missing behavior coverage")
+    expect(specPrompt).toContain("Keep the report terse")
+
+    expect(qualityPrompt).toContain("## TDD Evidence Gate")
+    expect(qualityPrompt).toContain("Missing cleanup after refactor")
+    expect(qualityPrompt).toContain("Do not reopen behavior-coverage gaps here")
+    expect(qualityPrompt).toContain("Keep the report terse")
+  })
+
+  test("ralph helper commands and workflow shortcuts route through work instead of a detached side loop", async () => {
+    const ralphLoop = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "ralph-loop.md",
+    )
+    const cancelRalph = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "cancel-ralph.md",
+    )
+    const lfg = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "lfg.md",
+    )
+    const slfg = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "slfg.md",
+    )
+
+    expect(ralphLoop).toContain("canonical red-green-refactor engine behind `/workflows:work`")
+    expect(ralphLoop).toContain("Post-Refactor Green")
+    expect(cancelRalph).toContain("default Ralph execution path")
+    expect(lfg).not.toContain("/compound-engineering:ralph-loop")
+    expect(lfg).toContain("default Ralph-driven execution path")
+    expect(slfg).not.toContain("/compound-engineering:ralph-loop")
+    expect(slfg).toContain("default Ralph-driven execution path")
+  })
+
+  test("local config documents the visible TDD defaults and precedence", async () => {
+    const localConfig = await readRepoFile("compound-engineering.local.md")
+
+    expect(localConfig).toContain("tdd_enabled: true")
+    expect(localConfig).toContain("mode: ralph")
+    expect(localConfig).toContain("loop: red-green-refactor")
+    expect(localConfig).toContain("precedence: plan_overrides_local")
+    expect(localConfig).toContain("Plan-level `tdd` values override this file")
+  })
+})

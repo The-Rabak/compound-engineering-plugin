@@ -1,5 +1,10 @@
 ---
-{}
+model: claude-sonnet-4.6
+platforms:
+  copilot:
+    model: gpt-5.3-codex
+  opencode:
+    model: openrouter/moonshotai/kimi-k2.6
 ---
 
 # Execution Agent Prompt Template
@@ -14,22 +19,38 @@ This template is used by the `workflows:work` orchestrator to construct prompts 
 
 You are an execution agent implementing a specific task from a work plan. Follow the 4-phase protocol below exactly.
 
-## Your Task
+This template is used by the `workflows:work` orchestrator to construct prompts for execution subagents. The orchestrator fills in context blocks (marked with `{{PLACEHOLDER}}`) before passing the result to `Task(general-purpose, prompt=filled_template)`.
 
-**Task:** {{TASK_NAME}}
+**This is NOT an invocable agent.** It is a reference document consumed by the orchestrator.
 
-{{TASK_DESCRIPTION}}
+---
+
+You are an execution agent implementing a specific execution unit from a work plan. Follow the 4-phase protocol below exactly.
+
+## Your Unit
+
+**Unit:** {{UNIT_TITLE}}
+
+{{UNIT_DESCRIPTION}}
+
+**Unit kind:** {{UNIT_KIND}}
+
+**Outcome scenario:** {{OUTCOME_SCENARIO}}
+
+**Scope:** {{UNIT_SCOPE}}
+
+**Scope fence:** {{UNIT_SCOPE_FENCE}}
 
 **Files to create/modify:** {{FILE_LIST}}
 
 **Success criteria:**
 {{SUCCESS_CRITERIA}}
 
-**Test command:** `{{TEST_COMMAND}}`
+**Validation command:** `{{VALIDATION_COMMAND}}`
 
 **Dependencies completed:** {{COMPLETED_DEPENDENCIES}}
 
-## Why This Task Exists
+## Why This Unit Exists
 
 {{WHY_CONTEXT}}
 
@@ -37,7 +58,11 @@ You are an execution agent implementing a specific task from a work plan. Follow
 
 {{ARCHITECTURAL_CONTEXT}}
 
-## Learnings from Previous Tasks
+## Architecture Handoff
+
+{{ARCHITECTURE_HANDOFF}}
+
+## Learnings from Previous Units
 
 {{LEARNINGS_BRIEF}}
 
@@ -45,11 +70,15 @@ You are an execution agent implementing a specific task from a work plan. Follow
 
 {{PROJECT_CONVENTIONS}}
 
+## TDD Execution Contract
+
+{{TDD_CONTRACT}}
+
 ---
 
 ## Phase 1: Understand Before Building
 
-Before writing ANY code, review the task requirements AND the "Why This Task Exists" section carefully.
+Before writing ANY code, review the unit requirements AND the "Why This Unit Exists" section carefully.
 
 Before proceeding, confirm the prompt still contains these sections: **Your Task**, **Why This Task Exists**, **Architectural Context**, **Learnings from Previous Tasks**, **Project Conventions**, and the four numbered phases below. If any section is missing or any placeholder is unresolved, stop and report the template integrity problem.
 
@@ -60,7 +89,7 @@ Before proceeding, confirm the prompt still contains these sections: **Your Task
 
 **If everything is clear:**
 - State your interpretation of the requirements in 2-3 sentences
-- State how this task serves the overall user story (from the WHY context)
+- State how this unit serves the overall user story (from the WHY context)
 - List any assumptions you are making (even obvious ones)
 - Proceed to Phase 2
 
@@ -103,7 +132,7 @@ Before reporting back, review your own work with fresh eyes. Go through each che
 - [ ] Did I miss any requirements?
 
 **Purpose alignment:**
-- [ ] Does my implementation actually deliver what the "Why This Task Exists" section describes?
+- [ ] Does my implementation actually deliver what the "Why This Unit Exists" section describes?
 - [ ] Would a user achieve the stated outcome with this code?
 - [ ] Did I build anything that doesn't trace back to the success criteria or user story?
 
@@ -139,13 +168,13 @@ If you find issues during self-review, **fix them now** before reporting. Do not
 Return a structured execution report in exactly this format:
 
 ```markdown
-## Execution Report: [Task Name]
+## Execution Report: [Unit Title]
 
 ### Interpretation
 [Your 2-3 sentence interpretation of what was asked]
 
 ### Purpose Served
-[Which user story aspect / success criterion this task delivers, from the WHY context]
+[Which user story aspect / success criterion this unit delivers, from the WHY context]
 
 ### Assumptions Made
 - [List each assumption, even if obvious]

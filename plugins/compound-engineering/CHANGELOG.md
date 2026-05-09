@@ -34,6 +34,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`grill-me` skill** -- Single-question design interrogation workflow for stress-testing plans and resolving dependencies one branch at a time.
 - **`ubiquitous-language` skill** -- DDD-oriented glossary generator that extracts canonical domain terminology from the conversation and writes `UBIQUITOUS_LANGUAGE.md`.
 
+### Changed
+
+- **Support-surface cleanup** -- Generated metadata and plugin docs now present the supported ladder explicitly: OpenCode first-class, GitHub Copilot second, Claude Code third. Codex, Droid, Pi, Gemini, and Kiro remain as de-emphasized compatibility exporters, while removed `.github_gpt/` and dormant Cursor-specific paths are no longer described as core surfaces.
+- **Architecture handoff workflow** -- `/workflows:architecture` is now the documented architecture-improvement step between planning and `/deepen-plan`, and downstream prompts consume an architecture artifact or explicit handoff contract instead of stale legacy technical-review language.
+- **Ralph/TDD evidence contract** -- Plan, execution, and review prompts now share a single Ralph-first TDD contract that defaults to unit + e2e evidence, requires stable red/green/post-refactor proof, and keeps `/ralph-loop` helpers subordinate to `/workflows:work`.
+
+### Migration notes
+
+- **Workflow order** -- Replace any `/technical_review` usage with `/workflows:architecture` after planning, then continue through `/deepen-plan`, `/workflows:work`, and `/workflows:review`.
+- **Platform support** -- Treat OpenCode as first-class, GitHub Copilot as second-class generated output, and Claude Code as third-class generated output. Compatibility exporters remain available but are no longer presented as co-equal surfaces.
+- **Removed legacy surfaces** -- `.github_gpt/` and dormant Cursor-specific export/sync code are no longer part of the supported workflow.
+- **Verification** -- Validate the generated surfaces with `bun run build:platforms && bun run verify:generated && bun test`.
+
 ## [4.3.0] - 2026-04-25
 
 ### Added
@@ -233,7 +246,7 @@ Complete adaptation of the compound-engineering plugin from Every Inc (Rails/Rub
 
 ### Removed
 
-- **`/technical_review` command** — Superseded by configurable review agents
+- **Legacy technical-review command** — Superseded by configurable review agents
 
 ---
 
