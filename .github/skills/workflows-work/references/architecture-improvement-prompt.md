@@ -6,7 +6,7 @@
 
 This template is consumed by the `workflows:architecture` phase. It is a **reference document**, not an invocable command.
 
-The purpose of the artifact is to make architectural choices explicit before `/deepen-plan` and `/workflows:work` continue. Use the vocabulary below consistently so downstream agents inherit a shared contract instead of guessing from oral tradition.
+The purpose of the artifact is to make architectural choices explicit before `/deepen-plan` and `/workflows-work` continue. Use the vocabulary below consistently so downstream agents inherit a shared contract instead of guessing from oral tradition.
 
 ## Mandatory inputs
 
@@ -86,10 +86,10 @@ handoff:
 ## Recommendations for `/deepen-plan`
 - <how to harden tasks, dependencies, tests, or research prompts>
 
-## Recommendations for `/workflows:work`
+## Recommendations for `/workflows-work`
 - <what implementation must preserve>
 
-## Recommendations for `/workflows:review`
+## Recommendations for `/workflows-review`
 - <what reviewers should verify>
 
 ## Open Questions
@@ -117,5 +117,5 @@ The artifact is complete only when:
 - Every proposed abstraction survives the deletion test or is explicitly deferred
 - Interfaces are described as test surfaces, not just nouns
 - Seams and adapters are mapped to real boundaries in the plan
-- `/deepen-plan`, `/workflows:work`, and `/workflows:review` each have explicit handoff guidance
+- `/deepen-plan`, `/workflows-work`, and `/workflows-review` each have explicit handoff guidance
 - The artifact path is recorded back into the plan

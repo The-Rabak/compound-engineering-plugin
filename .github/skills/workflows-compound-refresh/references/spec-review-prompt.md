@@ -47,7 +47,7 @@ The implementer's report may be incomplete, inaccurate, or optimistic. You MUST 
 
 Read `### TDD Evidence` in the implementer report before reviewing code.
 
-Apply `commands/workflows/references/tdd-evidence-contract.md` as the source of truth for Ralph evidence semantics and review-gate classifications.
+Apply `references/tdd-evidence-contract.md` as the source of truth for Ralph evidence semantics and review-gate classifications.
 
 Use this gate for **behavior coverage** only:
 - **Missing behavior coverage** = no trustworthy red/green evidence that the requested behavior was specified first and then made to pass.

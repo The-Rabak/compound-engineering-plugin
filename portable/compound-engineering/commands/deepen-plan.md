@@ -20,7 +20,7 @@ Each major element gets its own dedicated research sub-agent to find:
 - Quality enhancements and edge cases **that could threaten success criteria**
 - Real-world implementation examples **in similar architectural contexts**
 
-The result is a deeply grounded, production-ready plan that remains tightly coupled to WHY we're building it while honoring the deletion-test, interface, seam, and adapter decisions captured in the architecture artifact or explicit architecture handoff contract.
+The result is a deeply grounded, production-ready plan that remains tightly coupled to WHY we're building it while honoring the deletion-test, interface, seam, and adapter decisions captured in the architecture artifact or explicit architecture handoff contract. Deepening may add detail, remove unnecessary detail, or defer optional complexity when that yields a clearer and more executable plan.
 
 ## Plan File
 
@@ -621,10 +621,17 @@ Wait for ALL parallel agents to complete - skills, research agents, review agent
 - Group by plan section
 - **For each recommendation, note which success criterion it serves or which risk it mitigates**
 
+**Simplicity distillation pass (orchestrator responsibility):**
+- Keep "run everything" agent coverage intact; filter only at synthesis time
+- Prefer the least-complex change that satisfies the user story and success criteria
+- Remove or defer recommendations that are speculative, redundant, or not required now
+- Add complexity only when backed by concrete evidence from research, codebase constraints, or risk mitigation needs
+- If complexity is retained, include a brief justification tied to a specific success criterion or risk
+
 ### 7. Enhance Plan Sections
 
 <thinking>
-Merge research findings back into the plan, adding depth without changing the original structure. Critically: preserve all WHY sections untouched and ensure enhancements strengthen rather than dilute the connection to user story and success criteria.
+Merge research findings back into the plan, adding depth where useful and reducing noise where needed. Critically: preserve all WHY sections untouched and ensure enhancements strengthen rather than dilute the connection to user story and success criteria.
 </thinking>
 
 **RULE: Never modify these WHY sections** (they are the contract from planning):
@@ -641,6 +648,11 @@ If research suggests changes to these, add a `### WHY Reassessment` note at the 
 - Preserve the plan's `tdd` frontmatter and `## TDD & Evidence Contract`
 - You may clarify commands, add missing precedence notes, or add missing justifications
 - Any relaxation from Ralph/unit+e2e must appear as an explicit justified exception with replacement evidence
+
+**RULE: Simplicity over accretion.**
+- You may redact or simplify non-essential implementation detail that does not materially serve the user story or success criteria.
+- Keep packet structure and tracing intact while trimming unnecessary architectural ceremony.
+- If simplification removes previously proposed complexity, record it in the enhancement summary with a reason.
 
 **Enhancement format for each section:**
 
@@ -709,6 +721,10 @@ At the top of the plan, add a summary section:
 
 ### Scope Warnings (if any)
 - [Enhancement that was flagged as beyond current user story]
+
+### Simplifications Applied
+- [Removed/deferred complexity] (reason: [why it was unnecessary now])
+- [Retained complexity with justification] (serves: [success criterion or risk])
 ```
 
 ### 9. Update Plan File
@@ -735,6 +751,7 @@ Before finalizing:
 - [ ] Enhancement summary accurately reflects changes
 - [ ] Execution packets have execution-ready structure for the selected mode
 - [ ] TDD contract is explicit, precedence is documented, and unit/e2e evidence stays aligned with packet validation commands unless an exception says otherwise
+- [ ] Simplification pass completed: non-essential complexity removed or deferred, and necessary complexity explicitly justified
 
 **WHY integrity:**
 - [ ] Problem Narrative, User Story, Success Criteria, and Architectural Context are unmodified from the original plan

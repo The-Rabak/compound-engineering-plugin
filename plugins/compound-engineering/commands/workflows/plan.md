@@ -18,6 +18,7 @@ Transform feature descriptions, bug reports, or improvement ideas into well-stru
 5. **Make TDD explicit** -- the plan declares the Ralph/default loop, required unit + e2e evidence, and any justified exceptions
 6. **Choose the right execution shape** -- vertical slices are the default, but infra tracks and fix batches are valid when they fit the real work better
 7. **Enable architecture-first execution** -- `/workflows:architecture` turns the plan into a dedicated architecture artifact before `/deepen-plan`, `/workflows:work`, and `/workflows:review` harden or execute it
+8. **Favor simplest viable architecture** -- default to the least-complex design that satisfies the user story and success criteria; only add complexity when research-backed and explicitly justified
 
 Plans consume the project constitution from `/workflows:constitution` when available, plus lynchpin artifacts from `/workflows:brainstorm` when available, or construct feature context fresh when running standalone. Either way, the plan document carries forward the WHY, WHERE, DONE, GUARDRAIL, TDD, and **execution shape** contract that all downstream phases depend on. After the plan is written, the next explicit step is `/workflows:architecture`, not direct deepening.
 
@@ -79,6 +80,16 @@ Use `commands/workflows/references/execution-shape.md` as the single source for 
 - **Allowed overrides:** `infra-track`, `fix-batch`
 - **Override rule:** Any non-default mode must include a short rationale in frontmatter and in the plan body
 - **Anti-coercion rule:** Do not force work into slices if that would create fake end-to-end structure
+
+#### Simplicity Baseline (Runs Before Path A/B/C)
+
+- **Default posture:** choose the simplest plan that can honestly meet the user story and success criteria
+- **No speculative architecture:** avoid pre-emptive abstractions, framework migrations, or broad foundation work unless required now
+- **Complexity gate:** if adding complexity, add a short "Complexity Justification" note with:
+  - why simpler options are insufficient
+  - what risk/requirement this complexity addresses
+  - why deferring it would be harmful
+- **Defer by default:** if complexity is useful but not required for current success criteria, place it in Future Considerations instead of core execution packets
 
 #### Path A: Spec/Plan File Provided
 
@@ -371,6 +382,7 @@ Think like a product manager -- what would make this issue clear, actionable, an
 **Content Planning:**
 
 - [ ] Choose appropriate detail level based on issue complexity and audience
+- [ ] Keep architecture minimal by default; include only components required to meet current success criteria
 - [ ] List all necessary sections for the chosen template
 - [ ] Gather supporting materials (error logs, screenshots, design mockups)
 - [ ] Prepare code examples or reproduction steps if applicable, name the mock filenames in the lists
@@ -441,6 +453,11 @@ The SpecFlow Analyzer should evaluate:
 **All detail levels include WHY sections.** The Problem Narrative, User Story, Architectural Context, and Success Criteria are mandatory at every level -- they are the contract that downstream phases depend on. The difference between levels is how much implementation detail surrounds them.
 
 Select how comprehensive you want the issue to be, simpler is mostly better.
+
+**Simplicity-first selection rule:**
+- Start at **MINIMAL** and only move to **MORE** or **A LOT** when there is clear, current-scope justification.
+- If choosing **A LOT**, add a short `### Complexity Justification` section that names the concrete risk/constraint requiring that depth.
+- Never use higher detail to speculate about future architecture; move speculative items to `## Future Considerations`.
 
 #### 📄 MINIMAL (Quick Issue)
 
@@ -1199,6 +1216,8 @@ public function processUser(User $user): array
 - [ ] All template sections are complete
 - [ ] Links and references are working
 - [ ] Acceptance criteria are measurable
+- [ ] Architecture is the simplest viable option for the current user story and success criteria
+- [ ] Any added complexity is explicitly justified; non-essential complexity is deferred to Future Considerations
 - [ ] Add names of files in pseudo code examples and todo lists
 - [ ] Add an ERD mermaid diagram if applicable for new model changes
 
