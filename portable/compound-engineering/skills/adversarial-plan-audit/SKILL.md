@@ -57,7 +57,7 @@ Load [references/audit-rubric.md](references/audit-rubric.md) and convert scope 
 
 Apply weighting from the rubric and predefine scoring scale before collecting evidence.
 
-### Step 3: Run Parallel Adversarial Tracks
+### Step 2: Run Parallel Adversarial Tracks
 
 Launch track investigations in parallel with subagents.
 
@@ -75,7 +75,7 @@ Dispatch rules:
    - top gaps
    - high-impact recommendations first
 
-### Step 4: Add Dedicated Red-Team and Market Passes
+### Step 3: Add Dedicated Red-Team and Market Passes
 
 After core principle tracks complete:
 
@@ -88,7 +88,7 @@ After core principle tracks complete:
    - classify differentiators vs commodity areas
    - identify strategic opportunities and traps
 
-### Step 5: Synthesize, Normalize, and Prioritize
+### Step 4: Synthesize, Normalize, and Prioritize
 
 1. Normalize scores into a single weighted composite.
 2. Resolve contradictions across tracks; do not average conflicting claims blindly.
@@ -99,7 +99,7 @@ After core principle tracks complete:
    - dependency order
 4. Classify strengths separately from gaps.
 
-### Step 6: Produce a Reusable Assessment Artifact
+### Step 5: Produce a Reusable Assessment Artifact
 
 Load [references/report-template.md](references/report-template.md). Write the full report to a persistent docs path:
 
@@ -119,7 +119,7 @@ The report must include:
 5. Top prioritized recommendations
 6. Clear next-step decision framing (go / re-scope / redesign)
 
-### Step 7: Return Tight Summary to User
+### Step 6: Return Tight Summary to User
 
 Return concise summary in chat:
 
