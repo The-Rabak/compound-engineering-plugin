@@ -65,9 +65,7 @@ Dispatch rules:
 
 1. Run up to platform concurrency limits (typically 4 concurrent). Use waves if needed.
 2. Use specialized reviewers where available for architecture, security, performance, and data integrity.
-3. Load global agent templates before named specialist dispatch:
-   - `source ~/.copilot-skills/ov-core.sh`
-   - `AGENT_TEMPLATE=$(ov_load_global_agent "<agent-name>")`
+3. Load local agent templates before named specialist dispatch:
    - Include `AGENT_TEMPLATE` directly in dispatched prompt.
 4. Require each track to return:
    - numeric score in `X/Y` and percentage
