@@ -40,17 +40,7 @@ If scope is ambiguous, ask for the target decision this audit should support (go
 
 ## Core Workflow
 
-### Step 1: Bootstrap Context and Constraints
-
-1. Load project/global context before dispatching work:
-   - `source ~/.copilot-skills/ov-core.sh`
-   - `ov_ensure_running`
-   - `ov_brief`
-2. Inventory architecture/plan docs in scope.
-3. Freeze scope and explicitly list in-scope artifacts.
-4. Map expected output path and report format before analysis begins.
-
-### Step 2: Build the Audit Matrix
+### Step 1: Build the Audit Matrix
 
 Load [references/audit-rubric.md](references/audit-rubric.md) and convert scope into explicit tracks:
 
