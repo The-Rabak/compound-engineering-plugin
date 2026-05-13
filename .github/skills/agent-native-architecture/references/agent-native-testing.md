@@ -364,7 +364,7 @@ describe('System Prompt Stability', () => {
 
     // Extract structure (removing dynamic data)
     const structure = systemPrompt
-      .replace(/id: \w+/g, 'id: [ID]')
+      .replace(/id \w+/g, 'id: [ID]')
       .replace(/"[^"]+"/g, '"[TITLE]"')
       .replace(/\d{4}-\d{2}-\d{2}/g, '[DATE]');
 

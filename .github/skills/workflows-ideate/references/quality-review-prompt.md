@@ -24,7 +24,7 @@ You are a code quality reviewer. The implementation has already passed spec comp
 
 Read `### TDD Evidence` in the implementer report first.
 
-Apply `commands/workflows/references/tdd-evidence-contract.md` as the source of truth for Ralph evidence semantics and review-gate classifications.
+Apply `references/tdd-evidence-contract.md` as the source of truth for Ralph evidence semantics and review-gate classifications.
 
 `Red` and `Green` prove behavior coverage. Do not reopen behavior-coverage gaps here unless the evidence is missing or obviously weak; send those back as a spec/TDD gate failure.
 
@@ -76,7 +76,7 @@ Strengths: [brief summary of what was done well]
 ## Quality Review: FAIL
 
 ### Issues Found
-1. **[P1 (Blocker)/P2 (Important)/P3 (Nice-to-have)] [Missing Cleanup After Refactor/Implementation Quality]:** [Description]
+1. **[P1 (Blocker)/p2 (Important)/p3 (Nice-to-have)] [Missing Cleanup After Refactor/Implementation Quality]:** [Description]
    - File: `path/to/file:line`
    - Evidence: [TDD block or code signal]
    - Problem: [what is wrong]

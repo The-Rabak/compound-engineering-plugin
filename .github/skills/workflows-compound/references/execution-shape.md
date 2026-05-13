@@ -88,6 +88,6 @@ Then use the packet section that matches the chosen mode:
 
 ## Execution rules
 
-- `/workflows:work` must execute the units defined by the chosen mode.
+- `/workflows-work` must execute the units defined by the chosen mode.
 - Do not coerce `infra-track` or `fix-batch` plans into slices unless the user explicitly approves a mode change.
 - Session tracking may stay generic (`unit`, `work status`) even when the selected mode is `vertical-slices`.
