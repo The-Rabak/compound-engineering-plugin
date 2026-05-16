@@ -271,14 +271,12 @@ For each unit (or parallel batch of units), follow this cycle:
 
 For each unit, the orchestrator constructs a focused prompt by loading the **execution agent prompt template** from `commands/workflows/references/execution-agent-prompt.md` and filling in the context blocks.
 
-Before building `scoped_prompt`, complete this template-load protocol for `execution-agent-prompt.md`:
-1. Use the platform's file-search tool against the command reference directory to look for `execution-agent-prompt.md`. Search the directory, not a full path embedded in the pattern argument.
-2. Use the file-read tool to load the full template.
-3. Before continuing, quote the first non-empty line of the loaded template and record which file you used.
-4. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not spawn the subagent.
-5. Fill the placeholders from the loaded template. Do not reconstruct the prompt from memory, paraphrase it into a shorter prompt, or drop any mandatory section.
-6. Every execution, retry, fix, and regression-repair subagent in this workflow must start from a freshly loaded copy of this same template.
-7. If any placeholder input is unavailable or any `{{PLACEHOLDER}}` remains unresolved after filling, stop and resolve the missing context before spawning the subagent.
+Apply the shared `Reference Template Loading` protocol from `commands/workflows/references/orchestration-protocol.md`, substituting `execution-agent-prompt.md`.
+
+- Quote the first non-empty line of the loaded template before continuing.
+- Every execution, retry, fix, and regression-repair subagent in this workflow must start from a freshly loaded copy of that same template.
+- Fill the placeholders from the loaded template only. Do not reconstruct the prompt from memory, paraphrase it into a shorter prompt, or drop mandatory sections.
+- If the template cannot be loaded, quoted, or fully populated without unresolved `{{PLACEHOLDER}}` values, stop and resolve the missing context before spawning the subagent.
 
 - **{{UNIT_TITLE}}** and **{{UNIT_DESCRIPTION}}** -- from the plan
 - **{{UNIT_KIND}}** -- from the plan (`tracer-bullet`, `infra-packet`, `fix-item`, etc.)

@@ -1,11 +1,12 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 31 specialized agents, 25 commands, and 24 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 32 specialized agents, 26 commands, and 25 skills.
 
 This repository also ships generated Copilot assets under the repo root `.github/`, built from the canonical portable source in `portable/compound-engineering/`.
 
 ## Support policy
 
+- OpenCode first-class, GitHub Copilot second, Claude Code third.
 - **Keep:** OpenCode-first portable source, generated Copilot output, and this generated Claude Code plugin.
 - **De-emphasize:** compatibility exporters for Codex, Droid, Pi, Gemini, and Kiro, plus legacy Claude-home sync mirrors.
 - **Removed legacy surfaces:** `.github_gpt/` and dormant Cursor-specific export/sync code that no longer fit the supported target matrix.
@@ -36,17 +37,17 @@ bun test
 
 | Component | Count |
 |-----------|-------|
-| Agents | 31 |
-| Commands | 25 |
-| Skills | 24 |
-| Hooks | 1 |
+| Agents | 32 |
+| Commands | 26 |
+| Skills | 25 |
+| Hooks | 0 |
 | MCP Servers | 1 |
 
 ## Agents
 
 Agents are organized into categories for easier discovery.
 
-### Review (19)
+### Review (20)
 
 | Agent | Description |
 |-------|-------------|
@@ -69,6 +70,7 @@ Agents are organized into categories for easier discovery.
 | `performance-oracle` | Performance analysis and optimization |
 | `schema-drift-detector` | Detect unrelated schema dump and schema artifact drift in database PRs |
 | `security-sentinel` | Security audits and vulnerability assessments |
+| `uncle-bob` | Clean-code reviewer focused on naming, cohesion, side effects, boundaries, and tests that keep code changeable |
 
 ### Research (6)
 
@@ -145,6 +147,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 |-------|-------------|
 | `agent-native-audit` | Run a scored audit of agent-native architecture principles |
 | `agent-native-architecture` | Build AI agents using prompt-native architecture |
+| `adversarial-plan-audit` | Run a deep adversarial review of plans and architecture before implementation |
 
 ### Development Tools
 
@@ -197,12 +200,6 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | Skill | Description |
 |-------|-------------|
 | `gemini-imagegen` | Generate and edit images using Google's Gemini API |
-
-## Hooks
-
-| Hook | Description |
-|------|-------------|
-| `stop-hook` | Ralph Loop stop hook for self-referential iteration loops |
 
 ## MCP Servers
 

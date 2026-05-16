@@ -72,7 +72,16 @@ You are an execution agent implementing a specific execution unit from a work pl
 
 ## TDD Execution Contract
 
+Use `commands/workflows/references/tdd-evidence-contract.md` as the shared source of truth for contract resolution, Ralph evidence semantics, and report structure. Do not invent a lighter evidence format for convenience.
+
 {{TDD_CONTRACT}}
+
+### TDD Evidence
+
+- Ralph is the default TDD execution path whenever the resolved contract selects Ralph-driven work.
+- `Red` and `Green` prove behavior coverage.
+- `Post-Refactor Green` proves cleanup safety.
+- If no cleanup was needed, still rerun and say so.
 
 ---
 
@@ -193,6 +202,22 @@ Return a structured execution report in exactly this format:
 ```
 [paste ACTUAL test output here]
 ```
+
+### TDD Evidence
+- **Red**
+  - Command: `[red command]`
+  - Result: PASS/FAIL
+  - Evidence: [why this proves the missing behavior existed before the implementation]
+- **Green**
+  - Command: `[green command]`
+  - Result: PASS/FAIL
+  - Evidence: [why this proves the requested behavior now passes]
+- **Post-Refactor Green**
+  - Command: `[post-refactor command]`
+  - Result: PASS/FAIL
+  - Evidence: [why this proves cleanup/refactor work preserved behavior]
+
+[If no cleanup was needed, still rerun and say so.]
 
 ### Problems Encountered
 [For each problem encountered during implementation:]

@@ -64,4 +64,23 @@ describe("writeClaudeBundle", () => {
     const skillContent = await fs.readFile(skillPath, "utf8")
     expect(skillContent).toContain("Body provided by parser cache")
   })
+
+  test("removes stale generated hooks when the portable plugin has no hooks", async () => {
+    const plugin = await loadPortablePlugin(fixtureRoot)
+    plugin.hooks = undefined
+
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "claude-writer-no-hooks-"))
+    const outputRoot = path.join(tempRoot, "plugins", plugin.manifest.name)
+    const hooksPath = path.join(outputRoot, "hooks", "hooks.json")
+    const staleScriptPath = path.join(outputRoot, "hooks", "stop-hook.sh")
+
+    await fs.mkdir(path.dirname(hooksPath), { recursive: true })
+    await fs.writeFile(hooksPath, "{\n  \"hooks\": {}\n}\n", "utf8")
+    await fs.writeFile(staleScriptPath, "#!/usr/bin/env bash\necho stale\n", "utf8")
+
+    await writeClaudeBundle(outputRoot, plugin)
+
+    expect(await exists(hooksPath)).toBe(false)
+    expect(await exists(staleScriptPath)).toBe(false)
+  })
 })

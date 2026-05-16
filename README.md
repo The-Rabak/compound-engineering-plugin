@@ -2,7 +2,7 @@
 
 Portable source-of-truth and OpenCode-first release repository for the `compound-engineering` plugin.
 
-The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **31 specialized agents, 25 commands, and 24 skills** built from one portable definition set and emitted into multiple agent harnesses.
+The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **32 specialized agents, 26 commands, and 25 skills** built from one portable definition set and emitted into multiple agent harnesses.
 
 - **OpenCode** -- first-class authoring and daily-driver surface
 - **GitHub Copilot** -- second-class generated output
@@ -52,7 +52,7 @@ The plugin is strongest when a task needs judgment, not just linting.
 | Area | Examples |
 |---|---|
 | Architecture | `architecture-strategist`, `agent-native-architecture`, `spec-flow-analyzer` |
-| Code quality | `code-simplicity-reviewer`, `performance-oracle`, `security-sentinel` |
+| Code quality | `code-simplicity-reviewer`, `performance-oracle`, `security-sentinel`, `uncle-bob` |
 | Data safety | `data-integrity-guardian`, `data-migration-expert`, `schema-drift-detector` |
 | Language depth | `rabak-laravel-reviewer`, `rabak-typescript-reviewer`, `rabak-python-reviewer`, `rabak-rust-reviewer`, `rabak-vue-reviewer`, `rabak-nest-reviewer` |
 | Research and knowledge | `repo-research-analyst`, `framework-docs-researcher`, `learnings-researcher`, `compound-docs` |

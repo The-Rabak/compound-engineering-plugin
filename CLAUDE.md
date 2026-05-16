@@ -26,7 +26,6 @@ compound-engineering-plugin/
         ├── agents/                # Specialized AI agents
         ├── commands/              # Slash commands
         ├── skills/                # Skills
-        ├── hooks/                 # Hooks (ralph loop stop hook)
         ├── mcp-servers/           # MCP servers (context7)
         ├── README.md              # Plugin documentation
         └── CHANGELOG.md           # Version history
