@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Published surface counts** -- Claude plugin docs and generated metadata now reflect 32 specialized agents across the portable and generated bundles.
 - **Claude Ralph hook removal** -- Removed the unused Claude stop-hook wiring for Ralph loop operations, and the generated Claude bundle now cleans up stale `hooks/` output when no portable hooks are defined.
+- **Workflow reviewer policy** -- `/workflows:architecture` now explicitly runs `architecture-strategist` plus `uncle-bob` as mandatory architecture reviewers, and `/workflows:review` treats `uncle-bob` as a mandatory reviewer alongside the existing baseline agents.
 
 ## [4.6.0] - 2026-05-07
 

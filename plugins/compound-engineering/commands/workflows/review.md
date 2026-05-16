@@ -171,6 +171,8 @@ If no settings file exists, invoke the `setup` skill to create one. Then read th
 
 `review_agents` only decides **which** named review agents `/workflows:review` coordinates. It does **not** authorize direct reviewer dispatch from other workflows or ad hoc prompts. If any other workflow or skill needs named review-agent analysis, route that request through `/workflows:review` instead of spawning the reviewers directly.
 
+Regardless of `review_agents`, `/workflows:review` still adds the mandatory reviewers `agent-native-reviewer`, `learnings-researcher`, and `uncle-bob`. `/workflows:architecture` likewise always runs `architecture-strategist` and `uncle-bob`.
+
 #### Parallel Agents to review the branch changes:
 
 <parallel_tasks>
@@ -215,6 +217,7 @@ Branch diff:
 Additionally, always run these regardless of settings. These mandatory reviewers cannot be disabled by `review_agents`:
 - Apply the protocol above to `agent-native-reviewer`, then dispatch it with branch diff content + WHY context - Verify new features are agent-accessible
 - Apply the protocol above to `learnings-researcher`, then dispatch it with branch diff content + WHY context - Search docs/solutions/ for past issues related to this PR's modules and patterns
+- Apply the protocol above to `uncle-bob`, then dispatch it with branch diff content + WHY context - Pressure-test naming, cohesion, boundaries, side effects, and long-term changeability
 
 </parallel_tasks>
 
