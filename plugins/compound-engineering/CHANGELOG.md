@@ -5,6 +5,18 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.7.0] - 2026-05-16
+
+### Added
+
+- **`uncle-bob` agent** -- New clean-code-style reviewer focused on naming, cohesion, abstraction levels, side effects, dependency direction, error handling, and tests that document behavior. The prompt is written in original wording rather than reproducing copyrighted source text.
+
+### Changed
+
+- **Published surface counts** -- Claude plugin docs and generated metadata now reflect 32 specialized agents across the portable and generated bundles.
+- **Claude Ralph hook removal** -- Removed the unused Claude stop-hook wiring for Ralph loop operations, and the generated Claude bundle now cleans up stale `hooks/` output when no portable hooks are defined.
+- **Workflow reviewer policy** -- `/workflows:architecture` now explicitly runs `architecture-strategist` plus `uncle-bob` as mandatory architecture reviewers, and `/workflows:review` treats `uncle-bob` as a mandatory reviewer alongside the existing baseline agents.
+
 ## [4.6.0] - 2026-05-07
 
 ### Changed

@@ -46,6 +46,9 @@ describe("architecture workflow contract", () => {
 
     expect(architecturePrompt).toContain("## Required inputs")
     expect(architecturePrompt).toContain("## Required outputs")
+    expect(architecturePrompt).toContain("## Mandatory architecture reviewers")
+    expect(architecturePrompt).toContain("architecture-strategist")
+    expect(architecturePrompt).toContain("uncle-bob")
     expect(architecturePrompt).toContain("docs/architecture/")
     expect(referencePrompt).toContain("# Architecture Improvement Artifact Contract")
     expect(referencePrompt).toContain("Deepening Candidates")
@@ -117,6 +120,8 @@ describe("architecture workflow contract", () => {
     expect(reviewPrompt).toContain("Architecture Artifact")
     expect(reviewPrompt).toContain("Architecture Handoff")
     expect(reviewPrompt).toContain("docs/architecture/*.md")
+    expect(reviewPrompt).toContain("mandatory reviewers")
+    expect(reviewPrompt).toContain("`uncle-bob`")
     expect(rootReadme).toContain("architecture artifact or explicit architecture handoff contract")
     expect(pluginChangelog).toContain("Replace any `/technical_review` usage with `/workflows:architecture`")
   })

@@ -1,3 +1,4 @@
+import { promises as fs } from "fs"
 import path from "path"
 import { copyDir, ensureDir, readText, writeJson, writeText } from "../utils/files"
 import { formatFrontmatter } from "../utils/frontmatter"
@@ -7,6 +8,7 @@ import type { ClaudeAgent, ClaudeCommand, ClaudeManifest, ClaudePlugin, ClaudeSk
 export async function writeClaudeBundle(outputRoot: string, plugin: ClaudePlugin): Promise<void> {
   await ensureDir(outputRoot)
   await writeJson(path.join(outputRoot, ".claude-plugin", "plugin.json"), buildClaudeManifest(plugin.manifest))
+  await fs.rm(path.join(outputRoot, "hooks"), { recursive: true, force: true })
 
   for (const agent of plugin.agents) {
     const relativePath = relativeComponentPath(plugin.root, "agents", agent.sourcePath, `${agent.name}.md`)

@@ -48,6 +48,19 @@ Follow this protocol:
 
 Use that template as the **mandatory artifact contract**.
 
+## Mandatory architecture reviewers
+
+Before finalizing the artifact, apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`.
+
+Always run these reviewers regardless of repo config:
+
+- `architecture-strategist` -- pressure-test dependency direction, boundary ownership, seams, adapters, and contract shape.
+- `uncle-bob` -- pressure-test naming, responsibility slicing, side-effect visibility, local reasoning, and whether the proposed structure stays easy to change.
+
+Pass both reviewers the plan's WHY/WHERE context plus the current architecture notes or draft artifact content. Fold their findings into the final artifact instead of treating them as optional commentary.
+
+If either mandatory reviewer cannot be loaded and quoted, stop and report the architecture phase as incomplete rather than silently proceeding with reduced scrutiny.
+
 ## Workflow
 
 ### 1. Read the plan and linked context
@@ -77,6 +90,15 @@ Use the reference contract to produce explicit architectural guidance:
 6. **Translate findings into downstream guidance** -- what `/deepen-plan`, `/workflows:work`, and `/workflows:review` should preserve or verify.
 
 If you cannot explain a proposed abstraction in terms of deletion test, interface, seam, or adapter, it is not ready to include.
+
+### 2.5 Run mandatory architecture reviewers
+
+Dispatch `architecture-strategist` and `uncle-bob` using the protocol above.
+
+- `architecture-strategist` should challenge structural choices, coupling, and boundary integrity.
+- `uncle-bob` should challenge readability, responsibility boundaries, naming, side effects, and long-term changeability at the same architectural seams.
+
+Resolve meaningful conflicts between the two perspectives explicitly in the artifact instead of picking one silently.
 
 ### 3. Write the artifact
 

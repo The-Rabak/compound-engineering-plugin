@@ -216,6 +216,10 @@ options:
 - `tdd_enabled`: false (default) or true (enables TDD mode in execution agent template)
 - `review_mode`: "bulk" (default), "inline", or "both" (`bulk`/`both` invoke `/workflows-review`; `inline` stays template-based and must not spawn named review agents directly)
 
+**Workflow-injected mandatory reviewers:**
+- `/workflows-review` always adds `agent-native-reviewer`, `learnings-researcher`, and `uncle-bob`, regardless of `review_agents`.
+- `/workflows-architecture` always runs `architecture-strategist` and `uncle-bob`.
+
 Write `compound-engineering.local.md`:
 
 ```markdown

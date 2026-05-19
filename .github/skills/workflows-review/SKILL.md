@@ -173,21 +173,22 @@ If no settings file exists, invoke the `setup` skill to create one. Then read th
 
 `review_agents` only decides **which** named review agents `/workflows-review` coordinates. It does **not** authorize direct reviewer dispatch from other workflows or ad hoc prompts. If any other workflow or skill needs named review-agent analysis, route that request through `/workflows-review` instead of spawning the reviewers directly.
 
+Regardless of `review_agents`, `/workflows-review` still adds the mandatory reviewers `agent-native-reviewer`, `learnings-researcher`, and `uncle-bob`. `/workflows-architecture` likewise always runs `architecture-strategist` and `uncle-bob`.
+
 #### Parallel Agents to review the branch changes:
 
 <parallel_tasks>
 
 Run all configured review agents in parallel using Task tool. For each agent in the `review_agents` list:
 
-Before dispatching any named review agent below, complete this protocol:
-1. Use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`. Search the directory, not a full path embedded in the pattern argument.
-2. If the bundled template exists, use the file-read tool to load the full template.
-3. Only if no bundled template can be loaded, fall back to OpenViking/global context with `ov_load_global_agent "<agent-name>"`.
-4. Before dispatching, quote the first non-empty line of the loaded template and record which source you used.
-5. Include the loaded template's rules in the delegated prompt. Do not paraphrase away mandatory constraints.
-6. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch the agent.
-7. If any configured or mandatory reviewer cannot be loaded and quoted, report that the review is incomplete and stop rather than substituting a different reviewer or continuing with a reduced reviewer set.
-Never dispatch a named agent by name alone.
+Apply the shared `Named Agent Dispatch` protocol from `references/orchestration-protocol.md` before every named reviewer dispatch.
+
+- Start with the bundled agent directory and load the local template when it exists.
+- Fall back to OpenViking/global context only when no bundled template can be loaded.
+- Quote the first non-empty line of the loaded template and record which source you used before dispatching.
+- Include the loaded template's rules in the delegated prompt without paraphrasing away mandatory constraints.
+- If any configured or mandatory reviewer cannot be loaded and quoted, report that the review is incomplete and stop rather than substituting a different reviewer or silently reducing coverage.
+- Never dispatch a named agent by name alone.
 
 ```
 Task {agent-name}(branch diff content + review context from settings body + WHY context block)
@@ -218,6 +219,7 @@ Branch diff:
 Additionally, always run these regardless of settings. These mandatory reviewers cannot be disabled by `review_agents`:
 - Apply the protocol above to `agent-native-reviewer`, then dispatch it with branch diff content + WHY context - Verify new features are agent-accessible
 - Apply the protocol above to `learnings-researcher`, then dispatch it with branch diff content + WHY context - Search docs/solutions/ for past issues related to this PR's modules and patterns
+- Apply the protocol above to `uncle-bob`, then dispatch it with branch diff content + WHY context - Pressure-test naming, cohesion, boundaries, side effects, and long-term changeability
 
 </parallel_tasks>
 
