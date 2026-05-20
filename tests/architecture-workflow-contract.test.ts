@@ -43,19 +43,35 @@ describe("architecture workflow contract", () => {
       "references",
       "architecture-improvement-prompt.md",
     )
+    const sliceReference = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "vertical-slice-architecture.md",
+    )
 
     expect(architecturePrompt).toContain("## Required inputs")
     expect(architecturePrompt).toContain("## Required outputs")
     expect(architecturePrompt).toContain("## Mandatory architecture reviewers")
+    expect(architecturePrompt).toContain("vertical-slice-architecture.md")
     expect(architecturePrompt).toContain("architecture-strategist")
     expect(architecturePrompt).toContain("uncle-bob")
     expect(architecturePrompt).toContain("docs/architecture/")
     expect(referencePrompt).toContain("# Architecture Improvement Artifact Contract")
+    expect(referencePrompt).toContain("## Feature Homes and Ownership")
+    expect(referencePrompt).toContain("## Shared / Global Decisions")
     expect(referencePrompt).toContain("Deepening Candidates")
+    expect(referencePrompt).toContain("## Context Tiers")
+    expect(referencePrompt).toContain("## Drift Checks")
     expect(referencePrompt).toContain("Deletion Test")
     expect(referencePrompt).toContain("Interfaces as Test Surfaces")
     expect(referencePrompt).toContain("Seams, Adapters, and Contracts")
     expect(referencePrompt).toContain("Design-It-Twice Options")
+    expect(sliceReference).toContain("# Vertical Slice Architecture Contract")
+    expect(sliceReference).toContain("## Context tiers")
+    expect(sliceReference).toContain("Feature home")
   })
 
   test("documents the shared vocabulary in the skill and repo workflow docs", async () => {
@@ -113,16 +129,51 @@ describe("architecture workflow contract", () => {
 
     expect(deepenPrompt).toContain("explicit architecture handoff contract")
     expect(deepenPrompt).toContain("Read `architecture_ref`")
+    expect(deepenPrompt).toContain("Feature Homes and Ownership")
     expect(workPrompt).toContain("### Architecture Handoff")
+    expect(workPrompt).toContain("Feature-home ownership")
     expect(workPrompt).toContain("{{ARCHITECTURE_HANDOFF}}")
     expect(executionPrompt).toContain("## Architecture Handoff")
+    expect(executionPrompt).toContain("**Feature home:** {{FEATURE_HOME}}")
     expect(executionPrompt).toContain("{{ARCHITECTURE_HANDOFF}}")
     expect(reviewPrompt).toContain("Architecture Artifact")
     expect(reviewPrompt).toContain("Architecture Handoff")
+    expect(reviewPrompt).toContain("Feature Homes and Ownership")
     expect(reviewPrompt).toContain("docs/architecture/*.md")
     expect(reviewPrompt).toContain("mandatory reviewers")
     expect(reviewPrompt).toContain("`uncle-bob`")
     expect(rootReadme).toContain("architecture artifact or explicit architecture handoff contract")
     expect(pluginChangelog).toContain("Replace any `/technical_review` usage with `/workflows:architecture`")
+  })
+
+  test("review enforcement makes the feature-home versus shared-global boundary explicit", async () => {
+    const uncleBobPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "agents",
+      "review",
+      "uncle-bob.md",
+    )
+    const reviewPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "review.md",
+    )
+    const architecturePrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "architecture.md",
+    )
+
+    expect(uncleBobPrompt).toContain("### Feature-home boundaries")
+    expect(uncleBobPrompt).toContain("feature-home drift")
+    expect(uncleBobPrompt).toContain("shared/global drift")
+    expect(reviewPrompt).toContain("Introduces feature-home drift or shared/global drift")
+    expect(reviewPrompt).toContain("feature-home boundaries, shared/global extractions")
+    expect(architecturePrompt).toContain("feature-home ownership, shared/global extractions")
   })
 })

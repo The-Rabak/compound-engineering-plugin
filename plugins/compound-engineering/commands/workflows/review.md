@@ -84,6 +84,9 @@ ls -t docs/plans/*-plan*.md 2>/dev/null | head -5
 # Check for architecture files
 ls -t docs/architecture/*.md 2>/dev/null | head -5
 
+# Check for ticket sets
+ls -t docs/tickets/*/index.md 2>/dev/null | head -5
+
 # Check for readme files
 ls -t README.md 2>/dev/null | head -5
 ```
@@ -95,16 +98,28 @@ If a plan file is found, read it and extract:
 - **Success Criteria** — measurable conditions that define "done"
 - **brainstorm_ref** — path to brainstorm document, if available
 - **architecture_ref / Related Artifacts** — pointer to the architecture artifact or handoff document, if available
+- **tickets_ref / Related Artifacts** — pointer to the ticket set, if available
 - **constitution_version** / **constitution_waivers** — what repo-wide rules apply and which exceptions were explicitly approved
 
 If an `architecture_ref` or matching `docs/architecture/*.md` artifact exists, read it and extract:
+- Feature Homes and Ownership
+- Shared / Global Decisions
 - Deepening Candidates
+- Context Tiers
 - Deletion Test decisions
 - Interfaces as test surfaces
 - Seams, Adapters, and Contracts
+- Drift Checks
 - Recommendations for `/workflows:review`
 
 If no architecture artifact exists, build an explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and STATE.md notes. Do not review architecture implicitly.
+
+If a `tickets_ref` or matching `docs/tickets/*/index.md` artifact exists, read the ticket index and the relevant ticket files. Extract:
+- ticket order and statuses
+- dependency graph
+- feature homes and scope fences
+- acceptance criteria and evidence commands
+- any visible blocker notes or ticket-set review findings
 
 ALWAYS READ THE ARCHITECTURE ARTIFACT (or explicit handoff contract) AND README FILES FOR CONTEXT — they often contain critical information about architectural intent, constraints, and domain knowledge that is not in the plan.
 
@@ -132,7 +147,8 @@ WHY CONTEXT FOR REVIEWERS:
 - Success Criteria: [list]
 - Architectural Intent: [arch context summary]
 - Architecture Artifact: [docs/architecture/... path or none]
-- Architecture Handoff: [deletion-test decisions, interfaces as test surfaces, seams/adapters/contracts, and drift checks the implementation must honor]
+- Ticket Set: [docs/tickets/.../index.md or none]
+- Architecture Handoff: [feature homes, shared/global decisions, context tiers, deletion-test decisions, interfaces as test surfaces, seams/adapters/contracts, and drift checks the implementation must honor]
 - Constitution Version: [version or none]
 - Constitution Guardrails: [relevant principles, review baselines, approvals, waivers]
 ```
@@ -158,6 +174,7 @@ The following paths are compound-engineering pipeline artifacts and must never b
 
 - `docs/plans/*.md` — Plan files created by `/workflows:plan`. These are living documents that track implementation progress (checkboxes are checked off by `/workflows:work`).
 - `docs/architecture/*.md` — Architecture improvement artifacts and handoff contracts created or referenced between planning, deepening, execution, and review.
+- `docs/tickets/**/*.md` — Local ticket artifacts created by `/workflows:to-issues` and updated by ticket-scoped execution.
 - `docs/solutions/*.md` — Solution documents created during the pipeline.
 
 If a review agent flags any file in these directories for cleanup or removal, discard that finding during synthesis. Do not create a todo for it.
@@ -169,9 +186,9 @@ Read `compound-engineering.local.md` in the project root. If found, use `review_
 
 If no settings file exists, invoke the `setup` skill to create one. Then read the newly created file and continue.
 
-`review_agents` only decides **which** named review agents `/workflows:review` coordinates. It does **not** authorize direct reviewer dispatch from other workflows or ad hoc prompts. If any other workflow or skill needs named review-agent analysis, route that request through `/workflows:review` instead of spawning the reviewers directly.
+`review_agents` only decides **which** named review agents `/workflows:review` coordinates. It does **not** authorize direct reviewer dispatch from other workflows or ad hoc prompts. If any other workflow or skill needs named review-agent analysis, route that request through `/workflows:review` instead of spawning the reviewers directly, except for `/workflows:to-issues`, which may run `ticket-flow-auditor` as its explicit ticket-set completion gate before code exists.
 
-Regardless of `review_agents`, `/workflows:review` still adds the mandatory reviewers `agent-native-reviewer`, `learnings-researcher`, and `uncle-bob`. `/workflows:architecture` likewise always runs `architecture-strategist` and `uncle-bob`.
+Regardless of `review_agents`, `/workflows:review` still adds the mandatory reviewers `agent-native-reviewer`, `learnings-researcher`, `uncle-bob`, and `ticket-flow-auditor`. `/workflows:architecture` likewise always runs `architecture-strategist` and `uncle-bob`.
 
 #### Parallel Agents to review the branch changes:
 
@@ -203,12 +220,15 @@ WHY CONTEXT FOR REVIEWERS:
 - Success Criteria: [criteria list]
 - Architectural Intent: [arch context]
 - Architecture Artifact: [artifact path or "plan-derived handoff"]
+- Ticket Set: [ticket index path or "none"]
 - Architecture Handoff: [deletion test, interfaces, seams/adapters/contracts, review checks]
 
 When reporting findings, note whether each finding:
 (a) THREATENS the user story or success criteria (highest priority)
 (b) Is a general security concern independent of the user story
 (c) Would require changes that ALTER the user's intended outcome (flag as DRIFT RISK)
+(d) Introduces feature-home drift or shared/global drift against the architecture handoff
+(e) Introduces ticket drift, dependency drift, or undocumented scope expansion against the ticket set
 
 Branch diff:
 [diff content]
@@ -217,7 +237,8 @@ Branch diff:
 Additionally, always run these regardless of settings. These mandatory reviewers cannot be disabled by `review_agents`:
 - Apply the protocol above to `agent-native-reviewer`, then dispatch it with branch diff content + WHY context - Verify new features are agent-accessible
 - Apply the protocol above to `learnings-researcher`, then dispatch it with branch diff content + WHY context - Search docs/solutions/ for past issues related to this PR's modules and patterns
-- Apply the protocol above to `uncle-bob`, then dispatch it with branch diff content + WHY context - Pressure-test naming, cohesion, boundaries, side effects, and long-term changeability
+- Apply the protocol above to `uncle-bob`, then dispatch it with branch diff content + WHY context - Pressure-test naming, cohesion, feature-home boundaries, shared/global extractions, side effects, and long-term changeability
+- Apply the protocol above to `ticket-flow-auditor`, then dispatch it with branch diff content + WHY context + ticket artifacts - Verify plan/ticket/implementation alignment, scope fences, dependency honesty, and execution drift
 
 </parallel_tasks>
 

@@ -65,10 +65,14 @@ First, read and parse the plan to extract the WHY artifacts (problem narrative, 
 
 - [ ] Read `architecture_ref` from plan frontmatter
 - [ ] If an architecture path exists, read it and extract:
+  - Feature Homes and Ownership
+  - Shared / Global Decisions
   - Deepening Candidates
+  - Context Tiers
   - Deletion Test decisions
   - Interfaces as test surfaces
   - Seams, Adapters, and Contracts
+  - Drift Checks
   - Recommendations for `/deepen-plan`, `/workflows:work`, and `/workflows:review`
 - [ ] If no `architecture_ref` exists, check `docs/architecture/*.md` for a recent artifact that matches the plan topic
 - [ ] If no architecture artifact exists, build an explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and any `## Related Artifacts` section
@@ -107,11 +111,12 @@ Check if the plan has sufficiently structured execution packets for the subagent
 - [ ] Read `execution_shape.mode`; if missing, default it to `vertical-slices`
 - [ ] Read `execution_shape.rationale`; require it when the mode is not `vertical-slices`
 - [ ] Ensure the body includes a matching `## Execution Shape` section
+- [ ] If the mode is `vertical-slices`, also apply `commands/workflows/references/vertical-slice-architecture.md` for feature-home and shared/global boundary checks
 - [ ] If the chosen mode looks wrong for the real work, add a `### WHY Reassessment` note instead of silently changing it
 
 **Scan each execution packet using the required fields from `commands/workflows/references/execution-shape.md`:**
 
-- [ ] **`vertical-slices`:** slice type, serves, demo scenario, scope + scope fence, files, depends on, dependency type, success criteria, test command
+- [ ] **`vertical-slices`:** slice type, serves, demo scenario, feature home, scope + scope fence, files, depends on, dependency type, success criteria, test command
 - [ ] **`infra-track`:** capability enabled, consumers / downstream work unlocked, scope, files, depends on, risk / rollback, validation command, success criteria
 - [ ] **`fix-batch`:** problem, repro / expected outcome, files, depends on, validation command, success criteria
 - [ ] **TDD alignment:** packet-level validation commands collectively satisfy the resolved unit/e2e evidence contract, or the plan records a justified exception with replacement evidence
@@ -130,6 +135,7 @@ Check if the plan has sufficiently structured execution packets for the subagent
 **Slice type:** tracer-bullet | expansion | hardening
 **Serves:** [Which aspect of the user story / which success criterion this slice delivers]
 **Demo scenario:** [Smallest end-to-end behavior this slice proves]
+**Feature home:** `path/to/feature-home/`
 **Files:** `path/to/file1.php`, `path/to/file2.php`
 **Depends on:** Slice N-1.2 (or "None")
 **Dependency type:** real | stub-available | parallel-safe

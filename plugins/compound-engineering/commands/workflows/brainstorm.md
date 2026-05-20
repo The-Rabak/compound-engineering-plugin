@@ -120,13 +120,16 @@ Use **AskUserQuestion tool** to ask which approach the user prefers.
 
 After the approach is chosen, construct a lightweight architectural context map. This is NOT implementation design (no file paths, no class names, no code). This is **structural understanding** -- where this feature lives in the system.
 
+Use `commands/workflows/references/vertical-slice-architecture.md` as the source of truth for feature-home thinking and shared/global boundary language.
+
 **Architectural Context Map:**
 
-1. **System Placement** -- Which service/module/layer does this feature live in? What's its home?
+1. **System Placement** -- Which service/module/layer does this feature live in? What's its feature home?
 2. **Boundary Interactions** -- What other services, modules, or systems does it talk to? What data flows in and out?
 3. **User Touchpoints** -- How does the user interact with this? What's the entry point (UI, API, CLI, event)?
 4. **Data Considerations** -- What data does this feature create, read, update, or delete? Where does that data live?
 5. **Dependency Direction** -- What does this feature depend on? What might depend on it in the future?
+6. **Shared / Global Boundaries** -- Which parts look feature-local versus truly shared across multiple features?
 
 **Output format:** A concise prose description (not a diagram). Think of it as explaining to a new team member where this feature sits and what it touches. 5-10 sentences max.
 
@@ -184,10 +187,12 @@ which causes [impact].
 [The structural context map from Phase 2.5. WHERE this lives in the system.]
 
 - **Lives in:** [service/module/layer]
+- **Feature home:** [primary feature namespace or module home]
 - **Interacts with:** [neighboring systems/modules]
 - **User entry point:** [UI/API/CLI/event]
 - **Data:** [what data flows, where it lives]
 - **Dependencies:** [what this depends on, what may depend on it]
+- **Shared / global notes:** [what should stay shared instead of being absorbed into the feature home]
 
 ## Chosen Approach
 

@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 32 specialized agents, 26 commands, and 25 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 33 specialized agents, 28 commands, and 26 skills.
 
 This repository also ships generated Copilot assets under the repo root `.github/`, built from the canonical portable source in `portable/compound-engineering/`.
 
@@ -14,9 +14,33 @@ This repository also ships generated Copilot assets under the repo root `.github
 ## Workflow contract highlights
 
 - `/workflows:architecture` is the architecture-improvement handoff between planning and `/deepen-plan`.
+- `/workflows:to-issues` turns plans into local ticket artifacts with compact execution context before implementation, using `focused-ticket-priming` and `ticket-flow-auditor`.
 - `/workflows:plan`, `/deepen-plan`, and `/workflows:work` now default to issue-shaped execution slices, with the first slice acting as the tracer bullet, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake.
+- `/workflows:work` can execute a single ticket artifact directly while preserving parent plan and architecture refs.
+- Vertical slices now carry a feature-home module contract: feature business logic stays co-located, while truly shared utilities and adapters stay global.
+- `/brownfield-maintenance` is the on-demand repair path for inherited repos whose AI-layer docs, prompts, and reviewer coverage have drifted.
 - `/workflows:work` is the Ralph-first execution path; `/ralph-loop` and `/cancel-ralph` are helpers, not a detached workflow.
 - Plans default to unit + e2e evidence unless an explicit exception documents replacement evidence.
+
+## Full workflow guide
+
+Use this sequence when you want the full compound workflow instead of an ad hoc prompt chain:
+
+1. `/workflows:brainstorm` -- clarify the problem, user story, and constraints.
+2. `/workflows:plan` -- choose the execution shape and define packets.
+3. `/workflows:architecture` -- lock feature homes, shared/global boundaries, and architecture handoff details.
+4. `/deepen-plan` -- harden the plan with research and review.
+5. `/workflows:to-issues` -- generate `docs/tickets/...` with `focused-ticket-priming`, then gate the ticket set with `ticket-flow-auditor`.
+6. `/workflows:work <ticket-file>` -- execute one ticket artifact at a time while preserving parent plan and architecture refs.
+7. `/workflows:review` -- review code, ticket drift, architecture fit, and TDD evidence together.
+8. `/workflows:compound` -- turn the result into reusable team knowledge.
+
+### Ticketized execution guidance
+
+- Prefer `/workflows:to-issues` after `/deepen-plan` for the sharpest execution packets.
+- Use ticket files as the default `/workflows:work` input once they exist.
+- Treat feature-home ownership and scope fences as hard boundaries, not suggestions.
+- Use `/brownfield-maintenance` separately when an inherited repo needs workflow repair before normal feature delivery.
 
 ## Migration notes
 
@@ -37,9 +61,9 @@ bun test
 
 | Component | Count |
 |-----------|-------|
-| Agents | 32 |
-| Commands | 26 |
-| Skills | 25 |
+| Agents | 33 |
+| Commands | 28 |
+| Skills | 26 |
 | Hooks | 0 |
 | MCP Servers | 1 |
 
@@ -70,6 +94,7 @@ Agents are organized into categories for easier discovery.
 | `performance-oracle` | Performance analysis and optimization |
 | `schema-drift-detector` | Detect unrelated schema dump and schema artifact drift in database PRs |
 | `security-sentinel` | Security audits and vulnerability assessments |
+| `ticket-flow-auditor` | Review plan-to-ticket and ticket-to-implementation alignment, dependency order, scope fences, and execution drift |
 | `uncle-bob` | Clean-code reviewer focused on naming, cohesion, side effects, boundaries, and tests that keep code changeable |
 
 ### Research (6)
@@ -112,6 +137,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/workflows:brainstorm` | Explore requirements and approaches before planning |
 | `/workflows:plan` | Create implementation plans with issue-shaped execution slices and structured project inputs |
 | `/workflows:architecture` | Produce a dedicated architecture improvement artifact before deepening and execution |
+| `/workflows:to-issues` | Convert plans into local vertical-slice ticket artifacts with scoped execution context |
 | `/workflows:review` | Run comprehensive code reviews |
 | `/workflows:work` | Execute execution slices systematically |
 | `/workflows:compound` | Document solved problems to compound team knowledge |
@@ -128,6 +154,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/create-agent-skill` | Create or edit Claude Code skills |
 | `/generate_command` | Generate new slash commands |
 | `/heal-skill` | Fix skill documentation issues |
+| `/brownfield-maintenance` | Audit and fill brownfield AI-layer gaps outside the main feature workflow |
 | `/report-bug` | Report a bug in the plugin |
 | `/reproduce-bug` | Reproduce bugs using logs and console |
 | `/resolve_parallel` | Resolve TODO comments in parallel |
@@ -157,6 +184,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `compound-docs` | Capture solved problems as categorized documentation |
 | `create-agent-skills` | Expert guidance for creating Claude Code skills |
 | `frontend-design` | Create production-grade frontend interfaces |
+| `focused-ticket-priming` | Turn one plan packet into one compact ticket-local execution packet |
 | `ideate` | Generate and critically evaluate grounded improvement ideas before selecting one to brainstorm |
 | `laravel-conventions` | Modern Laravel coding standards reference |
 | `skill-creator` | Guide for creating effective Claude Code skills |

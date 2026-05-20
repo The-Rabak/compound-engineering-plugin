@@ -37,6 +37,8 @@ You are an execution agent implementing a specific execution unit from a work pl
 
 **Outcome scenario:** {{OUTCOME_SCENARIO}}
 
+**Feature home:** {{FEATURE_HOME}}
+
 **Scope:** {{UNIT_SCOPE}}
 
 **Scope fence:** {{UNIT_SCOPE_FENCE}}
@@ -49,6 +51,12 @@ You are an execution agent implementing a specific execution unit from a work pl
 **Validation command:** `{{VALIDATION_COMMAND}}`
 
 **Dependencies completed:** {{COMPLETED_DEPENDENCIES}}
+
+**Parent refs:** {{PARENT_REFS}}
+
+## Ticket-local context
+
+{{TICKET_LOCAL_CONTEXT}}
 
 ## Why This Unit Exists
 
@@ -150,6 +158,7 @@ Before reporting back, review your own work with fresh eyes. Go through each che
 - [ ] Did I reuse existing code where it already solved this problem cleanly?
 - [ ] If I introduced a new abstraction, does it have a clear SOLID-based reason to exist?
 - [ ] Did I avoid vague or abbreviated names in favor of explicit intent?
+- [ ] Did the core business logic stay in the declared feature home unless the architecture handoff justified a shared/global extraction?
 - [ ] Is the code clean and maintainable?
 - [ ] Does it follow existing codebase patterns?
 - [ ] Is error handling appropriate?
