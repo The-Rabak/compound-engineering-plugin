@@ -18,6 +18,7 @@ A valid architecture improvement pass requires:
 - Success Criteria
 - Architectural Context
 - Current plan phases/tasks
+- The vertical-slice module contract from `vertical-slice-architecture.md`
 - `brainstorm_ref`, constitution context, and source docs when available
 
 If any of the first five are missing, stop and report the missing input instead of improvising.
@@ -59,6 +60,17 @@ handoff:
 - Success Criteria: <list the criteria this artifact protects>
 - Architectural Context: <where this lives and what it touches>
 
+## Feature Homes and Ownership
+- **Feature home:** `<path/or/namespace>`
+  - Owns: <business behavior that should stay local to this feature>
+  - Crosses into: <neighboring boundaries touched by this work>
+  - Notes: <why this is the right home>
+
+## Shared / Global Decisions
+| Candidate | Keep in feature home / Move to shared | Why |
+|-----------|----------------------------------------|-----|
+| <thing>   | <decision>                             | <reason grounded in DRY, SOLID, and reason-to-change> |
+
 ## Deepening Candidates
 - <candidate>: Why this area needs deeper architectural treatment before execution hardening
 
@@ -83,6 +95,11 @@ handoff:
 - **Option B:** <alternative if leverage or risk justifies it>
 - **Chosen for now:** <decision and why>
 
+## Context Tiers
+- **Global context:** <repo-wide rules, defaults, and stable shared/global boundaries>
+- **On-demand context:** <artifact refs and deeper docs later phases can load as needed>
+- **Ticket-local context:** <the minimum feature-home, scope, and evidence packet each execution ticket should carry>
+
 ## Recommendations for `/deepen-plan`
 - <how to harden tasks, dependencies, tests, or research prompts>
 
@@ -91,6 +108,9 @@ handoff:
 
 ## Recommendations for `/workflows:review`
 - <what reviewers should verify>
+
+## Drift Checks
+- <what would count as feature-home drift, bad shared extraction, or horizontal scattering>
 
 ## Open Questions
 - <unresolved architectural question, or `None`>
@@ -101,12 +121,15 @@ handoff:
 Use these terms exactly and consistently:
 
 - **Deepening candidates** -- structural areas that need more treatment before execution hardening
+- **Feature home** -- the primary namespace or directory where one feature's business behavior lives
+- **Shared / global** -- code whose reason to change is truly cross-feature or infrastructural
 - **Deletion test** -- the test that asks what can be removed, avoided, or delayed before adding abstraction
 - **Interface as test surface** -- the stable behavior callers and tests should target
 - **Seam** -- a boundary where implementation can vary
 - **Adapter** -- the translation layer at a seam, usually for external systems or incompatible models
 - **Contract** -- the explicit promise a seam or interface must honor
 - **Design-it-twice** -- a lightweight comparison of two structural options when a boundary is high leverage
+- **Context tiers** -- the split between global, on-demand, and ticket-local context after planning
 
 Avoid fuzzy substitutes like "clean it up later," "probably abstract here," or "future-proofing" unless you immediately restate them in deletion-test, interface, seam, or adapter terms.
 
@@ -115,7 +138,9 @@ Avoid fuzzy substitutes like "clean it up later," "probably abstract here," or "
 The artifact is complete only when:
 
 - Every proposed abstraction survives the deletion test or is explicitly deferred
+- Feature homes and shared/global decisions are named explicitly
 - Interfaces are described as test surfaces, not just nouns
 - Seams and adapters are mapped to real boundaries in the plan
+- Context tiers are explicit enough that ticket creation and execution can stay smaller than the full plan
 - `/deepen-plan`, `/workflows:work`, and `/workflows:review` each have explicit handoff guidance
 - The artifact path is recorded back into the plan

@@ -2,6 +2,8 @@
 
 Use this reference when planning, deepening, or executing work so the workflow can preserve judgment without re-explaining the same rules in every prompt.
 
+For `vertical-slices`, also apply `commands/workflows/references/vertical-slice-architecture.md` so the plan names the feature home and preserves the shared/global boundary instead of treating slices as pure task buckets.
+
 ## Default
 
 Choose `vertical-slices` unless that would create fake end-to-end work just to satisfy the template.
@@ -16,6 +18,7 @@ Required packet:
 - `Slice type`
 - `Serves`
 - `Demo scenario`
+- `Feature home`
 - `Scope`
 - `Scope fence`
 - `Files`
@@ -80,6 +83,8 @@ Then use the packet section that matches the chosen mode:
 - `## Execution Slices`
 - `## Infrastructure Work Packets`
 - `## Fix Batch Items`
+
+When the mode is `vertical-slices`, each packet must also name the feature home defined by `commands/workflows/references/vertical-slice-architecture.md`.
 
 ## Deepening rules
 

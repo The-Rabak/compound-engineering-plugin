@@ -64,6 +64,8 @@ When this skill is used inside the compound workflow chain, produce an artifact 
 
 Use this vocabulary exactly:
 - **Deepening candidates** -- areas that need more design work before `/deepen-plan`.
+- **Feature home** -- the primary namespace or directory where one feature's business behavior should live.
+- **Shared / global** -- code whose reason to change is truly cross-feature or infrastructural.
 - **Deletion test** -- what can be removed, avoided, or delayed before adding structure.
 - **Interface as test surface** -- the behavior callers and tests rely on.
 - **Seam** -- where behavior can be swapped, isolated, or tested.
@@ -71,8 +73,11 @@ Use this vocabulary exactly:
 
 Required sections for the artifact:
 - Problem framing and constraints.
+- Feature homes and ownership.
+- Shared / global decisions.
 - Capability map and parity gaps.
 - Deepening candidates.
+- Context tiers.
 - Deletion test outcomes.
 - Interfaces as test surfaces.
 - Seams, adapters, and explicit contracts.

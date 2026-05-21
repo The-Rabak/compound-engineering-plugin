@@ -33,19 +33,24 @@ The architecture phase requires these inputs from the plan or linked artifacts:
 - **Implementation phases/tasks** -- the proposed execution shape
 - **`brainstorm_ref` / constitution alignment / waivers / source docs** -- when present
 
+Use `commands/workflows/references/execution-shape.md` to interpret the plan's packet structure before deciding whether a boundary belongs in a feature home, shared/global scope, or a different execution mode entirely.
+
 If any required WHY or WHERE inputs are missing, stop and tell the user exactly what is missing. Do not invent architectural context.
 
 ## Required reference contract
 
-Before drafting the artifact, load `architecture-improvement-prompt.md` from `commands/workflows/references/` (or the generated platform-local equivalent).
+Before drafting the artifact, load both of these references from `commands/workflows/references/` (or the generated platform-local equivalent):
+
+- `commands/workflows/references/architecture-improvement-prompt.md`
+- `commands/workflows/references/vertical-slice-architecture.md`
 
 Follow this protocol:
-1. Use the platform's file-search tool against the command reference directory to look for `architecture-improvement-prompt.md`.
-2. Use the file-read tool to load the full template.
-3. Before continuing, quote the first non-empty line of the loaded template and record which file you used.
-4. If you cannot load and quote the template, stop and report the missing template instead of improvising.
+1. Use the platform's file-search tool against the command reference directory to look for both files.
+2. Use the file-read tool to load both files in full.
+3. Before continuing, quote the first non-empty line of each loaded reference and record which files you used.
+4. If you cannot load and quote both references, stop and report the missing template instead of improvising.
 
-Use that template as the **mandatory artifact contract**.
+Use those references as the **mandatory artifact contract**.
 
 ## Mandatory architecture reviewers
 
@@ -54,7 +59,7 @@ Before finalizing the artifact, apply the shared `Named Agent Dispatch` protocol
 Always run these reviewers regardless of repo config:
 
 - `architecture-strategist` -- pressure-test dependency direction, boundary ownership, seams, adapters, and contract shape.
-- `uncle-bob` -- pressure-test naming, responsibility slicing, side-effect visibility, local reasoning, and whether the proposed structure stays easy to change.
+- `uncle-bob` -- pressure-test naming, responsibility slicing, feature-home ownership, shared/global extractions, side-effect visibility, local reasoning, and whether the proposed structure stays easy to change.
 
 Pass both reviewers the plan's WHY/WHERE context plus the current architecture notes or draft artifact content. Fold their findings into the final artifact instead of treating them as optional commentary.
 
@@ -71,6 +76,7 @@ Read the plan file and extract:
 - Architectural Context
 - Key Decisions / Approaches Considered (when present)
 - Task list and dependencies
+- Current or likely feature homes
 - `brainstorm_ref`, `constitution_version`, `constitution_waivers`, `source_docs`, and any existing `architecture_ref`
 
 If `brainstorm_ref` exists, read it for stakeholder impact, resolved questions, and architectural context that should not be lost.
@@ -86,7 +92,9 @@ Use the reference contract to produce explicit architectural guidance:
 3. **Define interfaces as test surfaces** -- what behavior downstream tests and callers should rely on.
 4. **Map seams, adapters, and contracts** -- where the system should flex, what translates external concerns, and what promises must stay stable.
 5. **Use design-it-twice only where leverage is high** -- compare at least two structural options for risky boundaries, not for every detail.
-6. **Translate findings into downstream guidance** -- what `/deepen-plan`, `/workflows:work`, and `/workflows:review` should preserve or verify.
+6. **Confirm feature homes and shared/global ownership** -- name what belongs in feature-local scope versus true shared/global scope so DRY and SOLID stay intact.
+7. **Split post-plan context tiers** -- make global, on-demand, and ticket-local context explicit so later ticketization and execution stay smaller.
+8. **Translate findings into downstream guidance** -- what `/deepen-plan`, `/workflows:work`, and `/workflows:review` should preserve or verify.
 
 If you cannot explain a proposed abstraction in terms of deletion test, interface, seam, or adapter, it is not ready to include.
 
@@ -95,7 +103,7 @@ If you cannot explain a proposed abstraction in terms of deletion test, interfac
 Dispatch `architecture-strategist` and `uncle-bob` using the protocol above.
 
 - `architecture-strategist` should challenge structural choices, coupling, and boundary integrity.
-- `uncle-bob` should challenge readability, responsibility boundaries, naming, side effects, and long-term changeability at the same architectural seams.
+- `uncle-bob` should challenge readability, responsibility boundaries, naming, side effects, long-term changeability, and whether the feature-home versus shared/global split is actually honest.
 
 Resolve meaningful conflicts between the two perspectives explicitly in the artifact instead of picking one silently.
 
@@ -120,6 +128,9 @@ A complete run must leave behind all of the following:
 
 - **Architecture artifact** in `docs/architecture/`
 - **Explicit artifact path** recorded back into the plan via `architecture_ref` or `## Related Artifacts`
+- **Feature-home ownership decisions** for the main slices or modules
+- **Shared/global boundary decisions** that keep DRY and SOLID honest
+- **Context tiers** that separate global, on-demand, and ticket-local context
 - **Deepening candidates** the next phase can act on
 - **Deletion-test decisions** that justify which abstractions stay or go
 - **Interface / seam / adapter / contract guidance** stated in plain language

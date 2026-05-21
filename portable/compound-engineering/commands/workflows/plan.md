@@ -76,6 +76,7 @@ Every plan must then write its own `tdd:` frontmatter block plus a `## TDD & Evi
 #### Execution Shape Baseline (Runs Before Path A/B/C)
 
 Use `commands/workflows/references/execution-shape.md` as the single source for choosing and documenting the execution shape.
+When the chosen mode is `vertical-slices`, also apply `commands/workflows/references/vertical-slice-architecture.md` as the source of truth for feature-home naming, shared/global placement, and context-tier language.
 
 - **Default mode:** `vertical-slices`
 - **Allowed overrides:** `infra-track`, `fix-batch`
@@ -391,11 +392,13 @@ Think like a product manager -- what would make this issue clear, actionable, an
 **Execution Shape Selection (traced to user story):**
 
 Use `commands/workflows/references/execution-shape.md` as the source of truth for selecting and documenting the plan's execution shape.
+When the mode is `vertical-slices`, also use `commands/workflows/references/vertical-slice-architecture.md`.
 
 Default to **`vertical-slices`**:
 - User Story → Phase/Track (optional grouping) → Slice → Files
 - Start with the thinnest tracer bullet
 - Slice vertically across layers when needed
+- Name the feature home each slice primarily changes
 - Treat phases as wrappers, not executable units
 - Forbid horizontal slice titles unless they still produce a demoable outcome
 
@@ -416,6 +419,7 @@ For plans that will be executed via `/workflows:work`, the plan must include the
 - `## Fix Batch Items`
 
 Each packet must include the fields defined in `commands/workflows/references/execution-shape.md`. Plans without a declared shape and packet structure will be flagged for refinement before execution begins.
+For `vertical-slices`, every packet must also name the feature home and stay honest about which supporting code remains shared/global.
 
 **TDD & Evidence Contract (mandatory):**
 
@@ -524,6 +528,7 @@ which causes [impact].
 ## Architectural Context
 
 - **Lives in:** [service/module/layer -- with actual file paths from research]
+- **Feature home:** [primary feature namespace or directory for this work]
 - **Interacts with:** [neighboring systems/modules]
 - **Entry point:** [UI/API/CLI/event]
 
@@ -559,6 +564,7 @@ Use this default section only when `execution_shape.mode` is `vertical-slices`. 
 **Slice type:** tracer-bullet
 **Serves:** [Which aspect of the user story / which success criterion this slice proves]
 **Demo scenario:** [Describe the smallest end-to-end behavior this slice makes observable]
+**Feature home:** `path/to/feature-home/`
 **Files:** `path/to/file1.php`, `path/to/file2.php`
 **Depends on:** None
 **Dependency type:** real | stub-available | parallel-safe
@@ -649,6 +655,7 @@ which causes [impact].
 ## Architectural Context
 
 - **Lives in:** [service/module/layer -- grounded in repo research]
+- **Feature home:** [primary feature namespace or directory for this work]
 - **Interacts with:** [neighboring systems/modules with file paths]
 - **Entry point:** [UI/API/CLI/event]
 - **Data:** [what data flows, where it lives]
@@ -699,6 +706,7 @@ Use this default section only when `execution_shape.mode` is `vertical-slices`. 
 **Slice type:** tracer-bullet
 **Serves:** [Which aspect of the user story / which success criterion this slice proves]
 **Demo scenario:** [Describe the smallest end-to-end behavior this slice makes observable]
+**Feature home:** `path/to/feature-home/`
 **Files:** `path/to/file1.php`, `path/to/file2.php`
 **Depends on:** None
 **Dependency type:** parallel-safe
@@ -861,6 +869,7 @@ As a [persona 2], I need to [action] so that [outcome].
 ## Architectural Context
 
 - **Lives in:** [service/module/layer -- grounded in repo research with file paths]
+- **Feature home:** [primary feature namespace or directory for this work]
 - **Interacts with:** [neighboring systems/modules with specific integration points]
 - **Entry point:** [UI/API/CLI/event -- specific routes, components, or endpoints]
 - **Data:** [what data flows, where it lives, schema implications]
@@ -925,6 +934,7 @@ Use this default section only when `execution_shape.mode` is `vertical-slices`. 
 **Slice type:** tracer-bullet
 **Serves:** [Which aspect of the user story / which success criteria this slice proves]
 **Demo scenario:** [Describe the smallest end-to-end behavior]
+**Feature home:** `path/to/feature-home/`
 **Files:** `path/to/file1.php`, `path/to/file2.php`
 **Depends on:** None
 **Dependency type:** real | stub-available | parallel-safe
@@ -1227,6 +1237,7 @@ public function processUser(User $user): array
 - [ ] The selected execution shape matches the real work instead of forcing fake verticality
 - [ ] The plan includes the packet section required by the selected mode
 - [ ] Every packet includes the required fields from `commands/workflows/references/execution-shape.md`
+- [ ] If mode is `vertical-slices`, every slice names its feature home and stays explicit about what remains shared/global
 - [ ] If mode is `vertical-slices`, the first slice is a tracer bullet, not a broad foundation phase
 - [ ] If mode is `vertical-slices`, no slice is a disguised horizontal layer bucket unless it still delivers a demoable outcome
 - [ ] Packet scope is explicit enough that an executor does not need to infer missing boundaries from adjacent packets
@@ -1282,15 +1293,17 @@ After writing the plan file, use the **AskUserQuestion tool** to present these o
 1. **Open plan in editor** - Open the plan file for review
 2. **Run `/workflows:architecture`** - Create the dedicated architecture improvement artifact in `docs/architecture/` and record the handoff contract
 3. **Run `/deepen-plan`** - Enhance each section with architecture guidance plus parallel research agents after the architecture handoff is explicit
-4. **Review and refine** - Improve the document through structured self-review
-5. **Start `/workflows:work`** - Begin implementing this plan locally once the architecture handoff is explicit
-6. **Start `/workflows:work` on remote** - Begin implementing in Claude Code on the web once the architecture handoff is explicit (use `&` to run in background)
-7. **Create Issue** - Create issue in project tracker
+4. **Run `/workflows:to-issues`** - Create local ticket artifacts once the architecture handoff is explicit
+5. **Review and refine** - Improve the document through structured self-review
+6. **Start `/workflows:work`** - Begin implementing this plan locally once the architecture handoff is explicit
+7. **Start `/workflows:work` on remote** - Begin implementing in Claude Code on the web once the architecture handoff is explicit (use `&` to run in background)
+8. **Create Issue** - Create issue in project tracker
 
 Based on selection:
 - **Open plan in editor** → Run `open docs/plans/<plan_filename>.md` to open the file in the user's default editor
 - **`/workflows:architecture`** → Call the /workflows:architecture command with the plan file path
 - **`/deepen-plan`** → Call the /deepen-plan command with the plan file path only after architecture improvement is complete and `architecture_ref` or a labeled handoff artifact has been recorded
+- **`/workflows:to-issues`** → Call `/workflows:to-issues` with the plan file path after architecture guidance is explicit; recommend this after `/deepen-plan`, but allow it directly after `/workflows:plan` when the user wants earlier backlog shaping
 - **Review and refine** → Load `document-review` skill.
 - **`/workflows:work`** → Call the /workflows:work command with the plan file path once the architecture artifact or explicit architecture handoff contract is available
 - **`/workflows:work` on remote** → Run `/workflows:work docs/plans/<plan_filename>.md &` after the architecture handoff is explicit so execution agents do not guess at boundaries
@@ -1321,6 +1334,7 @@ The plan document is a structured contract consumed by all downstream phases. He
 **`/workflows:architecture`** reads:
 - Problem Narrative, User Story, Success Criteria, and Architectural Context -- the WHY/WHERE contract it must preserve
 - Execution shape plus execution packets -- identifies the deepening candidates and boundaries that need structural clarification
+- `commands/workflows/references/vertical-slice-architecture.md` -- supplies the feature-home, shared/global, and context-tier contract
 - Constitution Alignment / waivers / brainstorm decisions -- keeps architecture decisions inside approved project guardrails
 - **Must write**: a dedicated artifact in `docs/architecture/` plus an `architecture_ref` back into the plan
 
@@ -1329,22 +1343,29 @@ The plan document is a structured contract consumed by all downstream phases. He
 - Success criteria -- validates they are testable and complete
 - Architectural Context -- uses it to ground research in the right part of the system
 - `tdd` frontmatter and `## TDD & Evidence Contract` -- preserves the effective Ralph/default loop, evidence requirements, and any justified exceptions
-- `architecture_ref` or the latest matching `docs/architecture/` artifact -- uses deepening candidates, deletion-test decisions, interface test surfaces, seams, adapters, and contracts to guide hardening
+- `architecture_ref` or the latest matching `docs/architecture/` artifact -- uses deepening candidates, feature homes, shared/global decisions, context tiers, deletion-test decisions, interface test surfaces, seams, adapters, and contracts to guide hardening
 - **Must preserve**: Problem Narrative, User Story, and handoff contract unchanged
+
+**`/workflows:to-issues`** reads:
+- plan WHY artifacts and execution packets -- these become the ticket set's purpose and base work units
+- `architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract -- supplies feature homes, shared/global boundaries, context tiers, and drift checks for ticket shaping
+- `tdd` frontmatter + `## TDD & Evidence Contract` -- preserves evidence expectations inside each ticket packet
+- **Must write**: a local ticket set in `docs/tickets/` plus `tickets_ref` or a labeled related-artifact link back into the plan
 
 **`/workflows:work`** reads:
 - **Problem Narrative & User Story** -- the orchestrator uses these to validate task outcomes make sense in context, not just pass tests
 - **Architectural Context** -- feeds directly into `{{ARCHITECTURAL_CONTEXT}}` in each execution agent's prompt loaded from the canonical execution-agent template. This is WHY grounded arch context matters -- every subagent gets system-level awareness
-- **Implementation phases & tasks** -- the execution chunk structure (Files, Depends on, Success criteria, Test command)
+- **Implementation phases & tasks** -- the execution chunk structure (Feature home, Files, Depends on, Success criteria, Test command)
 - **Success Criteria** -- the orchestrator checks final outcomes against these, not just individual task passes
 - **`constitution_version` / `constitution_waivers` / Constitution Alignment** -- the execution phase enforces repo-wide guardrails and knows which exceptions were approved
 - **`brainstorm_ref`** -- if present, the orchestrator can read the original brainstorm for additional context
+- **`commands/workflows/references/vertical-slice-architecture.md` + architecture handoff** -- keep business logic in the feature home while shared/global abstractions stay shared when DRY/SOLID requires it
 
 **`/workflows:review`** reads:
 - **Problem Narrative & User Story** -- the frame for evaluating whether the implementation solves the right problem
 - **Success Criteria** -- the measurable outcomes that the review should verify
 - **Architectural Context** -- used to evaluate whether the implementation respects system boundaries and integration points
-- **`architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract** -- supplies the architecture intent, deletion-test outcomes, interfaces, seams, adapters, and contracts that reviewers must verify or flag as drift
+- **`architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract** -- supplies the architecture intent, feature homes, shared/global boundary decisions, context tiers, deletion-test outcomes, interfaces, seams, adapters, and contracts that reviewers must verify or flag as drift
 - **`tdd` frontmatter + `## TDD & Evidence Contract`** -- review must verify the declared evidence exists and that any deviation from Ralph/unit+e2e is explicitly justified
 - **`execution_shape` + execution packets** -- review uses the chosen mode to judge whether the work was decomposed honestly and executed completely
 - **Constitution Alignment and waivers** -- used to distinguish approved exceptions from blocking constitution violations

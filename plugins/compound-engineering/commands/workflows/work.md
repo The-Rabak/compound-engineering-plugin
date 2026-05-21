@@ -1,7 +1,7 @@
 ---
 name: "workflows:work"
 description: Execute work plans while maintaining WHY tracing from problem narrative through user story to implementation. Grounds every subagent in purpose.
-argument-hint: "[plan file, specification, or todo file path] [--review-mode bulk|inline|both]"
+argument-hint: "[plan file, ticket file, specification, or todo file path] [--review-mode bulk|inline|both]"
 ---
 
 # Work Plan Execution Command
@@ -12,9 +12,9 @@ Execute a work plan while maintaining WHY tracing from problem narrative through
 
 ## Introduction
 
-This command takes a work document (plan, specification, or todo file) and executes it systematically using a **subagent orchestration model**. The orchestrator (this conversation) loads or adapts the plan into execution units and delegates each unit to a focused subagent. `vertical-slices` is the default execution shape, but `infra-track` and `fix-batch` are also valid when declared by the plan. Each subagent follows a standardized 4-phase protocol (understand, implement, self-review, report) defined in the execution agent prompt template.
+This command takes a work document (plan, ticket, specification, or todo file) and executes it systematically using a **subagent orchestration model**. The orchestrator (this conversation) loads or adapts the source into execution units and delegates each unit to a focused subagent. `vertical-slices` is the default execution shape, but `infra-track` and `fix-batch` are also valid when declared by the plan. When the input is a ticket file, that ticket becomes the primary execution packet and the parent plan/architecture artifacts provide deeper context instead of re-expanding the whole backlog. Each subagent follows a standardized 4-phase protocol (understand, implement, self-review, report) defined in the execution agent prompt template.
 
-**WHY-grounded execution:** Every subagent receives the plan's WHY context -- the problem narrative, user story, architectural context, the architecture handoff contract, and which success criterion their specific unit serves. This prevents implementation drift where technically correct code fails to deliver the user's actual need. The orchestrator is the guardian of WHY: it extracts purpose from the plan, threads it through every unit prompt, and validates that the combined output delivers the stated user story.
+**WHY-grounded execution:** Every subagent receives the source plan's WHY context -- the problem narrative, user story, architectural context, the architecture handoff contract, and which success criterion their specific unit serves. When execution starts from a ticket, the ticket's local context packet stays primary, while `plan_ref`, `tickets_ref`, and `architecture_ref` remain the deeper-dive path. This prevents implementation drift where technically correct code fails to deliver the user's actual need. The orchestrator is the guardian of WHY: it extracts purpose from the plan, threads it through every unit prompt, and validates that the combined output delivers the stated user story.
 
 ### Review Mode
 
@@ -36,27 +36,35 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
 
 ### Phase 1: Quick Start
 
-1. **Read Plan and Extract WHY + Guardrail Context**
+1. **Read the work document and extract WHY + guardrail context**
 
     - Read the work document completely
-    - **Extract WHY artifacts** from the plan (these ground everything that follows):
+    - If the input is a ticket file, first load `commands/workflows/references/ticket-execution-contract.md` and verify the ticket includes the required frontmatter and body sections. Stop and send the user back to `/workflows:to-issues` if the ticket contract is missing or malformed.
+    - If the input is a ticket file, extract:
+      - `plan_ref`, `tickets_ref`, `architecture_ref`, and `source_packet_ref`
+      - `feature_home`, `depends_on`, `dependency_type`, `files`, `test_command`, and `status`
+      - the compact packet in `## Local Context`
+      - the parent trace in `## Parent Refs` and `## Deeper-Dive Refs`
+    - If the input is a ticket file, load the parent plan and architecture artifact from the recorded refs before continuing. The ticket is the primary execution unit; the parent artifacts provide WHY and boundary context.
+    - **Extract WHY artifacts** from the parent plan (these ground everything that follows):
       - **Problem Narrative** -- why this work exists, what pain it solves
       - **User Story** -- who benefits and what outcome they get
       - **Architectural Context** -- how the solution fits in the system
       - **Success Criteria** -- measurable conditions that define "done"
       - **Execution shape** -- resolve it using `commands/workflows/references/execution-shape.md`
+      - **Feature-home ownership** -- for `vertical-slices`, identify the feature home each unit changes and what remains shared/global
       - **Unit tracing** -- each packet's `Serves`, `Consumers`, or equivalent purpose line showing what outcome it delivers or unlocks
       - **Constitution alignment** -- relevant principles, required approvals, and any approved waivers
       - **`tdd` frontmatter + `## TDD & Evidence Contract`** -- resolve the effective TDD contract using `commands/workflows/references/tdd-evidence-contract.md` (plan overrides local, `inherit` falls back, and no-local-config defaults to Ralph-driven `red-green-refactor` with unit + e2e evidence required)
-   - Check for `handoff:` frontmatter in the plan. If present, verify all flags are `true` (problem_narrative, user_story, architectural_context, success_criteria). If any are `false`, warn the user that WHY context is incomplete and suggest running `/workflows:brainstorm` or `/workflows:plan` first.
+    - Check for `handoff:` frontmatter in the parent plan. If present, verify all flags are `true` (problem_narrative, user_story, architectural_context, success_criteria). If any are `false`, warn the user that WHY context is incomplete and suggest running `/workflows:brainstorm` or `/workflows:plan` first.
    - If the resolved contract weakens Ralph/unit+e2e without a justified exception in the plan, stop and ask for the plan contract to be corrected before execution
    - If `docs/constitution.md` exists, read it and extract the active constitution version, applicable principles, execution baselines, and approval rules. If the plan lists `constitution_waivers`, honor only those explicit exceptions.
-   - If the plan has a `brainstorm_ref:` path, read that brainstorm document too for richer WHY context
-   - If the plan has an `architecture_ref:` path or `## Related Artifacts` entry, read that `docs/architecture/` artifact and extract the deletion test, interfaces as test surfaces, seams, adapters, contracts, deepening candidates, and downstream work/review guidance
-   - If no architecture artifact is recorded, assemble an explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and execution constraints. Tell the user this is a fallback and recommend `/workflows:architecture` if boundaries are still unsettled.
-   - Review any other references or links provided in the plan
+    - If the parent plan has a `brainstorm_ref:` path, read that brainstorm document too for richer WHY context
+     - If the parent plan has an `architecture_ref:` path, the ticket has an `architecture_ref`, or `## Related Artifacts` points to `docs/architecture/`, read that artifact and extract feature homes, shared/global decisions, context tiers, drift checks, deletion tests, interfaces as test surfaces, seams, adapters, contracts, deepening candidates, and downstream work/review guidance
+     - If no architecture artifact is recorded, assemble an explicit architecture handoff contract from the parent plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, execution constraints, and `commands/workflows/references/vertical-slice-architecture.md`. Tell the user this is a fallback and recommend `/workflows:architecture` if boundaries are still unsettled.
+    - Review any other references or links provided in the plan or ticket
    - If the constitution requires explicit approval for any part of the planned work (for example, risky writes, schema changes, auth changes, or scope expansions), surface that before execution starts
-     - If the document is not already in a declared execution shape, treat it as **legacy input**. Before spawning subagents, adapt it into execution units in STATE.md. If that adaptation materially changes scope or ordering, ask the user to approve the adapted unit backlog before proceeding.
+      - If the document is not already in a declared execution shape and is not a valid ticket artifact, treat it as **legacy input**. Before spawning subagents, adapt it into execution units in STATE.md. If that adaptation materially changes scope or ordering, ask the user to approve the adapted unit backlog before proceeding.
     - If anything is unclear or ambiguous, ask clarifying questions now
    - Get user approval to proceed
    - **Do not skip this** - better to ask questions now than build the wrong thing
@@ -106,7 +114,8 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
    - You plan to switch between branches frequently
 
 3. **Preview Unit Breakdown**
-   - Mentally identify the major execution units from the plan
+   - Mentally identify the major execution units from the source document
+   - If the input is a ticket file, preview exactly one execution unit unless the user explicitly asks to re-split it
    - Note any questions about dependencies or scope
    - The formal unit decomposition happens in Phase 2 Step 4 (STATE.md), which is the persistent record of progress
    - TodoWrite can be used for in-conversation progress tracking if helpful, but STATE.md is the source of truth
@@ -117,13 +126,14 @@ Phase 2 is where the orchestrator (this conversation) resolves the plan's execut
 
 #### Step 1: Validate Plan Readiness
 
-Before executing, validate four things: **structural readiness** (the selected execution shape is honest and its units are testable), **WHY readiness** (the plan carries purpose context), **TDD readiness** (the execution contract is explicit and enforceable), and **guardrail readiness** (repo-wide rules are visible and actionable).
+Before executing, validate four things: **structural readiness** (the selected execution shape or ticket contract is honest and its units are testable), **WHY readiness** (the plan carries purpose context), **TDD readiness** (the execution contract is explicit and enforceable), and **guardrail readiness** (repo-wide rules are visible and actionable).
 
 **Structural readiness** -- first resolve `execution_shape` using `commands/workflows/references/execution-shape.md`, then verify the units for that mode:
 
-- **`vertical-slices`** -- slice type, serves, demo scenario, scope fence, files, success criteria, validation command, dependencies, dependency type
+- **`vertical-slices`** -- slice type, serves, demo scenario, feature home, scope fence, files, success criteria, validation command, dependencies, dependency type
 - **`infra-track`** -- capability enabled, consumers / downstream work unlocked, scope, files, risk / rollback, success criteria, validation command, dependencies
 - **`fix-batch`** -- problem, repro / expected outcome, files, success criteria, validation command, dependencies
+- **Ticket input** -- valid `ticket-execution-contract.md` frontmatter/body, parent refs, feature home, scope fence, acceptance criteria, test command, and compact local context
 - **Default rule** -- if `execution_shape` is missing, assume `vertical-slices`
 - **Anti-coercion rule** -- do not force infra or fix-batch work into slices if that would create fake verticality
 
@@ -150,7 +160,7 @@ Before executing, validate four things: **structural readiness** (the selected e
 - **Success Criteria** -- present at plan level (not just unit level)
 - **Unit tracing** -- each execution unit has a purpose line connecting it to the user story or explicit enabling outcome
 
-If the plan lacks structural details, or if no architecture artifact / handoff contract can explain the boundaries, refuse to proceed and suggest running `/workflows:architecture` first if the boundaries are still fuzzy, then `/deepen-plan`, or manually breaking down the plan into execution units.
+If the plan lacks structural details, the ticket lacks the ticket execution contract, or no architecture artifact / handoff contract can explain the boundaries, refuse to proceed and suggest running `/workflows:architecture` first if the boundaries are still fuzzy, then `/deepen-plan` or `/workflows:to-issues`, or manually repairing the execution packet.
 
 If the plan lacks the `tdd` block or `## TDD & Evidence Contract`, or if the resolved contract is ambiguous, refuse to proceed and suggest `/workflows:plan` or `/deepen-plan` to repair the execution contract before spawning subagents.
 
@@ -162,13 +172,13 @@ If the plan lacks WHY artifacts, the orchestrator should **construct minimal WHY
 
 #### Step 2: Check for Resumable Session
 
-Before creating a new session, check for existing incomplete sessions for the same plan:
+Before creating a new session, check for existing incomplete sessions for the same plan or ticket:
 
 ```bash
 ls docs/execution-sessions/work-*/STATE.md 2>/dev/null
 ```
 
-If a previous session exists for the same plan file and has `status: in_progress`:
+If a previous session exists for the same source artifact and has `status: in_progress`:
 
 - Ask the user: "Found incomplete session `[session_id]` for this plan. Resume where you left off, or start fresh?"
 - **If resume**: Read STATE.md, load the WHY Context section plus the Architecture Handoff section, skip completed units, load the learnings brief, and continue from `current_unit`
@@ -189,7 +199,11 @@ Create a `STATE.md` file in the session directory:
 
 ```markdown
 ---
+source_type: [plan | ticket | specification | todo]
 plan_file: [path to plan]
+ticket_file: [path to ticket, if applicable]
+tickets_ref: [path to ticket index, if applicable]
+source_packet_ref: [plan packet ref or ticket packet ref]
 brainstorm_ref: [path to brainstorm, if available]
 started: [ISO timestamp]
 status: in_progress
@@ -224,6 +238,9 @@ session_id: [SESSION_ID]
 
 ### Architecture Handoff
 - Artifact: [docs/architecture/... path or "plan-derived handoff"]
+- Feature homes: [primary feature homes and who owns them]
+- Shared / global decisions: [what stays shared versus local]
+- Context tiers: [global, on-demand, ticket-local]
 - Deepening candidates to preserve: [list]
 - Deletion test: [what stays concrete vs what may be abstracted later]
 - Interfaces as test surfaces: [behavioral contracts]
@@ -243,9 +260,10 @@ _No learnings yet._
 
 #### Step 4: Load or Adapt Execution Units
 
-The orchestrator parses the plan and creates a list of execution units. Each unit is a self-contained packet of work defined by the selected execution shape. The orchestrator does the heavy lifting here:
+The orchestrator parses the source artifact and creates a list of execution units. Each unit is a self-contained packet of work defined by the selected execution shape or the ticket contract. The orchestrator does the heavy lifting here:
 
 - **Prefer plan-defined units directly** -- if the plan already declares a coherent execution shape, execute those packets as written
+- **Prefer ticket-defined unit directly** -- if the input is a valid ticket artifact, execute that one ticket as one unit and do not re-split it unless the user explicitly approves a change
 - **Adapt legacy phase/task plans into units before coding** -- do not execute raw task lists directly once the shape contract is available
 - **Break oversized units** into smaller units if needed (each unit should be completable in one subagent session)
 - **Preserve WHY tracing** -- when splitting a unit, each resulting unit inherits or refines the parent unit's purpose line. Never create an orphan unit with no connection to the user story.
@@ -276,15 +294,17 @@ Apply the shared `Reference Template Loading` protocol from `commands/workflows/
 - Fill the placeholders from the loaded template only. Do not reconstruct the prompt from memory, paraphrase it into a shorter prompt, or drop mandatory sections.
 - If the template cannot be loaded, quoted, or fully populated without unresolved `{{PLACEHOLDER}}` values, stop and resolve the missing context before spawning the subagent.
 
-- **{{UNIT_TITLE}}** and **{{UNIT_DESCRIPTION}}** -- from the plan
-- **{{UNIT_KIND}}** -- from the plan (`tracer-bullet`, `infra-packet`, `fix-item`, etc.)
+- **{{UNIT_TITLE}}** and **{{UNIT_DESCRIPTION}}** -- from the plan packet or ticket artifact
+- **{{UNIT_KIND}}** -- from the plan or ticket (`tracer-bullet`, `expansion`, `hardening`, `infra-packet`, `fix-item`, etc.)
 - **{{OUTCOME_SCENARIO}}** -- the observable behavior or enabling outcome this unit proves
 - **{{UNIT_SCOPE}}** -- what the unit owns and excludes
 - **{{UNIT_SCOPE_FENCE}}** -- the boundary that keeps the unit thin
-- **{{FILE_LIST}}** -- files to create/modify from the plan
+- **{{FILE_LIST}}** -- files to create/modify from the plan or ticket
 - **{{SUCCESS_CRITERIA}}** -- checkboxes that define "done"
 - **{{VALIDATION_COMMAND}}** -- how to verify the unit works
 - **{{COMPLETED_DEPENDENCIES}}** -- list of already-completed units this depends on
+- **{{PARENT_REFS}}** -- plan, ticket set, architecture, and source packet refs that anchor this unit
+- **{{TICKET_LOCAL_CONTEXT}}** -- the ticket-local execution packet when the source is a ticket; otherwise a compact packet derived from the plan unit
 - **{{WHY_CONTEXT}}** -- the purpose grounding block (constructed by orchestrator):
   ```
   ## Why This Unit Exists
@@ -410,6 +430,7 @@ status: [completed|failed]
 attempt_count: [n]
 domains: [backend, frontend, testing, database, etc.]
 plan_file: [path]
+ticket_file: [path, if applicable]
 session_id: [SESSION_ID]
 ---
 
@@ -483,7 +504,10 @@ If the `--review-mode` argument is `inline` or `both`, perform a two-stage inlin
 
 **4. Update learnings brief** -- add new learnings from this unit, tagged by domain, deduplicated against existing learnings
 
-**5. Update plan file** -- check off completed items (`[ ]` to `[x]`) in the original plan document
+**5. Update source work artifact** -- keep the execution source honest:
+   - plan input: check off completed items (`[ ]` to `[x]`) in the original plan document
+   - ticket input: update the ticket `status` field (`ready` -> `completed` or `blocked`) and preserve parent refs
+   - if both a ticket and plan backlog can be updated safely, update both without inventing new status fields
 
 **6. Regression guard** -- run test commands from ALL previously completed tasks. If any regress:
    - Log the regression in the current task's session file

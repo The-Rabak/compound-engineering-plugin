@@ -43,6 +43,13 @@ Review code as something a tired teammate must safely understand and change six 
 - **Dependencies should point inward to stable policy.** Flag domain logic that depends directly on volatile frameworks, transport details, persistence mechanics, or environment glue without a protective seam.
 - **Domain models must stay pure.** Flag I/O, presentation, serialization, or path-munging logic inside domain dataclasses. That work belongs in the application or adapter layer. A `to_dict()` that redacts file paths from raw absolute values is a finding.
 
+### Feature-home boundaries
+- **Business logic should stay in its declared feature home.** Flag changes that scatter one feature's policy across generic horizontal directories with no clear owning slice.
+- **Shared / global code must earn its place.** Reusable primitives, base classes, exceptions, design-system elements, and external adapters may live outside the feature home, but only when their reason to change is genuinely cross-feature.
+- **Do not bless copy-pasted shared abstractions.** If multiple feature homes now carry the same helper, adapter wrapper, base exception, or utility policy, raise it as duplication drift.
+- **Do not bless premature extraction either.** A `shared/helpers/*`, `common/*`, or `utils/*` addition used by one feature is usually a boundary smell, not an architectural win.
+- **A real vertical slice may span backend, frontend, and tests.** Do not flag that as horizontal sprawl by itself; flag it only when the business behavior has no clear owning feature home.
+
 ### Dead weight
 - **Duplicate code blocks are findings at P1.** Two identical class definitions, two identical method bodies, two identical property definitions in the same file — these survive only because nobody noticed. Each duplicate is a future drift point where one copy changes and the other doesn't.
 - **Imported-but-never-instantiated types are dead code.** A typed dataclass like `FusionCandidate` that is imported in the use case but whose `__init__` is never called — the pipeline operates on raw dicts instead. Either use the type throughout or delete it. Flag the gap.
@@ -80,6 +87,7 @@ Review code as something a tired teammate must safely understand and change six 
   - what makes the code harder to understand or change,
   - why that matters in this code path,
   - the smallest credible fix.
+- When a finding is about boundaries, say whether it is **feature-home drift** or **shared/global drift**.
 - Favor a short list of high-signal findings over an exhaustive style sermon.
 - **When structural bloat is discovered, file a P2/P3 with a deferral note.** "Split this file next session" is a valid finding when the code is working correctly.
 

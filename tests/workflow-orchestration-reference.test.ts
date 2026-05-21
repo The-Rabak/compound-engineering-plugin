@@ -34,6 +34,14 @@ describe("workflow orchestration references", () => {
       "references",
       "execution-shape.md",
     )
+    const sliceArchitecture = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "vertical-slice-architecture.md",
+    )
 
     expect(orchestration).toContain("## Reference Template Loading")
     expect(orchestration).toContain("## Named Agent Dispatch")
@@ -51,6 +59,9 @@ describe("workflow orchestration references", () => {
     expect(executionShape).toContain("infra-track")
     expect(executionShape).toContain("fix-batch")
     expect(executionShape).toContain("## Plan shape")
+    expect(executionShape).toContain("Feature home")
+    expect(sliceArchitecture).toContain("## Shared / global rule")
+    expect(sliceArchitecture).toContain("## Context tiers")
   })
 
   test("plan, deepen, work, and review reference the shared orchestration rules instead of duplicating them", async () => {
@@ -66,6 +77,13 @@ describe("workflow orchestration references", () => {
       "compound-engineering",
       "commands",
       "deepen-plan.md",
+    )
+    const architecturePrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "architecture.md",
     )
     const workPrompt = await readRepoFile(
       "portable",
@@ -187,6 +205,13 @@ describe("workflow orchestration references", () => {
       "commands",
       "deepen-plan.md",
     )
+    const architecturePrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "architecture.md",
+    )
     const workPrompt = await readRepoFile(
       "portable",
       "compound-engineering",
@@ -195,8 +220,12 @@ describe("workflow orchestration references", () => {
       "work.md",
     )
 
-    for (const prompt of [planPrompt, deepenPrompt, workPrompt]) {
+    for (const prompt of [planPrompt, architecturePrompt, deepenPrompt, workPrompt]) {
       expect(prompt).toContain("commands/workflows/references/execution-shape.md")
+    }
+
+    for (const prompt of [planPrompt, architecturePrompt, deepenPrompt, workPrompt]) {
+      expect(prompt).toContain("commands/workflows/references/vertical-slice-architecture.md")
     }
 
     expect(planPrompt).toContain("execution_shape:")

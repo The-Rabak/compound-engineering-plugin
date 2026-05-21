@@ -5,6 +5,44 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.11.0] - 2026-05-20
+
+### Added
+
+- **`focused-ticket-priming` skill** -- New ticket-packaging skill that converts one execution packet into one compact ticket-local execution packet with parent refs, feature-home ownership, and evidence commands.
+- **`ticket-flow-auditor` agent** -- New reusable reviewer that audits ticket sets after `/workflows:to-issues` and checks plan/ticket/implementation alignment during `/workflows:review`.
+- **Ticket execution contract** -- Added a shared `ticket-execution-contract.md` reference so ticket files now have one exact frontmatter/body schema across ticketization, execution, and review.
+
+### Changed
+
+- **`/workflows:to-issues`** -- Now loads the focused ticket-priming skill, writes tickets against the shared ticket execution contract, and closes with an explicit `ticket-flow-auditor` review sweep.
+- **`/workflows:work`** -- Now accepts ticket artifacts directly, preserves `plan_ref` / `tickets_ref` / `architecture_ref`, and treats one ticket as one pre-scoped execution unit.
+- **`/workflows:review`** -- Now reads ticket-set artifacts, protects `docs/tickets/`, and runs `ticket-flow-auditor` as a mandatory reviewer.
+
+## [4.10.0] - 2026-05-20
+
+### Added
+
+- **`/workflows:to-issues` command** -- New ticketization workflow that converts plans into local `docs/tickets/` artifacts with compact ticket-local context, explicit `tickets_ref` linkage, and a final ticket-set review sweep before execution.
+
+### Changed
+
+- **Ticketization contract** -- Added a shared `ticketization-contract.md` reference so the new `/workflows:to-issues` step uses a stable contract for output paths, local-artifact-first behavior, context packaging, and blocker classification.
+- **Workflow order** -- The recommended delivery chain now runs `/workflows:to-issues` between `/deepen-plan` and `/workflows:work` so execution can target smaller ticket artifacts instead of the full plan when appropriate.
+
+## [4.9.0] - 2026-05-20
+
+### Added
+
+- **`/brownfield-maintenance` command** -- New on-demand maintenance workflow for inherited repos that need an AI-layer audit, gap list, and safe fill-gap pass outside the canonical feature delivery flow.
+
+### Changed
+
+- **Vertical-slice architecture contract** -- Added a shared `vertical-slice-architecture.md` workflow reference so planning, architecture, deepening, work, and review now agree on feature homes, shared/global boundaries, and post-plan context tiers.
+- **`/workflows:architecture` handoff shape** -- The architecture artifact contract now requires feature-home ownership, shared/global placement decisions, context tiers, and drift checks in addition to the existing deletion-test and seam/adapter guidance.
+- **Execution packet expectations** -- `vertical-slices` packets and execution prompts now surface the feature home explicitly so downstream execution stays aligned with the module boundary instead of only the file list.
+- **Review boundary enforcement** -- `uncle-bob`, `/workflows:architecture`, and `/workflows:review` now explicitly flag feature-home drift and unjustified shared/global extraction drift.
+
 ## [4.7.0] - 2026-05-16
 
 ### Added
