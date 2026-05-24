@@ -34,6 +34,8 @@ describe("ticket flow review contract", () => {
     expect(agent).toContain("## Workflow")
     expect(agent).toContain("ticket-set audit")
     expect(agent).toContain("implementation audit")
+    expect(agent).toContain("execution-batch partitioning")
+    expect(agent).toContain("Batch safety notes")
     expect(reviewPrompt).toContain("docs/tickets/*/index.md")
     expect(reviewPrompt).toContain("`docs/tickets/**/*.md`")
     expect(reviewPrompt).toContain("Ticket Set:")
