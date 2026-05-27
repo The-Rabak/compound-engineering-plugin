@@ -1,313 +1,321 @@
 ---
 name: triage
-description: Triage and categorize findings for the CLI todo system
-argument-hint: '[findings list or source type]'
+description: Triage review todos, resolve open decisions one-by-one, then orchestrate execution-agent runs with strict per-item validation
+argument-hint: '[todo range or scope]'
 platforms:
   claude:
     disable-model-invocation: true
 ---
 
-- First set the /model to Haiku
-- Then read all pending todos in the todos/ directory
+- Read all target todo files before asking decisions.
+- Keep main context as orchestration + validation space; execution agents do implementation.
 
-Present all findings, decisions, or issues here one by one for triage. The goal is to go through each item and decide whether to add it to the CLI todo system.
+Use this command when you need to process review todos end-to-end:
 
-**IMPORTANT: DO NOT CODE ANYTHING DURING TRIAGE!**
+1. triage each todo,
+2. resolve open questions with the user,
+3. write decisions into todo files,
+4. execute todos one at a time via execution-agent with full context packets,
+5. validate each result independently,
+6. close statuses cleanly.
+
+## Core Rule Set
+
+**IMPORTANT: During triage/decision phases, DO NOT implement code fixes.**
 
 This command is for:
 
-- Triaging code review findings
-- Processing security audit results
-- Reviewing performance analysis
-- Handling any other categorized findings that need tracking
+- Review-todo triage and decision closure
+- Converting vague todos into executable units
+- Sequential execution-agent dispatch with rich context
+- Independent orchestration-side validation and status control
 
 ## Workflow
 
-### Step 1: Present Each Finding
+### Step 1: Bootstrap and Scope
 
-For each finding, present in this format:
+1. Load project context and memory first.
+2. Identify target todos from user scope (range, priority, status, or "all open").
+3. Build a deterministic queue sorted by todo id.
 
-```
----
-Issue #X: [Brief Title]
+Recommended checks:
 
-Severity: 🔴 P1 (CRITICAL) / 🟡 P2 (IMPORTANT) / 🔵 P3 (NICE-TO-HAVE)
-
-Category: [Security/Performance/Architecture/Bug/Feature/etc.]
-
-Description:
-[Detailed explanation of the issue or improvement]
-
-Location: [file_path:line_number]
-
-Problem Scenario:
-[Step by step what's wrong or could happen]
-
-Proposed Solution:
-[How to fix it]
-
-Estimated Effort: [Small (< 2 hours) / Medium (2-8 hours) / Large (> 8 hours)]
-
----
-Do you want to add this to the todo list?
-1. yes - create todo file
-2. next - skip this item
-3. custom - modify before creating
+```bash
+rg '^status:\s*(pending|in_progress|ready)' todos/*.md
 ```
 
-### Step 2: Handle User Decision
+### Step 2: Read and Triage All Target Todos
 
-**When user says "yes":**
+Read each todo fully before asking any question. Capture:
 
-1. **Update existing todo file** (if it exists) or **Create new filename:**
+- Problem statement quality
+- Missing decisions or unresolved options
+- Dependency and ordering concerns
+- Validation expectations
+- Coupled files/tests/docs likely needed for execution
 
-   If todo already exists (from code review):
+Present triage output per todo in this format:
 
-   - Rename file from `{id}-pending-{priority}-{desc}.md` → `{id}-ready-{priority}-{desc}.md`
-   - Update YAML frontmatter: `status: pending` → `status: ready`
-   - Keep issue_id, priority, and description unchanged
+```markdown
+---
+Todo #NNN: [Title]
 
-   If creating new todo:
+Status: [pending/in_progress/ready]
+Priority: [p1/p2/p3]
+Dependencies: [none/list]
 
-   ```
-   {next_id}-ready-{priority}-{brief-description}.md
-   ```
+Open Decisions:
+1. [Decision question]
+2. [Decision question]
 
-   Priority mapping:
+Execution Risks:
+- [Risk]
 
-   - 🔴 P1 (CRITICAL) → `p1`
-   - 🟡 P2 (IMPORTANT) → `p2`
-   - 🔵 P3 (NICE-TO-HAVE) → `p3`
-
-   Example: `042-ready-p1-transaction-boundaries.md`
-
-2. **Update YAML frontmatter:**
-
-   ```yaml
-   ---
-   status: ready # IMPORTANT: Change from "pending" to "ready"
-   priority: p1 # or p2, p3 based on severity
-   issue_id: "042"
-   tags: [category, relevant-tags]
-   dependencies: []
-   ---
-   ```
-
-3. **Populate or update the file:**
-
-   ```yaml
-   # [Issue Title]
-
-   ## Problem Statement
-   [Description from finding]
-
-   ## Findings
-   - [Key discoveries]
-   - Location: [file_path:line_number]
-   - [Scenario details]
-
-   ## Proposed Solutions
-
-   ### Option 1: [Primary solution]
-   - **Pros**: [Benefits]
-   - **Cons**: [Drawbacks if any]
-   - **Effort**: [Small/Medium/Large]
-   - **Risk**: [Low/Medium/High]
-
-   ## Recommended Action
-   [Filled during triage - specific action plan]
-
-   ## Technical Details
-   - **Affected Files**: [List files]
-   - **Related Components**: [Components affected]
-   - **Database Changes**: [Yes/No - describe if yes]
-
-   ## Resources
-   - Original finding: [Source of this issue]
-   - Related issues: [If any]
-
-   ## Acceptance Criteria
-   - [ ] [Specific success criteria]
-   - [ ] Tests pass
-   - [ ] Code reviewed
-
-   ## Work Log
-
-   ### {date} - Approved for Work
-   **By:** Claude Triage System
-   **Actions:**
-   - Issue approved during triage session
-   - Status changed from pending → ready
-   - Ready to be picked up and worked on
-
-   **Learnings:**
-   - [Context and insights]
-
-   ## Notes
-   Source: Triage session on {date}
-   ```
-
-4. **Confirm approval:** "✅ Approved: `{new_filename}` (Issue #{issue_id}) - Status: **ready** → Ready to work on"
-
-**When user says "next":**
-
-- **Delete the todo file** - Remove it from todos/ directory since it's not relevant
-- Skip to the next item
-- Track skipped items for summary
-
-**When user says "custom":**
-
-- Ask what to modify (priority, description, details)
-- Update the information
-- Present revised version
-- Ask again: yes/next/custom
-
-### Step 3: Continue Until All Processed
-
-- Process all items one by one
-- Track using TodoWrite for visibility
-- Don't wait for approval between items - keep moving
-
-### Step 4: Final Summary
-
-After all items processed:
-
-````markdown
-## Triage Complete
-
-**Total Items:** [X] **Todos Approved (ready):** [Y] **Skipped:** [Z]
-
-### Approved Todos (Ready for Work):
-
-- `042-ready-p1-transaction-boundaries.md` - Transaction boundary issue
-- `043-ready-p2-cache-optimization.md` - Cache performance improvement ...
-
-### Skipped Items (Deleted):
-
-- Item #5: [reason] - Removed from todos/
-- Item #12: [reason] - Removed from todos/
-
-### Summary of Changes Made:
-
-During triage, the following status updates occurred:
-
-- **Pending → Ready:** Filenames and frontmatter updated to reflect approved status
-- **Deleted:** Todo files for skipped findings removed from todos/ directory
-- Each approved file now has `status: ready` in YAML frontmatter
-
-### Next Steps:
-
-1. View approved todos ready for work:
-   ```bash
-   ls todos/*-ready-*.md
-   ```
-````
-
-2. Start work on approved items:
-
-   ```bash
-   /resolve_todo_parallel  # Work on multiple approved items efficiently
-   ```
-
-3. Or pick individual items to work on
-
-4. As you work, update todo status:
-   - Ready → In Progress (in your local context as you work)
-   - In Progress → Complete (rename file: ready → complete, update frontmatter)
-
+Initial Recommendation:
+- [Suggested choice and why]
+---
 ```
 
-## Example Response Format
+### Step 3: Resolve Open Decisions (One Question at a Time)
 
+Ask only one question at a time. Do not batch decisions.
+
+Decision prompt format:
+
+```markdown
+Decision for Todo #NNN:
+[Clear question]
+
+Recommended: [option]
+1. [option A]
+2. [option B]
+3. [option C]
 ```
 
----
+Rules:
 
-Issue #5: Missing Transaction Boundaries for Multi-Step Operations
+- Wait for explicit answer before asking next question.
+- If user gives freeform decision, normalize it and confirm in one sentence.
+- No implementation starts until decisions for that todo are resolved.
 
-Severity: 🔴 P1 (CRITICAL)
+### Step 4: Write Decisions Back into Todo Files
 
-Category: Data Integrity / Security
+Update todo files immediately after each resolved decision.
 
-Description: The google_oauth2_connected callback in GoogleOauthCallbacks concern performs multiple database operations without transaction protection. If any step fails midway, the database is left in an inconsistent state.
+Expected updates:
 
-Location: app/Services/OAuthService.php:13-50
+1. Add/refresh `## Recommended Action`
+2. Append `## Work Log` entry with decision outcome
+3. Keep status accurate:
+   - stays `pending` after triage-only updates
+   - moves to `in_progress` when execution starts
+   - moves to `done` only after independent validation passes
 
-Problem Scenario:
+Work log template:
 
-1. User.update succeeds (email changed)
-2. Account.save! fails (validation error)
-3. Result: User has changed email but no associated Account
-4. Next login attempt fails completely
+```markdown
+### YYYY-MM-DD - Triage decisions recorded
 
-Operations Without Transaction:
+**By:** @user
 
-- User confirmation (line 13)
-- Waitlist removal (line 14)
-- User profile update (line 21-23)
-- Account creation (line 28-37)
-- Avatar attachment (line 39-45)
-- Journey creation (line 47)
+**Actions:**
+- [Decision 1 captured]
+- [Decision 2 captured]
 
-Proposed Solution: Wrap all operations in ApplicationRecord.transaction do ... end block
+**Learnings:**
+- [Why this direction was chosen]
+```
 
-Estimated Effort: Small (30 minutes)
+### Step 5: Build an Execution Packet per Todo
 
----
+Before launching execution-agent, prepare a full context packet. Do not send minimal prompts.
 
-Do you want to add this to the todo list?
+Every packet must include:
 
-1. yes - create todo file
-2. next - skip this item
-3. custom - modify before creating
+- Repository path and branch
+- Exact todo file path and title
+- Goal and acceptance criteria
+- Resolved decisions (explicitly listed)
+- Scope fence (what not to change)
+- Likely files and tests
+- Validation expectations
+- Reporting contract (what execution-agent must return)
 
+Execution packet skeleton:
+
+```markdown
+AGENT_TEMPLATE loaded via local agent repository. Follow exactly.
+
+Repository: [path]
+Branch: [branch]
+
+## Your Unit
+Todo file: [path]
+Title: [title]
+Goal: [goal]
+
+## Decisions (Final)
+- [decision]
+- [decision]
+
+## Architecture Handoff
+Acceptance criteria:
+1. [...]
+2. [...]
+
+Scope fence:
+- [...]
+- [...]
+
+## Likely Files
+- [file]
+- [file]
+
+## Validation Contract
+- run/update tests relevant to this todo
+- report red/green/post-refactor evidence
+- provide changed files and rationale
+```
+
+### Step 6: Execute One Todo at a Time via execution-agent
+
+For each todo in queue:
+
+1. Set todo status to `in_progress`
+2. Dispatch execution-agent in sync mode with full packet
+3. Review execution report
+4. Validate independently from orchestration context
+5. If validation fails, keep `in_progress`, refine packet, and re-run
+6. On success, set status to `done` and log completion evidence in todo
+
+Do not run parallel execution agents for this workflow unless user asks for parallelism.
+
+### Step 7: Orchestration-Side Validation (Mandatory)
+
+Never rely only on subagent self-report. Orchestrator validates.
+
+Validation checklist per todo:
+
+- targeted tests pass for changed area
+- expected files actually changed
+- scope fence was respected
+- todo acceptance criteria now true
+- todo status/frontmatter/log updated
+
+Completion log template:
+
+```markdown
+### YYYY-MM-DD - Execution completed
+
+**Actions:**
+- [Implemented change summary]
+
+**Validation:**
+- `command 1`
+- `command 2`
+```
+
+### Step 8: Final Sweep and Completion Report
+
+After all todos processed:
+
+1. Check no target todo remains `pending`/`in_progress`
+2. Report done/incomplete counts
+3. List any blocked items with exact blocker
+
+Final report format:
+
+```markdown
+## Triage + Execution Complete
+
+**Total Targeted:** [X]
+**Done:** [Y]
+**Still Open:** [Z]
+
+### Done
+- [todo-id] [title]
+
+### Still Open / Blocked
+- [todo-id] [reason]
+
+### Validation Run
+- [key command]
+- [key command]
+```
+
+## Example Interaction Flow
+
+```markdown
+Todo #057 has one open decision: auth hardening now vs defer.
+Recommendation: defer auth to next phase and document deployment constraint.
+
+Which direction do you want?
+1. Defer auth now and document constraints (Recommended)
+2. Implement auth hardening now
+```
+
+Then:
+
+```markdown
+Recorded decision in `todos/057-...md`.
+Now dispatching execution-agent for todo 057 with full packet.
+```
+
+Then:
+
+```markdown
+Todo 057 implemented and validated.
+Status updated to done.
+Proceeding to todo 058.
 ```
 
 ## Important Implementation Details
 
-### Status Transitions During Triage
+### Status Discipline
 
-**When "yes" is selected:**
-1. Rename file: `{id}-pending-{priority}-{desc}.md` → `{id}-ready-{priority}-{desc}.md`
-2. Update YAML frontmatter: `status: pending` → `status: ready`
-3. Update Work Log with triage approval entry
-4. Confirm: "✅ Approved: `{filename}` (Issue #{issue_id}) - Status: **ready**"
+- `pending`: triaged but not executing
+- `in_progress`: actively executing/iterating
+- `done`: validated and closed
+- `blocked`: cannot continue; include concrete blocker
 
-**When "next" is selected:**
-1. Delete the todo file from todos/ directory
-2. Skip to next item
-3. No file remains in the system
+### Context Discipline
 
-### Progress Tracking
+- Main context owns orchestration, decisions, validation, and status integrity.
+- execution-agent owns code edits for one scoped todo at a time.
+- Do not duplicate the same implementation work in both contexts.
 
-Every time you present a todo as a header, include:
-- **Progress:** X/Y completed (e.g., "3/10 completed")
-- **Estimated time remaining:** Based on how quickly you're progressing
-- **Pacing:** Monitor time per finding and adjust estimate accordingly
+### Decision Discipline
 
-Example:
-```
+- Ask one decision question at a time.
+- Write answers into todo immediately.
+- Never "assume defaults" if user decision is explicitly required.
 
-Progress: 3/10 completed | Estimated time: ~2 minutes remaining
+### Execution Prompt Quality Bar
 
-```
+Bad packet:
+- "Implement todo 059"
 
-### Do Not Code During Triage
+Good packet:
+- includes decisions, acceptance criteria, scope fence, likely files, and tests.
 
-- ✅ Present findings
-- ✅ Make yes/next/custom decisions
-- ✅ Update todo files (rename, frontmatter, work log)
-- ❌ Do NOT implement fixes or write code
-- ❌ Do NOT add detailed implementation details
-- ❌ That's for /resolve_todo_parallel phase
-```
+### Do / Don't
 
-When done give these options
+- ✅ Do triage all targeted todos before heavy execution when user asks for prep.
+- ✅ Do capture recommendations before asking decisions.
+- ✅ Do validate each completed todo independently.
+- ✅ Do keep todo files as source of truth.
+- ❌ Don't code during triage-only phase.
+- ❌ Don't ask multiple decisions in one message.
+- ❌ Don't mark done before orchestration-side validation.
+- ❌ Don't drop decision outcomes from todo logs.
+
+## Done Options
+
+When all targeted todos are processed, end with:
 
 ```markdown
 What would you like to do next?
 
-1. run /resolve_todo_parallel to resolve the todos
-2. commit the todos
-3. nothing, go chill
+1. commit and push current completed todo batch
+2. stop here
 ```

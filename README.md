@@ -2,7 +2,7 @@
 
 Portable source-of-truth and OpenCode-first release repository for the `compound-engineering` plugin.
 
-The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **33 specialized agents, 28 commands, and 26 skills** built from one portable definition set and emitted into multiple agent harnesses.
+The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **34 specialized agents, 28 commands, and 26 skills** built from one portable definition set and emitted into multiple agent harnesses.
 
 - **OpenCode** -- first-class authoring and daily-driver surface
 - **GitHub Copilot** -- second-class generated output
@@ -89,8 +89,8 @@ This repo is built for:
 | `/workflows:plan` | execution-ready HOW | chooses an execution shape, then breaks work into slices or other execution packets with dependencies and success criteria |
 | `/workflows:architecture` | architecture artifact in `docs/architecture/` | forces the important structural decisions into the open |
 | `/deepen-plan` | stronger plan with research and review input | hardens the selected execution backlog before execution |
-| `/workflows:to-issues` | local ticket set in `docs/tickets/` | turns one large plan into smaller vertical-slice execution packets by applying the focused ticket-priming skill, then gates the set with `ticket-flow-auditor` |
-| `/workflows:work` | executed implementation with session state and learnings | drives the Ralph-first build loop by executing either plan units or one ticket artifact through scoped subagents |
+| `/workflows:to-issues` | local ticket set in `docs/tickets/` | turns one large plan into smaller vertical-slice execution packets, builds a conservative dependency graph plus parallel-safe batches, then gates the set with `ticket-flow-auditor` |
+| `/workflows:work` | executed implementation with session state and learnings | drives the Ralph-first build loop by executing either plan units or the next safe batch from a ticket index through scoped subagents |
 | `/workflows:review` | purpose-aware review against code, architecture, tickets, and evidence | checks fit, not just syntax |
 | `/workflows:compound` | reusable solution docs and refreshed learnings | turns one solved problem into future leverage |
 
@@ -110,9 +110,9 @@ For most serious work:
 ### What is new in the ticketized flow
 
 - **`focused-ticket-priming`** turns one execution packet into one compact ticket-local packet instead of copying the whole plan into every task.
-- **`ticket-execution-contract.md`** gives ticket creation, ticket execution, and review one shared schema for frontmatter, sections, refs, and ticket status.
+- **`ticket-execution-contract.md`** gives ticket creation, ticket execution, and review one shared schema for frontmatter, sections, refs, ticket status, index batching, and resumable progress.
 - **`ticket-flow-auditor`** now closes `/workflows:to-issues` and also runs inside `/workflows:review`, so the same reviewer checks both pre-execution ticket quality and post-implementation ticket drift.
-- **Ticket-scoped `/workflows:work`** can execute one ticket file directly using `plan_ref`, `tickets_ref`, and `architecture_ref` as deeper-dive context instead of reloading the full backlog every time.
+- **Index-driven `/workflows:work`** can execute the next safe ticket batch directly from `docs/tickets/.../index.md`, using the index as the execution cursor and the selected ticket files as the local packets.
 
 ## Full updated workflow guidance
 
@@ -124,15 +124,15 @@ Use the full chain when you want the plugin to take a feature from vague intent 
 | 2 | `/workflows:plan` | `docs/plans/...` | Choose an honest execution shape and define packets with dependencies and evidence expectations. |
 | 3 | `/workflows:architecture` | `docs/architecture/...` | Lock feature homes, shared/global boundaries, context tiers, seams, and drift checks before hardening the plan. |
 | 4 | `/deepen-plan` | updated `docs/plans/...` | Stress-test the chosen backlog with research and reviewers until boundaries and execution packets are solid. |
-| 5 | `/workflows:to-issues` | `docs/tickets/.../index.md` + ticket files | Use `focused-ticket-priming` to shrink each packet into one execution-ready ticket, then let `ticket-flow-auditor` classify blocking gaps vs recommendations. |
-| 6 | `/workflows:work <ticket-file>` | `docs/execution-sessions/...` | Prefer one ticket file at a time. The ticket stays primary, and the parent plan plus architecture stay as deeper-dive refs. |
+| 5 | `/workflows:to-issues` | `docs/tickets/.../index.md` + ticket files | Use `focused-ticket-priming` to shrink each packet into one execution-ready ticket, then write the dependency graph, conservative execution batches, and `last_completed_batch` cursor into the index before `ticket-flow-auditor` signs off. |
+| 6 | `/workflows:work <ticket-index>` | `docs/execution-sessions/...` | Prefer the ticket index as the execution entrypoint. `/workflows:work` reads the next batch from the index, runs only that safe batch, and advances the index cursor when the batch is complete. |
 | 7 | `/workflows:review` | review findings | Review against code, architecture, ticket artifacts, and TDD evidence. This is where post-implementation ticket drift is checked. |
 | 8 | `/workflows:compound` | `docs/solutions/...` | Capture the solved pattern so the next task starts from accumulated knowledge instead of chat history. |
 
 ### Practical usage rules
 
 1. Run **`/workflows:to-issues` after `/deepen-plan`** when you want the cleanest execution packets. Run it right after `/workflows:plan` only when you explicitly want earlier backlog shaping and you are willing to preserve visible uncertainty.
-2. Treat **tickets as the default execution boundary**. If the plan is large, do not hand the entire plan to every execution run once ticket artifacts exist.
+2. Treat **the ticket index as the default execution entrypoint** once ticket artifacts exist. Let `/workflows:work` pick the next batch from `index.md` instead of hand-selecting from the full plan every time.
 3. Keep **business logic inside the feature home** named by the architecture artifact. Only move code into shared/global space when the reason to change is truly cross-feature.
 4. Let **`ticket-flow-auditor` findings block execution** when it reports missing dependency order, weak WHY tracing, oversized tickets, or scope fences that are too vague to enforce.
 5. Use **`/brownfield-maintenance`** outside the happy path when the repo already exists and the AI-layer docs, prompts, or review contracts need repair before you can trust the workflow.
@@ -142,7 +142,7 @@ Use the full chain when you want the plugin to take a feature from vague intent 
 - `/technical_review` is gone
 - `/workflows:architecture` is now the supported architecture handoff
 - `/workflows:to-issues` is the local-artifact-first ticketization step between deepening and execution, now powered by the `focused-ticket-priming` skill and the reusable `ticket-flow-auditor`
-- `/workflows:work` can execute one `docs/tickets/.../*.md` artifact directly instead of dragging the full plan into every run
+- `/workflows:work` can execute the next safe batch directly from `docs/tickets/.../index.md`, while still allowing a single ticket file when you need a narrower manual run
 - plan/deepen/work now default to issue-shaped vertical slices and tracer-bullet sequencing, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake
 - `/brownfield-maintenance` is the on-demand repair path for inherited repos whose AI-layer docs, prompts, and reviewer coverage have drifted
 - Ralph-driven TDD is explicit across setup, planning, execution, and review

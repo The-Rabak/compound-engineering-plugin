@@ -92,6 +92,23 @@ describe("TDD contract surfaces", () => {
     expect(executionPrompt).toContain("If no cleanup was needed, still rerun and say so")
   })
 
+  test("execution agent carries explicit clean-code implementation guardrails", async () => {
+    const executionAgent = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "agents",
+      "workflow",
+      "execution-agent.md",
+    )
+
+    expect(executionAgent).toContain("## Clean-code operating rules")
+    expect(executionAgent).toContain("Apply DRY by reason to change")
+    expect(executionAgent).toContain("Apply SOLID deliberately")
+    expect(executionAgent).toContain("Add doc blocks or docstrings above public or exported functions")
+    expect(executionAgent).toContain("Keep imports at the top of the file")
+    expect(executionAgent).toContain("Fail explicitly")
+  })
+
   test("review prompts reject weak evidence and separate behavior coverage from cleanup quality", async () => {
     const reviewPrompt = await readRepoFile(
       "portable",

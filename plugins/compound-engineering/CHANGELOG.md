@@ -5,6 +5,31 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.13.0] - 2026-05-24
+
+### Added
+
+- **`execution-agent` agent** -- New workflow execution agent for `/workflows:work` ticket and unit delivery, with strict clean-code, DRY, SOLID, doc-block, import-order, and Ralph evidence guardrails.
+
+### Changed
+
+- **`/workflows:work`** -- Ticket execution, retries, and regression repairs now dispatch through the named `execution-agent`, with the full bundled agent template plus injected execution packet context loaded on every run.
+- **Execution prompt contract** -- `execution-agent-prompt.md` now serves as the injected context scaffold for the named `execution-agent` instead of acting like a standalone worker prompt.
+
+## [4.12.0] - 2026-05-24
+
+### Changed
+
+- **`/workflows:to-issues`** -- Ticket sets now require a conservative dependency graph, explicit parallel-safe execution batches, and an index-level `last_completed_batch` cursor so ticketized execution can resume from `index.md`.
+- **`/workflows:work`** -- Now accepts ticket indexes as the default ticketized entrypoint, selects the next safe batch from `docs/tickets/.../index.md`, and advances the batch cursor only after the whole batch completes.
+- **`ticket-flow-auditor` and ticket contracts** -- Review and shared ticket contracts now verify batch safety, dependency layering, and file-overlap honesty so parallel execution stays race-safe.
+
+## [4.11.1] - 2026-05-24
+
+### Changed
+
+- **`grill-with-docs` / `grill-me` skill** -- Concrete implementation and architecture decisions now get written inline into the active brainstorm or plan artifact during the grilling session, while `CONTEXT.md` stays glossary-only.
+
 ## [4.11.0] - 2026-05-20
 
 ### Added

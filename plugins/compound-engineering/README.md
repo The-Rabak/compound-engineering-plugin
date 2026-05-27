@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 33 specialized agents, 28 commands, and 26 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 34 specialized agents, 28 commands, and 26 skills.
 
 This repository also ships generated Copilot assets under the repo root `.github/`, built from the canonical portable source in `portable/compound-engineering/`.
 
@@ -14,9 +14,9 @@ This repository also ships generated Copilot assets under the repo root `.github
 ## Workflow contract highlights
 
 - `/workflows:architecture` is the architecture-improvement handoff between planning and `/deepen-plan`.
-- `/workflows:to-issues` turns plans into local ticket artifacts with compact execution context before implementation, using `focused-ticket-priming` and `ticket-flow-auditor`.
+- `/workflows:to-issues` turns plans into local ticket artifacts with compact execution context, a dependency graph, and conservative execution batches before implementation, using `focused-ticket-priming` and `ticket-flow-auditor`.
 - `/workflows:plan`, `/deepen-plan`, and `/workflows:work` now default to issue-shaped execution slices, with the first slice acting as the tracer bullet, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake.
-- `/workflows:work` can execute a single ticket artifact directly while preserving parent plan and architecture refs.
+- `/workflows:work` can execute the next safe batch directly from a ticket index while preserving parent plan and architecture refs.
 - Vertical slices now carry a feature-home module contract: feature business logic stays co-located, while truly shared utilities and adapters stay global.
 - `/brownfield-maintenance` is the on-demand repair path for inherited repos whose AI-layer docs, prompts, and reviewer coverage have drifted.
 - `/workflows:work` is the Ralph-first execution path; `/ralph-loop` and `/cancel-ralph` are helpers, not a detached workflow.
@@ -30,15 +30,15 @@ Use this sequence when you want the full compound workflow instead of an ad hoc 
 2. `/workflows:plan` -- choose the execution shape and define packets.
 3. `/workflows:architecture` -- lock feature homes, shared/global boundaries, and architecture handoff details.
 4. `/deepen-plan` -- harden the plan with research and review.
-5. `/workflows:to-issues` -- generate `docs/tickets/...` with `focused-ticket-priming`, then gate the ticket set with `ticket-flow-auditor`.
-6. `/workflows:work <ticket-file>` -- execute one ticket artifact at a time while preserving parent plan and architecture refs.
+5. `/workflows:to-issues` -- generate `docs/tickets/...` with `focused-ticket-priming`, then write the dependency graph and batch cursor into `index.md` before `ticket-flow-auditor` gates the set.
+6. `/workflows:work <ticket-index>` -- execute the next safe batch from the ticket index while preserving parent plan and architecture refs.
 7. `/workflows:review` -- review code, ticket drift, architecture fit, and TDD evidence together.
 8. `/workflows:compound` -- turn the result into reusable team knowledge.
 
 ### Ticketized execution guidance
 
 - Prefer `/workflows:to-issues` after `/deepen-plan` for the sharpest execution packets.
-- Use ticket files as the default `/workflows:work` input once they exist.
+- Use the ticket index as the default `/workflows:work` input once it exists.
 - Treat feature-home ownership and scope fences as hard boundaries, not suggestions.
 - Use `/brownfield-maintenance` separately when an inherited repo needs workflow repair before normal feature delivery.
 
@@ -61,7 +61,7 @@ bun test
 
 | Component | Count |
 |-----------|-------|
-| Agents | 33 |
+| Agents | 34 |
 | Commands | 28 |
 | Skills | 26 |
 | Hooks | 0 |
@@ -71,7 +71,7 @@ bun test
 
 Agents are organized into categories for easier discovery.
 
-### Review (20)
+### Review (21)
 
 | Agent | Description |
 |-------|-------------|
@@ -116,11 +116,12 @@ Agents are organized into categories for easier discovery.
 | `design-iterator` | Iteratively refine UI through systematic design iterations |
 | `figma-design-sync` | Synchronize web implementations with Figma designs |
 
-### Workflow (3)
+### Workflow (4)
 
 | Agent | Description |
 |-------|-------------|
 | `bug-reproduction-validator` | Systematically reproduce and validate bug reports |
+| `execution-agent` | Execute scoped `/workflows:work` tickets and units with strict clean-code, DRY, SOLID, and Ralph-aware delivery discipline |
 | `pr-comment-resolver` | Address PR comments and implement fixes |
 | `spec-flow-analyzer` | Analyze user flows and identify gaps in specifications |
 
