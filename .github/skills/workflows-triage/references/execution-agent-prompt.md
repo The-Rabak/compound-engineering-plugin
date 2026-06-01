@@ -9,9 +9,9 @@ platforms:
 
 # Execution Agent Prompt Template
 
-This template is the **injected context packet** that `/workflows:work` passes into the named `execution-agent`.
+This template is the **injected context packet** that `/workflows-work` passes into the named `execution-agent`.
 
-**Canonical execution rules live in `agents/workflow/execution-agent.md`.** `/workflows:work` must load that bundled agent template, then inject the fully populated context packet below when dispatching `Task(execution-agent, prompt=scoped_prompt)`.
+**Canonical execution rules live in `agents/workflow/execution-agent.md`.** `/workflows-work` must load that bundled agent template, then inject the fully populated context packet below when dispatching `Task(execution-agent, prompt=scoped_prompt)`.
 
 **This is NOT an invocable agent.** It is a reference document consumed by the orchestrator so the exact context scaffold ships with generated workflow bundles.
 
@@ -74,7 +74,7 @@ The bundled `execution-agent` enforces clean-code, DRY, SOLID, feature-home boun
 
 ## TDD Execution Contract
 
-Use `commands/workflows/references/tdd-evidence-contract.md` as the shared source of truth for contract resolution, Ralph evidence semantics, and report structure. Do not invent a lighter evidence format for convenience.
+Use `references/tdd-evidence-contract.md` as the shared source of truth for contract resolution, Ralph evidence semantics, and report structure. Do not invent a lighter evidence format for convenience.
 
 {{TDD_CONTRACT}}
 

@@ -97,4 +97,29 @@ describe("writeDroidBundle", () => {
     expect(await exists(path.join(factoryRoot, "commands", "work.md"))).toBe(true)
     expect(await exists(path.join(factoryRoot, "commands", "brainstorm.md"))).toBe(true)
   })
+
+  test("prunes stale generated commands, droids, and skills", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "droid-prune-"))
+    const outputRoot = path.join(tempRoot, ".factory")
+    const skillFixture = path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one")
+
+    const firstBundle: DroidBundle = {
+      commands: [{ name: "old-command", content: "old" }],
+      droids: [{ name: "old-droid", content: "old" }],
+      skillDirs: [{ name: "skill-one", sourceDir: skillFixture }],
+    }
+    await writeDroidBundle(outputRoot, firstBundle)
+
+    const secondBundle: DroidBundle = {
+      commands: [{ name: "new-command", content: "new" }],
+      droids: [],
+      skillDirs: [],
+    }
+    await writeDroidBundle(outputRoot, secondBundle)
+
+    expect(await exists(path.join(outputRoot, "commands", "old-command.md"))).toBe(false)
+    expect(await exists(path.join(outputRoot, "droids", "old-droid.md"))).toBe(false)
+    expect(await exists(path.join(outputRoot, "skills", "skill-one"))).toBe(false)
+    expect(await exists(path.join(outputRoot, "commands", "new-command.md"))).toBe(true)
+  })
 })

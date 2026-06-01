@@ -1,11 +1,21 @@
 import path from "path"
-import { backupFile, copyDir, ensureDir, writeText } from "../utils/files"
+import { copyDir, ensureDir, writeText } from "../utils/files"
 import type { CodexBundle } from "../types/codex"
 import type { ClaudeMcpServer } from "../types/claude"
+import {
+  pruneManagedOutput,
+  removeLegacyBackupArtifacts,
+  writeManagedOutputState,
+} from "../utils/managed-output"
+
+const STATE_FILE_NAME = ".compound-engineering-codex-state.json"
 
 export async function writeCodexBundle(outputRoot: string, bundle: CodexBundle): Promise<void> {
   const codexRoot = resolveCodexRoot(outputRoot)
   await ensureDir(codexRoot)
+  const managedPaths = collectManagedPaths(codexRoot, bundle)
+  const normalizedManagedPaths = await pruneManagedOutput(codexRoot, STATE_FILE_NAME, managedPaths)
+  await removeLegacyBackupArtifacts(codexRoot, [/^config\.toml\.bak\./])
 
   if (bundle.prompts.length > 0) {
     const promptsDir = path.join(codexRoot, "prompts")
@@ -31,16 +41,31 @@ export async function writeCodexBundle(outputRoot: string, bundle: CodexBundle):
   const config = renderCodexConfig(bundle.mcpServers)
   if (config) {
     const configPath = path.join(codexRoot, "config.toml")
-    const backupPath = await backupFile(configPath)
-    if (backupPath) {
-      console.log(`Backed up existing config to ${backupPath}`)
-    }
     await writeText(configPath, config)
   }
+
+  await writeManagedOutputState(codexRoot, STATE_FILE_NAME, normalizedManagedPaths)
 }
 
 function resolveCodexRoot(outputRoot: string): string {
   return path.basename(outputRoot) === ".codex" ? outputRoot : path.join(outputRoot, ".codex")
+}
+
+function collectManagedPaths(codexRoot: string, bundle: CodexBundle): string[] {
+  const managed = new Set<string>()
+  for (const prompt of bundle.prompts) {
+    managed.add(path.join(codexRoot, "prompts", `${prompt.name}.md`))
+  }
+  for (const skill of bundle.skillDirs) {
+    managed.add(path.join(codexRoot, "skills", skill.name))
+  }
+  for (const skill of bundle.generatedSkills) {
+    managed.add(path.join(codexRoot, "skills", skill.name))
+  }
+  if (bundle.mcpServers && Object.keys(bundle.mcpServers).length > 0) {
+    managed.add(path.join(codexRoot, "config.toml"))
+  }
+  return [...managed]
 }
 
 export function renderCodexConfig(mcpServers?: Record<string, ClaudeMcpServer>): string | null {

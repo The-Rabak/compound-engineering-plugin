@@ -78,4 +78,29 @@ describe("writeCopilotBundle", () => {
       "skill name contains unsafe path characters: ../escape",
     )
   })
+
+  test("prunes stale generated agents and skills", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "copilot-prune-"))
+    const outputRoot = path.join(tempRoot, ".github")
+    const fixtureSkillDir = path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one")
+
+    const firstBundle: CopilotBundle = {
+      agents: [{ name: "old-agent", content: "old" }],
+      generatedSkills: [{ name: "old-generated", content: "old skill" }],
+      skillDirs: [{ name: "skill-one", sourceDir: fixtureSkillDir, skillPath: path.join(fixtureSkillDir, "SKILL.md") }],
+    }
+    await writeCopilotBundle(outputRoot, firstBundle)
+
+    const secondBundle: CopilotBundle = {
+      agents: [{ name: "new-agent", content: "new" }],
+      generatedSkills: [],
+      skillDirs: [],
+    }
+    await writeCopilotBundle(outputRoot, secondBundle)
+
+    expect(await exists(path.join(outputRoot, "agents", "old-agent.agent.md"))).toBe(false)
+    expect(await exists(path.join(outputRoot, "skills", "old-generated"))).toBe(false)
+    expect(await exists(path.join(outputRoot, "skills", "skill-one"))).toBe(false)
+    expect(await exists(path.join(outputRoot, "agents", "new-agent.agent.md"))).toBe(true)
+  })
 })

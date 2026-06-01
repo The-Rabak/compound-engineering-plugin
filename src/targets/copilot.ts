@@ -1,22 +1,23 @@
 import path from "path"
-import {
-  backupFile,
-  copyDir,
-  ensureDir,
-  pathExists,
-  readText,
-  walkFiles,
-  writeJson,
-  writeText,
-} from "../utils/files"
+import { copyDir, ensureDir, pathExists, readText, walkFiles, writeJson, writeText } from "../utils/files"
 import { transformContentForCopilot } from "../converters/claude-to-copilot"
 import type { CopilotBundle } from "../types/copilot"
 import { formatFrontmatter, parseFrontmatter } from "../utils/frontmatter"
 import { assertSafeOutputName } from "../utils/path-safety"
+import {
+  pruneManagedOutput,
+  removeLegacyBackupArtifacts,
+  writeManagedOutputState,
+} from "../utils/managed-output"
+
+const STATE_FILE_NAME = ".compound-engineering-copilot-state.json"
 
 export async function writeCopilotBundle(outputRoot: string, bundle: CopilotBundle): Promise<void> {
   const paths = resolveCopilotPaths(outputRoot)
   await ensureDir(paths.githubDir)
+  const managedPaths = collectManagedPaths(paths.githubDir, bundle)
+  const normalizedManagedPaths = await pruneManagedOutput(paths.githubDir, STATE_FILE_NAME, managedPaths)
+  await removeLegacyBackupArtifacts(paths.githubDir, [/^copilot-mcp-config\.json\.bak\./])
 
   if (bundle.agents.length > 0) {
     const agentsDir = path.join(paths.githubDir, "agents")
@@ -62,12 +63,10 @@ export async function writeCopilotBundle(outputRoot: string, bundle: CopilotBund
 
   if (bundle.mcpConfig && Object.keys(bundle.mcpConfig).length > 0) {
     const mcpPath = path.join(paths.githubDir, "copilot-mcp-config.json")
-    const backupPath = await backupFile(mcpPath)
-    if (backupPath) {
-      console.log(`Backed up existing copilot-mcp-config.json to ${backupPath}`)
-    }
     await writeJson(mcpPath, { mcpServers: bundle.mcpConfig })
   }
+
+  await writeManagedOutputState(paths.githubDir, STATE_FILE_NAME, normalizedManagedPaths)
 }
 
 async function copyCommandReferenceDocs(commandSourcePath: string, targetDir: string): Promise<void> {
@@ -101,4 +100,21 @@ function resolveCopilotPaths(outputRoot: string) {
   }
   // Otherwise nest under .github
   return { githubDir: path.join(outputRoot, ".github") }
+}
+
+function collectManagedPaths(githubDir: string, bundle: CopilotBundle): string[] {
+  const managed = new Set<string>()
+  for (const agent of bundle.agents) {
+    managed.add(path.join(githubDir, "agents", `${agent.name}.agent.md`))
+  }
+  for (const skill of bundle.generatedSkills) {
+    managed.add(path.join(githubDir, "skills", skill.name))
+  }
+  for (const skill of bundle.skillDirs) {
+    managed.add(path.join(githubDir, "skills", skill.name))
+  }
+  if (bundle.mcpConfig && Object.keys(bundle.mcpConfig).length > 0) {
+    managed.add(path.join(githubDir, "copilot-mcp-config.json"))
+  }
+  return [...managed]
 }

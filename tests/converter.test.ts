@@ -204,7 +204,7 @@ describe("convertClaudeToOpenCode", () => {
     expect(parsed.data.mode).toBe("primary")
   })
 
-  test("excludes commands with disable-model-invocation from command map", async () => {
+  test("keeps commands with disable-model-invocation in command map", async () => {
     const plugin = await loadClaudePlugin(fixtureRoot)
     const bundle = convertClaudeToOpenCode(plugin, {
       agentMode: "subagent",
@@ -212,8 +212,8 @@ describe("convertClaudeToOpenCode", () => {
       permissions: "none",
     })
 
-    // deploy-docs has disable-model-invocation: true, should be excluded
-    expect(bundle.commandFiles.find((f) => f.name === "deploy-docs")).toBeUndefined()
+    // deploy-docs has disable-model-invocation: true and should still be exported for OpenCode.
+    expect(bundle.commandFiles.find((f) => f.name === "deploy-docs")).toBeDefined()
 
     // Normal commands should still be present
     expect(bundle.commandFiles.find((f) => f.name === "workflows:review")).toBeDefined()

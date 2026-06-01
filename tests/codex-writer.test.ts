@@ -74,7 +74,7 @@ describe("writeCodexBundle", () => {
     expect(await exists(path.join(codexRoot, "skills", "skill-one", "SKILL.md"))).toBe(true)
   })
 
-  test("backs up existing config.toml before overwriting", async () => {
+  test("overwrites existing config.toml without backup artifacts", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "codex-backup-"))
     const codexRoot = path.join(tempRoot, ".codex")
     const configPath = path.join(codexRoot, "config.toml")
@@ -97,12 +97,38 @@ describe("writeCodexBundle", () => {
     const newConfig = await fs.readFile(configPath, "utf8")
     expect(newConfig).toContain("[mcp_servers.test]")
 
-    // Backup should exist with original content
+    // Backup should not be created
     const files = await fs.readdir(codexRoot)
     const backupFileName = files.find((f) => f.startsWith("config.toml.bak."))
-    expect(backupFileName).toBeDefined()
+    expect(backupFileName).toBeUndefined()
+  })
 
-    const backupContent = await fs.readFile(path.join(codexRoot, backupFileName!), "utf8")
-    expect(backupContent).toBe(originalContent)
+  test("prunes stale generated prompts and skills", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "codex-prune-"))
+    const codexRoot = path.join(tempRoot, ".codex")
+
+    const firstBundle: CodexBundle = {
+      prompts: [{ name: "old-command", content: "Old" }],
+      skillDirs: [
+        {
+          name: "skill-one",
+          sourceDir: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one"),
+        },
+      ],
+      generatedSkills: [{ name: "old-generated", content: "Old generated" }],
+    }
+    await writeCodexBundle(codexRoot, firstBundle)
+
+    const secondBundle: CodexBundle = {
+      prompts: [{ name: "new-command", content: "New" }],
+      skillDirs: [],
+      generatedSkills: [],
+    }
+    await writeCodexBundle(codexRoot, secondBundle)
+
+    expect(await exists(path.join(codexRoot, "prompts", "old-command.md"))).toBe(false)
+    expect(await exists(path.join(codexRoot, "skills", "old-generated", "SKILL.md"))).toBe(false)
+    expect(await exists(path.join(codexRoot, "skills", "skill-one"))).toBe(false)
+    expect(await exists(path.join(codexRoot, "prompts", "new-command.md"))).toBe(true)
   })
 })

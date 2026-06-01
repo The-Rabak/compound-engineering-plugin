@@ -172,7 +172,7 @@ Don't confuse with file paths like /tmp/output.md or /dev/null.`,
     expect(parsed.body).toContain("/dev/null")
   })
 
-  test("excludes commands with disable-model-invocation from prompts and skills", () => {
+  test("keeps commands with disable-model-invocation in prompts and skills", () => {
     const plugin: ClaudePlugin = {
       ...fixturePlugin,
       commands: [
@@ -200,14 +200,14 @@ Don't confuse with file paths like /tmp/output.md or /dev/null.`,
       permissions: "none",
     })
 
-    // Only normal command should produce a prompt
-    expect(bundle.prompts).toHaveLength(1)
-    expect(bundle.prompts[0].name).toBe("normal-command")
+    // Both commands should produce prompts
+    expect(bundle.prompts).toHaveLength(2)
+    expect(bundle.prompts.some((prompt) => prompt.name === "normal-command")).toBe(true)
+    expect(bundle.prompts.some((prompt) => prompt.name === "disabled-command")).toBe(true)
 
-    // Only normal command should produce a generated skill
+    // Both commands should produce generated skills
     const commandSkills = bundle.generatedSkills.filter((s) => s.name === "normal-command" || s.name === "disabled-command")
-    expect(commandSkills).toHaveLength(1)
-    expect(commandSkills[0].name).toBe("normal-command")
+    expect(commandSkills).toHaveLength(2)
   })
 
   test("rewrites .claude/ paths to .codex/ in command skill bodies", () => {

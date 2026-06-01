@@ -19,8 +19,7 @@ export function convertClaudeToCodex(
 
   const usedSkillNames = new Set<string>(skillDirs.map((skill) => normalizeName(skill.name)))
   const commandSkills: CodexGeneratedSkill[] = []
-  const invocableCommands = plugin.commands.filter((command) => !command.disableModelInvocation)
-  const prompts = invocableCommands.map((command) => {
+  const prompts = plugin.commands.map((command) => {
     const promptName = uniqueName(normalizeName(command.name), promptNames)
     const commandSkill = convertCommandSkill(command, usedSkillNames)
     commandSkills.push(commandSkill)

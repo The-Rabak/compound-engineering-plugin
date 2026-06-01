@@ -117,7 +117,7 @@ describe("writeGeminiBundle", () => {
     expect(await exists(tempRoot)).toBe(true)
   })
 
-  test("backs up existing settings.json before overwrite", async () => {
+  test("overwrites settings.json without backup artifacts", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gemini-backup-"))
     const geminiRoot = path.join(tempRoot, ".gemini")
     await fs.mkdir(geminiRoot, { recursive: true })
@@ -141,10 +141,10 @@ describe("writeGeminiBundle", () => {
     const newContent = JSON.parse(await fs.readFile(settingsPath, "utf8"))
     expect(newContent.mcpServers.newServer.command).toBe("new-cmd")
 
-    // A backup file should exist
+    // Backup files should not exist
     const files = await fs.readdir(geminiRoot)
     const backupFiles = files.filter((f) => f.startsWith("settings.json.bak."))
-    expect(backupFiles.length).toBeGreaterThanOrEqual(1)
+    expect(backupFiles.length).toBe(0)
   })
 
   test("merges mcpServers into existing settings.json without clobbering other keys", async () => {
@@ -177,5 +177,33 @@ describe("writeGeminiBundle", () => {
     expect(content.mcpServers.old.command).toBe("old-cmd")
     // Should add new MCP server
     expect(content.mcpServers.newServer.command).toBe("new-cmd")
+  })
+
+  test("prunes stale generated skills and commands", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "gemini-prune-"))
+    const bundleOne: GeminiBundle = {
+      generatedSkills: [{ name: "old-skill", content: "old" }],
+      skillDirs: [
+        {
+          name: "skill-one",
+          sourceDir: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one"),
+        },
+      ],
+      commands: [{ name: "old-command", content: "old" }],
+    }
+    await writeGeminiBundle(tempRoot, bundleOne)
+
+    const bundleTwo: GeminiBundle = {
+      generatedSkills: [{ name: "new-skill", content: "new" }],
+      skillDirs: [],
+      commands: [{ name: "new-command", content: "new" }],
+    }
+    await writeGeminiBundle(tempRoot, bundleTwo)
+
+    expect(await exists(path.join(tempRoot, ".gemini", "skills", "old-skill"))).toBe(false)
+    expect(await exists(path.join(tempRoot, ".gemini", "skills", "skill-one"))).toBe(false)
+    expect(await exists(path.join(tempRoot, ".gemini", "commands", "old-command.toml"))).toBe(false)
+    expect(await exists(path.join(tempRoot, ".gemini", "skills", "new-skill", "SKILL.md"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".gemini", "commands", "new-command.toml"))).toBe(true)
   })
 })

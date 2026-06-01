@@ -20,9 +20,7 @@ export function convertClaudeToPi(
   const promptNames = new Set<string>()
   const usedSkillNames = new Set<string>(plugin.skills.map((skill) => normalizeName(skill.name)))
 
-  const prompts = plugin.commands
-    .filter((command) => !command.disableModelInvocation)
-    .map((command) => convertPrompt(command, promptNames))
+  const prompts = plugin.commands.map((command) => convertPrompt(command, promptNames))
 
   const generatedSkills = plugin.agents.map((agent) => convertAgent(agent, usedSkillNames))
 

@@ -1,10 +1,20 @@
 import path from "path"
-import { backupFile, copyDir, ensureDir, pathExists, readJson, writeJson, writeText } from "../utils/files"
+import { copyDir, ensureDir, pathExists, readJson, writeJson, writeText } from "../utils/files"
 import type { GeminiBundle } from "../types/gemini"
+import {
+  pruneManagedOutput,
+  removeLegacyBackupArtifacts,
+  writeManagedOutputState,
+} from "../utils/managed-output"
+
+const STATE_FILE_NAME = ".compound-engineering-gemini-state.json"
 
 export async function writeGeminiBundle(outputRoot: string, bundle: GeminiBundle): Promise<void> {
   const paths = resolveGeminiPaths(outputRoot)
   await ensureDir(paths.geminiDir)
+  const managedPaths = collectManagedPaths(paths, bundle)
+  const normalizedManagedPaths = await pruneManagedOutput(paths.geminiDir, STATE_FILE_NAME, managedPaths)
+  await removeLegacyBackupArtifacts(paths.geminiDir, [/^settings\.json\.bak\./])
 
   if (bundle.generatedSkills.length > 0) {
     for (const skill of bundle.generatedSkills) {
@@ -26,10 +36,6 @@ export async function writeGeminiBundle(outputRoot: string, bundle: GeminiBundle
 
   if (bundle.mcpServers && Object.keys(bundle.mcpServers).length > 0) {
     const settingsPath = path.join(paths.geminiDir, "settings.json")
-    const backupPath = await backupFile(settingsPath)
-    if (backupPath) {
-      console.log(`Backed up existing settings.json to ${backupPath}`)
-    }
 
     // Merge mcpServers into existing settings if present
     let existingSettings: Record<string, unknown> = {}
@@ -47,6 +53,7 @@ export async function writeGeminiBundle(outputRoot: string, bundle: GeminiBundle
     const merged = { ...existingSettings, mcpServers: { ...existingMcp, ...bundle.mcpServers } }
     await writeJson(settingsPath, merged)
   }
+  await writeManagedOutputState(paths.geminiDir, STATE_FILE_NAME, normalizedManagedPaths)
 }
 
 function resolveGeminiPaths(outputRoot: string) {
@@ -65,4 +72,24 @@ function resolveGeminiPaths(outputRoot: string) {
     skillsDir: path.join(outputRoot, ".gemini", "skills"),
     commandsDir: path.join(outputRoot, ".gemini", "commands"),
   }
+}
+
+function collectManagedPaths(
+  paths: ReturnType<typeof resolveGeminiPaths>,
+  bundle: GeminiBundle,
+): string[] {
+  const managed = new Set<string>()
+  for (const skill of bundle.generatedSkills) {
+    managed.add(path.join(paths.skillsDir, skill.name))
+  }
+  for (const skill of bundle.skillDirs) {
+    managed.add(path.join(paths.skillsDir, skill.name))
+  }
+  for (const command of bundle.commands) {
+    managed.add(path.join(paths.commandsDir, `${command.name}.toml`))
+  }
+  if (bundle.mcpServers && Object.keys(bundle.mcpServers).length > 0) {
+    managed.add(path.join(paths.geminiDir, "settings.json"))
+  }
+  return [...managed]
 }
