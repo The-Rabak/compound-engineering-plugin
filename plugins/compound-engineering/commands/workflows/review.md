@@ -612,7 +612,7 @@ After creating all todo files, present comprehensive summary:
 3. **Triage All Todos**:
    ```bash
    ls todos/*-pending-*.md  # View all pending todos
-   /triage                  # Use slash command for interactive triage
+   /workflows:triage        # Use slash command for interactive triage
    ```
 ````
 

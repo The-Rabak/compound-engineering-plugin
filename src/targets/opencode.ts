@@ -1,8 +1,16 @@
+import { promises as fs } from "fs"
 import path from "path"
-import { backupFile, copyDir, ensureDir, pathExists, readJson, readText, writeJson, writeText } from "../utils/files"
+import { copyDir, ensureDir, pathExists, readJson, readText, writeJson, writeText } from "../utils/files"
 import { transformContentForOpenCode } from "../converters/claude-to-opencode"
 import { formatFrontmatter, parseFrontmatter } from "../utils/frontmatter"
 import type { OpenCodeBundle, OpenCodeConfig } from "../types/opencode"
+
+type OpenCodeInstallState = {
+  version: 1
+  generatedPaths: string[]
+}
+
+const STATE_FILE_NAME = ".compound-engineering-opencode-state.json"
 
 // Merges plugin config into existing opencode.json. User keys win on conflict. See ADR-002.
 async function mergeOpenCodeConfig(
@@ -59,11 +67,11 @@ async function mergeOpenCodeConfig(
 export async function writeOpenCodeBundle(outputRoot: string, bundle: OpenCodeBundle): Promise<void> {
   const openCodePaths = resolveOpenCodePaths(outputRoot)
   await ensureDir(openCodePaths.root)
+  const desiredPaths = await collectDesiredManagedPaths(openCodePaths, bundle)
+  await pruneStaleGeneratedArtifacts(openCodePaths.root, desiredPaths)
+  await pruneLegacyRenamedArtifacts(openCodePaths, bundle)
+  await removeLegacyBackupFiles(openCodePaths)
 
-  const backupPath = await backupFile(openCodePaths.configPath)
-  if (backupPath) {
-    console.log(`Backed up existing config to ${backupPath}`)
-  }
   const merged = await mergeOpenCodeConfig(openCodePaths.configPath, bundle.config)
   await writeJson(openCodePaths.configPath, merged)
 
@@ -74,10 +82,6 @@ export async function writeOpenCodeBundle(outputRoot: string, bundle: OpenCodeBu
 
   for (const commandFile of bundle.commandFiles ?? []) {
     const dest = path.join(openCodePaths.commandDir, `${commandFile.name}.md`)
-    const cmdBackupPath = await backupFile(dest)
-    if (cmdBackupPath) {
-      console.log(`Backed up existing command file to ${cmdBackupPath}`)
-    }
     await writeText(dest, commandFile.content + "\n")
     if (commandFile.sourcePath) {
       await copyCommandReferenceDocs(commandFile.sourcePath, openCodePaths.commandDir)
@@ -111,7 +115,109 @@ export async function writeOpenCodeBundle(outputRoot: string, bundle: OpenCodeBu
       await writeText(path.join(targetDir, "SKILL.md"), content + "\n")
     }
   }
+
+  await writeInstallState(openCodePaths.root, desiredPaths)
 }
+
+async function collectDesiredManagedPaths(
+  openCodePaths: ReturnType<typeof resolveOpenCodePaths>,
+  bundle: OpenCodeBundle,
+): Promise<string[]> {
+  const paths = new Set<string>()
+
+  for (const agent of bundle.agents) {
+    paths.add(path.join(openCodePaths.agentsDir, `${agent.name}.md`))
+  }
+  for (const commandFile of bundle.commandFiles ?? []) {
+    paths.add(path.join(openCodePaths.commandDir, `${commandFile.name}.md`))
+    if (commandFile.sourcePath) {
+      const sourceReferencesDir = path.join(path.dirname(commandFile.sourcePath), "references")
+      if (await pathExists(sourceReferencesDir)) {
+        const relativeDir = resolveCommandRelativeDir(commandFile.sourcePath)
+        paths.add(path.join(openCodePaths.commandDir, relativeDir, "references"))
+      }
+    }
+  }
+  for (const plugin of bundle.plugins) {
+    paths.add(path.join(openCodePaths.pluginsDir, plugin.name))
+  }
+  for (const skill of bundle.skillDirs) {
+    paths.add(path.join(openCodePaths.skillsDir, skill.name))
+  }
+
+  return [...paths]
+}
+
+async function pruneStaleGeneratedArtifacts(rootDir: string, desiredPaths: string[]): Promise<void> {
+  const state = await readInstallState(rootDir)
+  if (!state) return
+
+  const desired = new Set(desiredPaths.map((filePath) => path.resolve(filePath)))
+  const stale = state.generatedPaths
+    .map((filePath) => path.resolve(filePath))
+    .filter((filePath) => !desired.has(filePath))
+    .sort((a, b) => b.length - a.length)
+
+  for (const stalePath of stale) {
+    await fs.rm(stalePath, { recursive: true, force: true })
+  }
+}
+
+async function removeLegacyBackupFiles(openCodePaths: ReturnType<typeof resolveOpenCodePaths>): Promise<void> {
+  await removeMatchingFiles(openCodePaths.root, (name) => /^opencode\.json\.bak\./.test(name))
+  await removeMatchingFiles(openCodePaths.commandDir, (name) => /\.md\.bak\./.test(name))
+}
+
+async function pruneLegacyRenamedArtifacts(
+  openCodePaths: ReturnType<typeof resolveOpenCodePaths>,
+  bundle: OpenCodeBundle,
+): Promise<void> {
+  const commandNames = new Set((bundle.commandFiles ?? []).map((commandFile) => commandFile.name))
+
+  if (commandNames.has("workflows:triage")) {
+    await fs.rm(path.join(openCodePaths.commandDir, "triage.md"), { force: true })
+    await fs.rm(path.join(openCodePaths.skillsDir, "triage"), { recursive: true, force: true })
+  }
+}
+
+async function removeMatchingFiles(
+  rootDir: string,
+  matcher: (name: string) => boolean,
+): Promise<void> {
+  if (!(await pathExists(rootDir))) return
+  const entries = await fs.readdir(rootDir, { withFileTypes: true })
+  for (const entry of entries) {
+    const fullPath = path.join(rootDir, entry.name)
+    if (entry.isDirectory()) {
+      await removeMatchingFiles(fullPath, matcher)
+      continue
+    }
+    if (entry.isFile() && matcher(entry.name)) {
+      await fs.rm(fullPath, { force: true })
+    }
+  }
+}
+
+async function readInstallState(rootDir: string): Promise<OpenCodeInstallState | null> {
+  const statePath = path.join(rootDir, STATE_FILE_NAME)
+  if (!(await pathExists(statePath))) return null
+  try {
+    const state = await readJson<OpenCodeInstallState>(statePath)
+    if (state.version !== 1 || !Array.isArray(state.generatedPaths)) {
+      return null
+    }
+    return state
+  } catch {
+    return null
+  }
+}
+
+async function writeInstallState(rootDir: string, desiredPaths: string[]): Promise<void> {
+  const statePath = path.join(rootDir, STATE_FILE_NAME)
+  const normalized = [...new Set(desiredPaths.map((filePath) => path.resolve(filePath)))].sort()
+  await writeJson(statePath, { version: 1, generatedPaths: normalized } satisfies OpenCodeInstallState)
+}
+
 async function copyCommandReferenceDocs(commandSourcePath: string, commandDir: string): Promise<void> {
   const sourceReferencesDir = path.join(path.dirname(commandSourcePath), "references")
   if (!(await pathExists(sourceReferencesDir))) return

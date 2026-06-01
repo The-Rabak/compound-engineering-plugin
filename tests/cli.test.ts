@@ -425,6 +425,57 @@ describe("CLI", () => {
     expect(copiedSkillContent).toContain("model: gpt-5.4-mini")
     expect(copiedSkillContent).toContain("/workflows-plan")
     expect(copiedSkillContent).toContain("~/.copilot/skills/skill-one/notes.md")
+    expect(
+      await exists(path.join(claudePluginRoot, "commands", "workflows", "references", "ignored.md")),
+    ).toBe(true)
+  })
+
+  test("build removes stale generated Claude commands before regeneration", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-build-stale-"))
+    const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+    const staleCommand = path.join(
+      tempRoot,
+      "plugins",
+      "compound-engineering",
+      "commands",
+      "triage.md",
+    )
+
+    await fs.mkdir(path.dirname(staleCommand), { recursive: true })
+    await fs.writeFile(staleCommand, "# stale triage command\n", "utf8")
+
+    const proc = Bun.spawn([
+      "bun",
+      "run",
+      "src/index.ts",
+      "build",
+      fixtureRoot,
+      "--output",
+      tempRoot,
+      "--targets",
+      "claude",
+    ], {
+      cwd: path.join(import.meta.dir, ".."),
+      stdout: "pipe",
+      stderr: "pipe",
+    })
+
+    const exitCode = await proc.exited
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+
+    if (exitCode !== 0) {
+      throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
+    }
+
+    expect(stdout).toContain("Built Claude output")
+    expect(await exists(staleCommand)).toBe(false)
+    expect(
+      await exists(path.join(tempRoot, "plugins", "compound-engineering", "commands", "workflows", "plan.md")),
+    ).toBe(true)
+    expect(
+      await exists(path.join(tempRoot, "plugins", "compound-engineering", "commands", "workflows", "references")),
+    ).toBe(true)
   })
 
   test("sync-ov registers portable agents, skills, commands, and skill support files", async () => {
@@ -495,6 +546,68 @@ describe("CLI", () => {
     expect(log).toContain(`resource\tviking://resources/_global/skills\t${path.join(fakeOvRoot, "skills", "workflows-constitution.md")}`)
     expect(log).toContain("resource\tviking://resources/_global/skills/skill-one/references")
     expect(log).toContain("rebuild\tglobal-manifest")
+  })
+
+  test("sync-ov prunes legacy triage skill artifacts when workflows:triage is present", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-sync-ov-triage-legacy-"))
+    const sourceFixture = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+    const fixtureRoot = path.join(tempRoot, "portable-plugin")
+    const fakeOvCore = path.join(import.meta.dir, "fixtures", "fake-ov-core.sh")
+    const fakeOvRoot = path.join(tempRoot, "ov-global")
+    const fakeOvLog = path.join(tempRoot, "ov.log")
+    const legacySkillPath = path.join(fakeOvRoot, "skills", "triage.md")
+    const legacySupportPath = path.join(fakeOvRoot, "skills", "triage", "SKILL.md")
+
+    await fs.cp(sourceFixture, fixtureRoot, { recursive: true })
+    await fs.writeFile(
+      path.join(fixtureRoot, "commands", "workflows", "triage.md"),
+      [
+        "---",
+        "name: workflows:triage",
+        "description: Triage todo items.",
+        "---",
+        "",
+        "Task execution-agent(resolve todos)",
+        "",
+      ].join("\n"),
+      "utf8",
+    )
+    await fs.mkdir(path.dirname(legacySkillPath), { recursive: true })
+    await fs.mkdir(path.dirname(legacySupportPath), { recursive: true })
+    await fs.writeFile(legacySkillPath, "# stale triage\n", "utf8")
+    await fs.writeFile(legacySupportPath, "# stale triage skill\n", "utf8")
+
+    const proc = Bun.spawn([
+      "bun",
+      "run",
+      "src/index.ts",
+      "sync-ov",
+      fixtureRoot,
+      "--ov-core",
+      fakeOvCore,
+    ], {
+      cwd: path.join(import.meta.dir, ".."),
+      stdout: "pipe",
+      stderr: "pipe",
+      env: {
+        ...process.env,
+        FAKE_OV_ROOT: fakeOvRoot,
+        FAKE_OV_LOG: fakeOvLog,
+      },
+    })
+
+    const exitCode = await proc.exited
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+
+    if (exitCode !== 0) {
+      throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
+    }
+
+    expect(stdout).toContain("Synced 1 agents, 1 skills, 2 commands")
+    expect(await exists(legacySkillPath)).toBe(false)
+    expect(await exists(path.join(fakeOvRoot, "skills", "triage"))).toBe(false)
+    expect(await exists(path.join(fakeOvRoot, "skills", "workflows-triage.md"))).toBe(true)
   })
 
   test("sync-ov rejects unsafe skill names before mirroring", async () => {

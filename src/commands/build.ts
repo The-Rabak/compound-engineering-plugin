@@ -39,7 +39,9 @@ export default defineCommand({
 
     if (targets.includes("claude")) {
       const claudeRoot = path.join(outputRoot, "plugins", plugin.manifest.name)
+      await removeGeneratedClaudeOutput(claudeRoot)
       await writeClaudeBundle(claudeRoot, plugin)
+      await fs.rm(path.join(claudeRoot, ".compound-engineering-claude-state.json"), { force: true })
       await writeMarketplace(outputRoot, plugin)
       console.log(`Built Claude output at ${claudeRoot}`)
     }
@@ -53,6 +55,7 @@ export default defineCommand({
       const copilotRoot = path.join(outputRoot, ".github")
       await removeGeneratedCopilotOutput(copilotRoot)
       await writeCopilotBundle(copilotRoot, copilotBundle)
+      await fs.rm(path.join(copilotRoot, ".compound-engineering-copilot-state.json"), { force: true })
       console.log(`Built Copilot output at ${copilotRoot}`)
     }
   },
@@ -100,4 +103,14 @@ async function removeGeneratedCopilotOutput(copilotRoot: string): Promise<void> 
   await fs.rm(path.join(copilotRoot, "agents"), { recursive: true, force: true })
   await fs.rm(path.join(copilotRoot, "skills"), { recursive: true, force: true })
   await fs.rm(path.join(copilotRoot, "copilot-mcp-config.json"), { force: true })
+  await fs.rm(path.join(copilotRoot, ".compound-engineering-copilot-state.json"), { force: true })
+}
+
+async function removeGeneratedClaudeOutput(claudeRoot: string): Promise<void> {
+  await fs.rm(path.join(claudeRoot, "agents"), { recursive: true, force: true })
+  await fs.rm(path.join(claudeRoot, "commands"), { recursive: true, force: true })
+  await fs.rm(path.join(claudeRoot, "skills"), { recursive: true, force: true })
+  await fs.rm(path.join(claudeRoot, "hooks"), { recursive: true, force: true })
+  await fs.rm(path.join(claudeRoot, ".claude-plugin", "plugin.json"), { force: true })
+  await fs.rm(path.join(claudeRoot, ".compound-engineering-claude-state.json"), { force: true })
 }

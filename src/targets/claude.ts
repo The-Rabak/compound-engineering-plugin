@@ -1,12 +1,17 @@
 import { promises as fs } from "fs"
 import path from "path"
-import { copyDir, ensureDir, readText, writeJson, writeText } from "../utils/files"
+import { copyDir, ensureDir, pathExists, readText, writeJson, writeText } from "../utils/files"
 import { formatFrontmatter } from "../utils/frontmatter"
 import { parseFrontmatter } from "../utils/frontmatter"
 import type { ClaudeAgent, ClaudeCommand, ClaudeManifest, ClaudePlugin, ClaudeSkill } from "../types/claude"
+import { pruneManagedOutput, writeManagedOutputState } from "../utils/managed-output"
+
+const STATE_FILE_NAME = ".compound-engineering-claude-state.json"
 
 export async function writeClaudeBundle(outputRoot: string, plugin: ClaudePlugin): Promise<void> {
   await ensureDir(outputRoot)
+  const managedPaths = await collectManagedPaths(outputRoot, plugin)
+  const normalizedManagedPaths = await pruneManagedOutput(outputRoot, STATE_FILE_NAME, managedPaths)
   await writeJson(path.join(outputRoot, ".claude-plugin", "plugin.json"), buildClaudeManifest(plugin.manifest))
   await fs.rm(path.join(outputRoot, "hooks"), { recursive: true, force: true })
 
@@ -17,7 +22,9 @@ export async function writeClaudeBundle(outputRoot: string, plugin: ClaudePlugin
 
   for (const command of plugin.commands) {
     const relativePath = relativeComponentPath(plugin.root, "commands", command.sourcePath, `${command.name}.md`)
-    await writeText(path.join(outputRoot, "commands", relativePath), formatCommand(command) + "\n")
+    const targetPath = path.join(outputRoot, "commands", relativePath)
+    await writeText(targetPath, formatCommand(command) + "\n")
+    await copyCommandReferenceDocs(command.sourcePath, path.dirname(targetPath))
   }
 
   for (const skill of plugin.skills) {
@@ -31,6 +38,8 @@ export async function writeClaudeBundle(outputRoot: string, plugin: ClaudePlugin
   if (plugin.hooks) {
     await writeJson(path.join(outputRoot, "hooks", "hooks.json"), plugin.hooks)
   }
+
+  await writeManagedOutputState(outputRoot, STATE_FILE_NAME, normalizedManagedPaths)
 }
 
 function buildClaudeManifest(manifest: ClaudeManifest): ClaudeManifest {
@@ -107,4 +116,40 @@ function relativeComponentDir(root: string, componentDir: string, sourceDir: str
     return path.relative(componentRoot, sourceDir)
   }
   return fallback
+}
+
+async function copyCommandReferenceDocs(commandSourcePath: string, targetDir: string): Promise<void> {
+  const sourceReferencesDir = path.join(path.dirname(commandSourcePath), "references")
+  if (!(await pathExists(sourceReferencesDir))) return
+  await copyDir(sourceReferencesDir, path.join(targetDir, "references"))
+}
+
+async function collectManagedPaths(outputRoot: string, plugin: ClaudePlugin): Promise<string[]> {
+  const managed = new Set<string>()
+  managed.add(path.join(outputRoot, ".claude-plugin", "plugin.json"))
+
+  for (const agent of plugin.agents) {
+    const relativePath = relativeComponentPath(plugin.root, "agents", agent.sourcePath, `${agent.name}.md`)
+    managed.add(path.join(outputRoot, "agents", relativePath))
+  }
+
+  for (const command of plugin.commands) {
+    const relativePath = relativeComponentPath(plugin.root, "commands", command.sourcePath, `${command.name}.md`)
+    managed.add(path.join(outputRoot, "commands", relativePath))
+    const sourceReferencesDir = path.join(path.dirname(command.sourcePath), "references")
+    if (await pathExists(sourceReferencesDir)) {
+      managed.add(path.join(outputRoot, "commands", path.dirname(relativePath), "references"))
+    }
+  }
+
+  for (const skill of plugin.skills) {
+    const relativeDir = relativeComponentDir(plugin.root, "skills", skill.sourceDir, skill.name)
+    managed.add(path.join(outputRoot, "skills", relativeDir))
+  }
+
+  if (plugin.hooks) {
+    managed.add(path.join(outputRoot, "hooks", "hooks.json"))
+  }
+
+  return [...managed]
 }

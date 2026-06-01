@@ -20,8 +20,8 @@ describe("convertClaudeToPi", () => {
     expect(bundle.prompts.some((prompt) => prompt.name === "workflows-review")).toBe(true)
     expect(bundle.prompts.some((prompt) => prompt.name === "plan_review")).toBe(true)
 
-    // Commands with disable-model-invocation are excluded
-    expect(bundle.prompts.some((prompt) => prompt.name === "deploy-docs")).toBe(false)
+    // Commands with disable-model-invocation are still included for parity with other exports.
+    expect(bundle.prompts.some((prompt) => prompt.name === "deploy-docs")).toBe(true)
 
     const workflowsReview = bundle.prompts.find((prompt) => prompt.name === "workflows-review")
     expect(workflowsReview).toBeDefined()

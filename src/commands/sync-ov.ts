@@ -10,6 +10,7 @@ import { resolveTargetHome } from "../utils/resolve-home"
 
 const DEFAULT_OV_CORE = path.join(os.homedir(), ".copilot-skills", "ov-core.sh")
 const GLOBAL_SKILLS_URI = "viking://resources/_global/skills"
+const OV_STATE_FILE_NAME = ".compound-engineering-sync-ov-state.json"
 
 type SkillSupportResource = {
   sourcePath: string
@@ -21,6 +22,17 @@ type GeneratedCommandSkill = {
   name: string
   sourcePath: string
   commandSourcePath?: string
+}
+
+type SyncOvState = {
+  version: 1
+  agents: string[]
+  skills: string[]
+  supportUris: string[]
+}
+
+const LEGACY_COMMAND_SKILL_RENAMES: Record<string, string[]> = {
+  "workflows-triage": ["triage"],
 }
 
 export default defineCommand({
@@ -51,9 +63,15 @@ export default defineCommand({
     const skillSupportFiles = await collectSkillSupportResources(plugin)
     const commandSupportFiles = await collectCommandSupportResources(generatedCommandSkills)
     const supportFiles = [...skillSupportFiles, ...commandSupportFiles]
+    const syncState = buildSyncState(plugin, generatedCommandSkills, supportFiles)
+    const legacySkillNames = collectLegacySkillNames(plugin, generatedCommandSkills)
 
     try {
-      await fs.writeFile(scriptPath, buildSyncScript(ovCorePath, plugin, supportFiles, generatedCommandSkills), "utf8")
+      await fs.writeFile(
+        scriptPath,
+        buildSyncScript(ovCorePath, plugin, supportFiles, generatedCommandSkills, syncState, legacySkillNames),
+        "utf8",
+      )
 
       const proc = Bun.spawn(["bash", scriptPath], {
         cwd: plugin.root,
@@ -158,6 +176,8 @@ function buildSyncScript(
   plugin: PortablePlugin,
   supportFiles: SkillSupportResource[],
   generatedCommandSkills: GeneratedCommandSkill[],
+  syncState: SyncOvState,
+  legacySkillNames: string[],
 ): string {
   const lines = [
     "#!/usr/bin/env bash",
@@ -206,6 +226,76 @@ function buildSyncScript(
     "  _ov_add_resource \"$source_file\" --parent \"$parent_uri\"",
     "}",
     "",
+    `OV_STATE_DIR="${'${OV_GLOBAL_DIR:-${HOME}/openviking_workspace/global}'}"`,
+    "mkdir -p \"$OV_STATE_DIR\"",
+    `OV_STATE_FILE="${'${OV_STATE_DIR}'}/${OV_STATE_FILE_NAME}"`,
+    "",
+    "compound_syncov_prune_stale() {",
+    "  local kind=\"$1\"",
+    "  local name=\"$2\"",
+    "  if [[ -z \"$name\" ]]; then return 0; fi",
+    "  if [[ \"$kind\" == \"agent\" ]]; then",
+    "    rm -f \"${OV_GLOBAL_AGENTS_DIR}/${name}.md\"",
+    "    rm -rf \"${OV_GLOBAL_AGENTS_DIR}/${name}\"",
+    "    _ov_reset_uri \"${OV_GLOBAL_AGENTS_URI}/${name}\"",
+    "    return 0",
+    "  fi",
+    "  rm -f \"${OV_GLOBAL_SKILLS_DIR}/${name}.md\"",
+    "  rm -rf \"${OV_GLOBAL_SKILLS_DIR}/${name}\"",
+    "  _ov_reset_uri \"${OV_GLOBAL_SKILLS_URI}/${name}\"",
+    "}",
+    "",
+    "compound_syncov_prune_support_uri() {",
+    "  local uri=\"$1\"",
+    "  if [[ -z \"$uri\" ]]; then return 0; fi",
+    "  local prefix=\"${OV_GLOBAL_SKILLS_URI}/\"",
+    "  if [[ \"$uri\" == \"$prefix\"* ]]; then",
+    "    local rel=\"${uri#${prefix}}\"",
+    "    rm -f \"${OV_GLOBAL_SKILLS_DIR}/${rel}\"",
+    "  fi",
+    "  _ov_reset_uri \"$uri\"",
+    "}",
+    "",
+    "compound_syncov_prune_from_state() {",
+    "  local current_agents_json=\"$1\"",
+    "  local current_skills_json=\"$2\"",
+    "  local current_support_json=\"$3\"",
+    "  python3 - \"$OV_STATE_FILE\" \"$current_agents_json\" \"$current_skills_json\" \"$current_support_json\" <<'PY'",
+    "import json, sys",
+    "state_path, agents_raw, skills_raw, support_raw = sys.argv[1:5]",
+    "try:",
+    "    with open(state_path, 'r', encoding='utf-8') as fh:",
+    "        state = json.load(fh)",
+    "except Exception:",
+    "    state = {}",
+    "old_agents = set(state.get('agents') or [])",
+    "old_skills = set(state.get('skills') or [])",
+    "old_support = set(state.get('supportUris') or [])",
+    "new_agents = set(json.loads(agents_raw))",
+    "new_skills = set(json.loads(skills_raw))",
+    "new_support = set(json.loads(support_raw))",
+    "for name in sorted(old_agents - new_agents):",
+    "    print(f'agent\\t{name}')",
+    "for name in sorted(old_skills - new_skills):",
+    "    print(f'skill\\t{name}')",
+    "for uri in sorted(old_support - new_support):",
+    "    print(f'support\\t{uri}')",
+    "PY",
+    "}",
+    "",
+    `CURRENT_AGENTS_JSON=${shellEscape(JSON.stringify(syncState.agents))}`,
+    `CURRENT_SKILLS_JSON=${shellEscape(JSON.stringify(syncState.skills))}`,
+    `CURRENT_SUPPORT_JSON=${shellEscape(JSON.stringify(syncState.supportUris))}`,
+    "",
+    "while IFS=$'\\t' read -r kind value; do",
+    "  [[ -z \"$kind\" ]] && continue",
+    "  case \"$kind\" in",
+    "    agent) compound_syncov_prune_stale agent \"$value\" ;;",
+    "    skill) compound_syncov_prune_stale skill \"$value\" ;;",
+    "    support) compound_syncov_prune_support_uri \"$value\" ;;",
+    "  esac",
+    "done < <(compound_syncov_prune_from_state \"$CURRENT_AGENTS_JSON\" \"$CURRENT_SKILLS_JSON\" \"$CURRENT_SUPPORT_JSON\")",
+    "",
   ]
 
   for (const agent of [...plugin.agents].sort((left, right) => left.name.localeCompare(right.name))) {
@@ -236,9 +326,31 @@ function buildSyncScript(
   }
 
   lines.push("")
+  for (const skillName of legacySkillNames) {
+    lines.push(`compound_syncov_prune_stale skill ${shellEscape(skillName)}`)
+  }
+  if (legacySkillNames.length > 0) {
+    lines.push("")
+  }
+
   lines.push("if declare -F _ov_rebuild_global_manifest >/dev/null 2>&1; then")
   lines.push("  _ov_rebuild_global_manifest")
   lines.push("fi")
+  lines.push("")
+  lines.push("cat >\"$OV_STATE_FILE\" <<'JSON'")
+  lines.push(
+    JSON.stringify(
+      {
+        version: 1,
+        agents: syncState.agents,
+        skills: syncState.skills,
+        supportUris: syncState.supportUris,
+      } satisfies SyncOvState,
+      null,
+      2,
+    ),
+  )
+  lines.push("JSON")
 
   return lines.join("\n") + "\n"
 }
@@ -268,6 +380,49 @@ async function generateCommandSkills(
   }
 
   return generated.sort((left, right) => left.name.localeCompare(right.name))
+}
+
+function buildSyncState(
+  plugin: PortablePlugin,
+  generatedCommandSkills: GeneratedCommandSkill[],
+  supportFiles: SkillSupportResource[],
+): SyncOvState {
+  const agents = [...new Set(plugin.agents.map((agent) => agent.name))].sort()
+  const skills = [
+    ...new Set([
+      ...plugin.skills.map((skill) => skill.name),
+      ...generatedCommandSkills.map((skill) => skill.name),
+    ]),
+  ].sort()
+  const supportUris = [...new Set(supportFiles.map((resource) => resource.targetUri))].sort()
+
+  return {
+    version: 1,
+    agents,
+    skills,
+    supportUris,
+  }
+}
+
+function collectLegacySkillNames(
+  plugin: PortablePlugin,
+  generatedCommandSkills: GeneratedCommandSkill[],
+): string[] {
+  const currentSkillNames = new Set([
+    ...plugin.skills.map((skill) => skill.name),
+    ...generatedCommandSkills.map((skill) => skill.name),
+  ])
+  const legacySkillNames = new Set<string>()
+
+  for (const generatedSkill of generatedCommandSkills) {
+    for (const legacyName of LEGACY_COMMAND_SKILL_RENAMES[generatedSkill.name] ?? []) {
+      if (!currentSkillNames.has(legacyName)) {
+        legacySkillNames.add(legacyName)
+      }
+    }
+  }
+
+  return [...legacySkillNames].sort()
 }
 
 function assertNamespaceSegment(value: string, label: string): void {

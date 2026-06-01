@@ -83,4 +83,32 @@ describe("writeClaudeBundle", () => {
     expect(await exists(hooksPath)).toBe(false)
     expect(await exists(staleScriptPath)).toBe(false)
   })
+
+  test("prunes stale generated agents, commands, and skills", async () => {
+    const plugin = await loadPortablePlugin(fixtureRoot)
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "claude-writer-prune-"))
+    const outputRoot = path.join(tempRoot, "plugins", plugin.manifest.name)
+
+    await writeClaudeBundle(outputRoot, plugin)
+
+    const oldAgentPath = path.join(outputRoot, "agents", "research", "repo-research-analyst.md")
+    const oldCommandPath = path.join(outputRoot, "commands", "workflows", "plan.md")
+    const oldSkillPath = path.join(outputRoot, "skills", "skill-one")
+    expect(await exists(oldAgentPath)).toBe(true)
+    expect(await exists(oldCommandPath)).toBe(true)
+    expect(await exists(oldSkillPath)).toBe(true)
+
+    const trimmedPlugin = {
+      ...plugin,
+      agents: [],
+      commands: [],
+      skills: [],
+      hooks: undefined,
+    }
+    await writeClaudeBundle(outputRoot, trimmedPlugin)
+
+    expect(await exists(oldAgentPath)).toBe(false)
+    expect(await exists(oldCommandPath)).toBe(false)
+    expect(await exists(oldSkillPath)).toBe(false)
+  })
 })

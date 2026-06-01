@@ -67,7 +67,7 @@ describe("writePiBundle", () => {
     expect(await exists(path.join(outputRoot, ".pi"))).toBe(false)
   })
 
-  test("backs up existing mcporter config before overwriting", async () => {
+  test("overwrites existing mcporter config without backup artifacts", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pi-backup-"))
     const outputRoot = path.join(tempRoot, ".pi")
     const configPath = path.join(outputRoot, "compound-engineering", "mcporter.json")
@@ -91,9 +91,37 @@ describe("writePiBundle", () => {
 
     const files = await fs.readdir(path.dirname(configPath))
     const backupFileName = files.find((file) => file.startsWith("mcporter.json.bak."))
-    expect(backupFileName).toBeDefined()
+    expect(backupFileName).toBeUndefined()
 
     const currentConfig = JSON.parse(await fs.readFile(configPath, "utf8")) as { mcpServers: Record<string, unknown> }
     expect(currentConfig.mcpServers.linear).toBeDefined()
+  })
+
+  test("prunes stale generated prompts, skills, and extensions", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pi-prune-"))
+    const outputRoot = path.join(tempRoot, ".pi")
+    const fixtureSkillDir = path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one")
+
+    const firstBundle: PiBundle = {
+      prompts: [{ name: "old-prompt", content: "old" }],
+      skillDirs: [{ name: "skill-one", sourceDir: fixtureSkillDir }],
+      generatedSkills: [{ name: "old-generated", content: "old" }],
+      extensions: [{ name: "old-ext.ts", content: "old" }],
+    }
+    await writePiBundle(outputRoot, firstBundle)
+
+    const secondBundle: PiBundle = {
+      prompts: [{ name: "new-prompt", content: "new" }],
+      skillDirs: [],
+      generatedSkills: [],
+      extensions: [],
+    }
+    await writePiBundle(outputRoot, secondBundle)
+
+    expect(await exists(path.join(outputRoot, "prompts", "old-prompt.md"))).toBe(false)
+    expect(await exists(path.join(outputRoot, "skills", "old-generated"))).toBe(false)
+    expect(await exists(path.join(outputRoot, "skills", "skill-one"))).toBe(false)
+    expect(await exists(path.join(outputRoot, "extensions", "old-ext.ts"))).toBe(false)
+    expect(await exists(path.join(outputRoot, "prompts", "new-prompt.md"))).toBe(true)
   })
 })

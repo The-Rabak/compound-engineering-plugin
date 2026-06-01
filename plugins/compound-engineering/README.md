@@ -140,6 +140,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/workflows:architecture` | Produce a dedicated architecture improvement artifact before deepening and execution |
 | `/workflows:to-issues` | Convert plans into local vertical-slice ticket artifacts with scoped execution context |
 | `/workflows:review` | Run comprehensive code reviews |
+| `/workflows:triage` | Research todos, record chosen actions, then execute safe batches in swarm mode |
 | `/workflows:work` | Execute execution slices systematically |
 | `/workflows:compound` | Document solved problems to compound team knowledge |
 | `/workflows:compound-refresh` | Refresh stale learnings and pattern docs in `docs/solutions/` |
@@ -160,7 +161,6 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/reproduce-bug` | Reproduce bugs using logs and console |
 | `/resolve_parallel` | Resolve TODO comments in parallel |
 | `/resolve_todo_parallel` | Resolve todos in parallel |
-| `/triage` | Triage and prioritize issues |
 | `/test-browser` | Run browser tests on PR-affected pages |
 | `/feature-video` | Record video walkthroughs and add to PR description |
 | `/ralph-loop` | Start a self-referential loop until completion promise is met |

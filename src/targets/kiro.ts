@@ -1,11 +1,21 @@
 import path from "path"
-import { backupFile, copyDir, ensureDir, pathExists, readJson, writeJson, writeText } from "../utils/files"
+import { copyDir, ensureDir, pathExists, readJson, writeJson, writeText } from "../utils/files"
 import type { KiroBundle } from "../types/kiro"
 import { assertSafeOutputName } from "../utils/path-safety"
+import {
+  pruneManagedOutput,
+  removeLegacyBackupArtifacts,
+  writeManagedOutputState,
+} from "../utils/managed-output"
+
+const STATE_FILE_NAME = ".compound-engineering-kiro-state.json"
 
 export async function writeKiroBundle(outputRoot: string, bundle: KiroBundle): Promise<void> {
   const paths = resolveKiroPaths(outputRoot)
   await ensureDir(paths.kiroDir)
+  const managedPaths = collectManagedPaths(paths, bundle)
+  const normalizedManagedPaths = await pruneManagedOutput(paths.kiroDir, STATE_FILE_NAME, managedPaths)
+  await removeLegacyBackupArtifacts(paths.kiroDir, [/^mcp\.json\.bak\./])
 
   // Write agents
   if (bundle.agents.length > 0) {
@@ -69,10 +79,6 @@ export async function writeKiroBundle(outputRoot: string, bundle: KiroBundle): P
   // Write MCP servers to mcp.json
   if (Object.keys(bundle.mcpServers).length > 0) {
     const mcpPath = path.join(paths.settingsDir, "mcp.json")
-    const backupPath = await backupFile(mcpPath)
-    if (backupPath) {
-      console.log(`Backed up existing mcp.json to ${backupPath}`)
-    }
 
     // Merge with existing mcp.json if present
     let existingConfig: Record<string, unknown> = {}
@@ -91,6 +97,8 @@ export async function writeKiroBundle(outputRoot: string, bundle: KiroBundle): P
     const merged = { ...existingConfig, mcpServers: { ...existingServers, ...bundle.mcpServers } }
     await writeJson(mcpPath, merged)
   }
+
+  await writeManagedOutputState(paths.kiroDir, STATE_FILE_NAME, normalizedManagedPaths)
 }
 
 function resolveKiroPaths(outputRoot: string) {
@@ -103,6 +111,30 @@ function resolveKiroPaths(outputRoot: string) {
       skillsDir: path.join(outputRoot, "skills"),
       steeringDir: path.join(outputRoot, "steering"),
       settingsDir: path.join(outputRoot, "settings"),
+    }
+
+    function collectManagedPaths(
+      paths: ReturnType<typeof resolveKiroPaths>,
+      bundle: KiroBundle,
+    ): string[] {
+      const managed = new Set<string>()
+      for (const agent of bundle.agents) {
+        managed.add(path.join(paths.agentsDir, `${agent.name}.json`))
+        managed.add(path.join(paths.agentsDir, "prompts", `${agent.name}.md`))
+      }
+      for (const skill of bundle.generatedSkills) {
+        managed.add(path.join(paths.skillsDir, skill.name))
+      }
+      for (const skill of bundle.skillDirs) {
+        managed.add(path.join(paths.skillsDir, skill.name))
+      }
+      for (const file of bundle.steeringFiles) {
+        managed.add(path.join(paths.steeringDir, `${file.name}.md`))
+      }
+      if (Object.keys(bundle.mcpServers).length > 0) {
+        managed.add(path.join(paths.settingsDir, "mcp.json"))
+      }
+      return [...managed]
     }
   }
   // Otherwise nest under .kiro

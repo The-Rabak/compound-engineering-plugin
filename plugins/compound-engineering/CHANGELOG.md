@@ -5,6 +5,13 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.14.0] - 2026-06-01
+
+### Changed
+
+- **`/workflows:triage` command** -- Renamed the old `/triage` workflow to a namespaced command, added a mandatory research pass that produces evidence-backed action options for each todo, and changed execution to safe swarm batches built from dedicated per-todo execution packets.
+- **Generated export cleanup** -- Repo builds now clear stale generated Claude command output before regeneration, and OV/OpenCode sync/install now prune the legacy `triage` surface when `/workflows:triage` is present, so renamed workflows stop leaking old installable artifacts across exported platforms.
+
 ## [4.13.0] - 2026-05-24
 
 ### Added

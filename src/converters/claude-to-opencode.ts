@@ -123,7 +123,6 @@ function convertAgent(agent: ClaudeAgent, options: ClaudeToOpenCodeOptions) {
 function convertCommands(commands: ClaudeCommand[]): OpenCodeCommandFile[] {
   const files: OpenCodeCommandFile[] = []
   for (const command of commands) {
-    if (command.disableModelInvocation) continue
     const frontmatter: Record<string, unknown> = {
       description: command.description,
     }
