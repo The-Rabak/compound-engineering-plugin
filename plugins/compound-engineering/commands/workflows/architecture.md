@@ -1,6 +1,6 @@
 ---
 name: "workflows:architecture"
-description: Produce a dedicated architecture improvement artifact between planning and deepening, using deletion tests, interfaces, seams, and adapters as the shared contract
+description: Produce an implementation-guiding architecture handoff between planning and deepening, with optional deep review for risky changes
 argument-hint: "[path to plan file]"
 ---
 
@@ -52,18 +52,21 @@ Follow this protocol:
 
 Use those references as the **mandatory artifact contract**.
 
-## Mandatory architecture reviewers
+## Review depth
 
-Before finalizing the artifact, apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`.
+Default path: lightweight implementation handoff.
 
-Always run these reviewers regardless of repo config:
+- Treat routine plans as guidance-first: produce the architecture artifact without mandatory named-reviewer ceremony.
+- Focus the default pass on a concrete module blueprint, feature homes, shared/global boundaries, arrangement, contents, rationale, and downstream guardrails.
+- Record the chosen review depth in the artifact so `/deepen-plan`, `/workflows:work`, and `/workflows:review` inherit the same context.
 
-- `architecture-strategist` -- pressure-test dependency direction, boundary ownership, seams, adapters, and contract shape.
-- `uncle-bob` -- pressure-test naming, responsibility slicing, feature-home ownership, shared/global extractions, side-effect visibility, local reasoning, and whether the proposed structure stays easy to change.
+Escalate to deep architecture review when risk is high.
 
-Pass both reviewers the plan's WHY/WHERE context plus the current architecture notes or draft artifact content. Fold their findings into the final artifact instead of treating them as optional commentary.
-
-If either mandatory reviewer cannot be loaded and quoted, stop and report the architecture phase as incomplete rather than silently proceeding with reduced scrutiny.
+- Trigger escalation when work is genuinely novel, has high blast radius, introduces major shared/global extraction, or leaves boundary ownership disputed.
+- For escalated runs, apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`.
+- Then run `architecture-strategist` and `uncle-bob`, fold findings back into the artifact, and resolve meaningful conflicts explicitly.
+- After merging reviewer findings, run `document-review` in **architecture** mode for final tightening.
+- If an escalated run cannot load/quote required reviewers, stop and report the phase as incomplete rather than silently reducing scrutiny.
 
 ## Workflow
 
@@ -83,29 +86,30 @@ If `brainstorm_ref` exists, read it for stakeholder impact, resolved questions, 
 
 If an existing `architecture_ref` already exists, read it first and decide whether to update it in place or replace it with a newer artifact. Do not create duplicate artifacts without explaining why.
 
-### 2. Run the architecture improvement pass
+### 2. Run the architecture improvement pass (default lightweight)
 
 Use the reference contract to produce explicit architectural guidance:
 
-1. **Name the deepening candidates** -- which parts of the plan need deeper architectural treatment before execution hardening.
-2. **Run the deletion test** -- what can be removed, avoided, or kept concrete before adding a new interface, seam, or adapter.
-3. **Define interfaces as test surfaces** -- what behavior downstream tests and callers should rely on.
-4. **Map seams, adapters, and contracts** -- where the system should flex, what translates external concerns, and what promises must stay stable.
-5. **Use design-it-twice only where leverage is high** -- compare at least two structural options for risky boundaries, not for every detail.
-6. **Confirm feature homes and shared/global ownership** -- name what belongs in feature-local scope versus true shared/global scope so DRY and SOLID stay intact.
-7. **Split post-plan context tiers** -- make global, on-demand, and ticket-local context explicit so later ticketization and execution stay smaller.
-8. **Translate findings into downstream guidance** -- what `/deepen-plan`, `/workflows:work`, and `/workflows:review` should preserve or verify.
+1. **Build a module blueprint** -- identify each module, feature home, arrangement, main contents, and rationale so implementation knows what to build and why.
+2. **Confirm shared/global decisions** -- keep feature-home ownership, shared/global extractions, and reason-to-change boundaries explicit.
+3. **Name deepening candidates** -- call out only the areas that need deeper treatment before execution hardening.
+4. **Run the deletion test** -- state what stays concrete, what is delayed, and why.
+5. **Define interfaces as test surfaces** -- name stable caller/test behavior and what must not leak.
+6. **Map seams, adapters, and contracts** -- show where variation is expected and what promises must remain stable.
+7. **Use design-it-twice only for high leverage** -- compare options when risk justifies it; routine details can stay single-path.
+8. **Split context tiers** -- keep global, on-demand, and ticket-local context explicit.
+9. **Translate findings into downstream guidance** -- what `/deepen-plan`, `/workflows:work`, and `/workflows:review` should preserve or verify.
 
 If you cannot explain a proposed abstraction in terms of deletion test, interface, seam, or adapter, it is not ready to include.
 
-### 2.5 Run mandatory architecture reviewers
+### 2.5 Decide whether deep review escalation is required
 
-Dispatch `architecture-strategist` and `uncle-bob` using the protocol above.
+Choose one path and document it in the artifact:
 
-- `architecture-strategist` should challenge structural choices, coupling, and boundary integrity.
-- `uncle-bob` should challenge readability, responsibility boundaries, naming, side effects, long-term changeability, and whether the feature-home versus shared/global split is actually honest.
+- **Routine/default:** no named-reviewer ceremony; rely on the lightweight architecture contract and explicit downstream handoff.
+- **Escalated/deep:** run `architecture-strategist`, `uncle-bob`, and `document-review` as defined in **Review depth**.
 
-Resolve meaningful conflicts between the two perspectives explicitly in the artifact instead of picking one silently.
+For escalated/deep runs, resolve meaningful conflicts explicitly in the artifact instead of picking one silently.
 
 ### 3. Write the artifact
 
@@ -122,18 +126,22 @@ After writing the artifact:
 2. If frontmatter cannot be safely updated, add a clearly labeled `## Related Artifacts` section to the plan with the artifact path.
 3. Do not silently move the artifact elsewhere.
 
+For escalated/deep runs, run the `document-review` skill in **architecture** mode against the architecture artifact plus the parent plan context. This pass can run headlessly. Its job is to tighten feature-home ownership, shared/global boundary honesty, deletion-test justification, and downstream handoff usefulness without creating a parallel shadow spec.
+
 ## Required outputs
 
 A complete run must leave behind all of the following:
 
 - **Architecture artifact** in `docs/architecture/`
 - **Explicit artifact path** recorded back into the plan via `architecture_ref` or `## Related Artifacts`
+- **Module blueprint** that tells implementation which modules/feature homes to build, how they are arranged, what they contain, and why
 - **Feature-home ownership decisions** for the main slices or modules
 - **Shared/global boundary decisions** that keep DRY and SOLID honest
 - **Context tiers** that separate global, on-demand, and ticket-local context
 - **Deepening candidates** the next phase can act on
 - **Deletion-test decisions** that justify which abstractions stay or go
 - **Interface / seam / adapter / contract guidance** stated in plain language
+- **Review depth record** (`lightweight` or `escalated`) and why that depth was chosen
 - **Clear next step**: run `/deepen-plan` with the updated plan
 
 ## Handoff
@@ -153,6 +161,10 @@ Key deepening candidates:
 Deletion test:
 - Keep: <what stays concrete>
 - Add later only if needed: <what failed the deletion test>
+
+Review depth:
+- <lightweight | escalated>
+- Why: <why this depth fits the current plan risk>
 
 Next: Run `/deepen-plan <plan_path>` so execution hardening uses this architecture artifact.
 ```

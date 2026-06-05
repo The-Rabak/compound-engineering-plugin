@@ -13,15 +13,14 @@ The purpose of the artifact is to make architectural choices explicit before `/d
 A valid architecture improvement pass requires:
 
 - `plan_ref` -- the plan being hardened
-- Problem Narrative
-- User Story
-- Success Criteria
-- Architectural Context
+- canonical WHY source path via existing refs (`brainstorm_ref` when present, otherwise `plan_ref`)
+- concise local intent for what this architecture pass protects
+- success-criteria focus (reference labels/IDs, not copied prose)
 - Current plan phases/tasks
 - The vertical-slice module contract from `vertical-slice-architecture.md`
 - `brainstorm_ref`, constitution context, and source docs when available
 
-If any of the first five are missing, stop and report the missing input instead of improvising.
+If `plan_ref` is missing, or a canonical WHY source cannot be resolved from `brainstorm_ref`/`plan_ref`, stop and report the missing input instead of improvising.
 
 ## Mandatory output location
 
@@ -55,16 +54,21 @@ handoff:
 # <Topic Title> Architecture Improvement
 
 ## Purpose Linkage
-- Problem Narrative: <copied or summarized from plan>
-- User Story: <copied or summarized from plan>
-- Success Criteria: <list the criteria this artifact protects>
-- Architectural Context: <where this lives and what it touches>
+- Canonical WHY Source: <`brainstorm_ref` when available, otherwise `plan_ref`>
+- Local Intent: <1-2 lines describing what user outcome this architecture pass protects>
+- Success-Criteria Focus: <criteria labels/IDs this artifact is hardening>
+- Architectural Scope: <where this lives and what it touches>
 
 ## Feature Homes and Ownership
 - **Feature home:** `<path/or/namespace>`
   - Owns: <business behavior that should stay local to this feature>
   - Crosses into: <neighboring boundaries touched by this work>
   - Notes: <why this is the right home>
+
+## Module Blueprint for Implementation
+| Module | Feature home | Contains | Why this arrangement |
+|--------|--------------|----------|----------------------|
+| <module name> | `<path/or/namespace>` | <main files/responsibilities this module contains> | <how this helps implementation and keeps boundaries honest> |
 
 ## Shared / Global Decisions
 | Candidate | Keep in feature home / Move to shared | Why |
@@ -90,15 +94,19 @@ handoff:
   - **Adapter:** <translation layer at that seam, or `None`>
   - **Contract:** <explicit promise that must stay stable>
 
-## Design-It-Twice Options
+## Design-It-Twice (only for high-leverage risk)
 - **Option A:** <simpler structural option>
 - **Option B:** <alternative if leverage or risk justifies it>
-- **Chosen for now:** <decision and why>
+- **Chosen for now:** <decision and why, or `Not needed for this routine pass`>
 
 ## Context Tiers
 - **Global context:** <repo-wide rules, defaults, and stable shared/global boundaries>
 - **On-demand context:** <artifact refs and deeper docs later phases can load as needed>
 - **Ticket-local context:** <the minimum feature-home, scope, and evidence packet each execution ticket should carry>
+
+## Review Depth
+- **Depth used:** <lightweight | escalated>
+- **Why this depth:** <why this work did or did not require architecture-strategist + uncle-bob + document-review>
 
 ## Recommendations for `/deepen-plan`
 - <how to harden tasks, dependencies, tests, or research prompts>
@@ -139,8 +147,10 @@ The artifact is complete only when:
 
 - Every proposed abstraction survives the deletion test or is explicitly deferred
 - Feature homes and shared/global decisions are named explicitly
+- Module blueprint clearly states modules, arrangement, contents, and rationale
 - Interfaces are described as test surfaces, not just nouns
 - Seams and adapters are mapped to real boundaries in the plan
 - Context tiers are explicit enough that ticket creation and execution can stay smaller than the full plan
 - `/deepen-plan`, `/workflows-work`, and `/workflows-review` each have explicit handoff guidance
+- Review depth choice is explicit so downstream phases know whether this was lightweight or escalated
 - The artifact path is recorded back into the plan

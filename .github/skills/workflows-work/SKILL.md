@@ -16,7 +16,7 @@ Execute a work plan while maintaining WHY tracing from problem narrative through
 
 This command takes a work document (plan, ticket index, ticket, specification, or todo file) and executes it systematically using a **subagent orchestration model**. The orchestrator (this conversation) loads or adapts the source into execution units and delegates each unit to a focused subagent. `vertical-slices` is the default execution shape, but `infra-track` and `fix-batch` are also valid when declared by the plan. When the input is a ticket index, that index becomes the authoritative execution queue and `/workflows-work` selects the next safe batch from it. When the input is a ticket file, that ticket becomes the primary execution packet and the parent plan/architecture artifacts provide deeper context instead of re-expanding the whole backlog. Every implementation unit, retry, and regression repair in this workflow is delegated through the named `execution-agent`, which follows a standardized 4-phase protocol (understand, implement, self-review, report).
 
-**WHY-grounded execution:** Every subagent receives the source plan's WHY context -- the problem narrative, user story, architectural context, the architecture handoff contract, and which success criterion their specific unit serves. When execution starts from a ticket index, the index decides the next batch while the selected tickets provide the local execution packets. When execution starts from a ticket file, the ticket's local context packet stays primary, while `plan_ref`, `tickets_ref`, and `architecture_ref` remain the deeper-dive path. This prevents implementation drift where technically correct code fails to deliver the user's actual need. The orchestrator is the guardian of WHY: it extracts purpose from the plan, threads it through every unit prompt, and validates that the combined output delivers the stated user story.
+**WHY-grounded execution:** Every subagent receives canonical WHY linkage (`brainstorm_ref` when present, otherwise `plan_ref`), a concise local purpose line for the unit, architectural context, the architecture handoff contract, and which success criterion the unit serves. When execution starts from a ticket index, the index decides the next batch while the selected tickets provide the local execution packets. When execution starts from a ticket file, the ticket's local context packet stays primary, while `plan_ref`, `tickets_ref`, and `architecture_ref` remain the deeper-dive path. This prevents implementation drift where technically correct code fails to deliver the user's actual need. The orchestrator is the guardian of WHY: it resolves the canonical source once, threads refs plus local intent through every unit prompt, and validates that the combined output delivers the stated user story.
 
 **Execution delegation rule:** Ticket execution must always go through the bundled `execution-agent`. Do not route ticket implementation, ticket fix loops, or ticket regression repairs through `general-purpose` or any ad hoc worker prompt.
 
@@ -56,11 +56,11 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
       - the compact packet in `## Local Context`
       - the parent trace in `## Parent Refs` and `## Deeper-Dive Refs`
     - If the input is a ticket index or ticket file, load the parent plan and architecture artifact from the recorded refs before continuing. The index chooses the batch; the ticket files remain the execution packets; the parent artifacts provide WHY and boundary context.
-    - **Extract WHY artifacts** from the parent plan (these ground everything that follows):
-      - **Problem Narrative** -- why this work exists, what pain it solves
-      - **User Story** -- who benefits and what outcome they get
+    - **Resolve canonical WHY linkage** from parent refs (these ground everything that follows):
+      - **Canonical WHY source** -- `brainstorm_ref` when present, otherwise the parent `plan_ref`
+      - **User outcome anchor** -- one concise line from the parent user story
+      - **Success-criteria focus** -- criteria labels this execution packet serves
       - **Architectural Context** -- how the solution fits in the system
-      - **Success Criteria** -- measurable conditions that define "done"
       - **Execution shape** -- resolve it using `references/execution-shape.md`
       - **Feature-home ownership** -- for `vertical-slices`, identify the feature home each unit changes and what remains shared/global
       - **Unit tracing** -- each packet's `Serves`, `Consumers`, or equivalent purpose line showing what outcome it delivers or unlocks
@@ -176,11 +176,11 @@ If the plan lacks structural details, the ticket index or ticket lacks the ticke
 
 If the plan lacks the `tdd` block or `## TDD & Evidence Contract`, or if the resolved contract is ambiguous, refuse to proceed and suggest `/workflows-plan` or `/deepen-plan` to repair the execution contract before spawning subagents.
 
-If the plan lacks WHY artifacts, the orchestrator should **construct minimal WHY context** before proceeding:
+If the plan lacks WHY artifacts, the orchestrator should **construct minimal WHY linkage** before proceeding:
 1. Ask the user: "This plan doesn't include a problem narrative or user story. In one sentence, what problem are we solving and for whom?"
 2. Infer success criteria from the unit-level criteria
 3. Infer architectural context from the file paths and technologies mentioned
-4. Record these in STATE.md (see Step 3) so they're available for all units
+4. Record a canonical source note plus concise local intent in STATE.md (see Step 3) so they're available for all units
 
 #### Step 2: Check for Resumable Session
 
@@ -193,7 +193,7 @@ ls docs/execution-sessions/work-*/state.md 2>/dev/null
 If a previous session exists for the same source artifact and has `status: in_progress`:
 
 - Ask the user: "Found incomplete session `[session_id]` for this plan. Resume where you left off, or start fresh?"
-- **If resume**: Read STATE.md, load the WHY Context section plus the Architecture Handoff section, skip completed units, load the learnings brief, and continue from `current_unit`
+- **If resume**: Read STATE.md, load the WHY Linkage section plus the Architecture Handoff section, skip completed units, load the learnings brief, and continue from `current_unit`
 - **If fresh**: Archive the old session directory (rename with `-archived` suffix), then start a new session
 
 If no resumable session exists, proceed to Step 3.
@@ -226,19 +226,11 @@ total_units: [count]
 session_id: [SESSION_ID]
 ---
 
-## WHY Context
-
-### Problem Narrative
-[Extracted from plan -- why this work exists]
-
-### User Story
-[Extracted from plan -- who benefits and what outcome]
-
-### Architectural Context
-[Extracted from plan -- how this fits in the system]
-
-### Success Criteria
-[Extracted from plan -- measurable conditions for "done"]
+## WHY Linkage
+- Canonical WHY source: [brainstorm_ref path if available, else plan_file]
+- Parent plan: [path to plan]
+- This execution serves: [one-line outcome this session is delivering]
+- Success-criteria focus: [criteria labels this session is protecting]
 
 ### TDD Contract
 - Effective mode: [Ralph-driven TDD | Standard implementation with approved exception]
@@ -325,13 +317,13 @@ Apply the shared `Named Agent Dispatch` protocol from `references/orchestration-
 - **`## Ticket-local context`**
   - **{{TICKET_LOCAL_CONTEXT}}** -- the ticket-local execution packet when the source is a ticket; otherwise a compact packet derived from the plan unit
 - **`## Why This Unit Exists`**
-  - **{{WHY_CONTEXT}}** -- the purpose grounding block (constructed by orchestrator):
+  - **{{WHY_CONTEXT}}** -- the compact purpose-linkage block (constructed by orchestrator):
   ```
   ## Why This Unit Exists
-  **Problem:** [problem narrative from plan -- 1-2 sentences]
-  **User Story:** [user story from plan]
+  **Canonical WHY source:** [brainstorm_ref path when available, otherwise plan path]
+  **Parent refs:** [plan/tickets/architecture refs that ground this unit]
   **This unit serves:** [the packet purpose line from this unit -- which user story aspect, success criterion, or enabling outcome this delivers]
-  **Overall success criteria:** [plan-level success criteria list]
+  **Success-criteria focus:** [criteria labels this unit is protecting]
   **Guardrails:** [relevant constitution principles, approval rules, and approved waivers]
   ```
 - **`## Architectural Context`**
@@ -383,13 +375,10 @@ The subagent prompt is constructed from the loaded bundled `execution-agent` tem
 You are implementing Unit 3 of a feature plan. Here is your scoped context:
 
 ## Why This Unit Exists
-**Problem:** Users currently cannot authenticate, forcing manual session management that's error-prone and insecure.
-**User Story:** As a user, I want to log in with my credentials so that I can access my personalized dashboard securely.
+**Canonical WHY source:** docs/brainstorms/2026-01-15-auth-flow.md
+**Parent refs:** plan=`docs/plans/2026-01-16-auth-plan.md`; architecture=`docs/architecture/2026-01-16-auth-architecture.md`
 **This unit serves:** "Secure authentication flow" -- implementing the first thin end-to-end login path.
-**Overall success criteria:**
-- Users can log in and receive a JWT token
-- Invalid credentials are rejected with clear error messages
-- Tokens expire after the configured TTL
+**Success-criteria focus:** SC-1 login token issuance; SC-2 invalid credential rejection; SC-3 token expiry enforcement
 
 ## Unit
 Create the UserAuthService with JWT token generation and validation.
@@ -892,6 +881,7 @@ See the `orchestrating-swarms` skill for detailed swarm patterns and best practi
 - Progress is persistent: STATE.md means you can resume after crashes
 - Regression is caught early: previous tests re-run after each unit
 - When debugging unexpected errors, use the `systematic-debugging` skill for structured root-cause analysis instead of trial-and-error
+- When reproduction is fuzzy, prior attempts may matter, or the issue may need a fix-vs-diagnosis-vs-design decision, route through `/workflows-debug` instead of improvising a longer failure loop
 
 ## Quality Checklist
 

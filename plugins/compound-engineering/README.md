@@ -134,7 +134,6 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | Command | Description |
 |---------|-------------|
 | `/workflows:constitution` | Create or update the repo-level constitution that governs downstream workflows |
-| `/workflows:ideate` | Generate and rank grounded improvement ideas before selecting one to brainstorm |
 | `/workflows:brainstorm` | Explore requirements and approaches before planning |
 | `/workflows:plan` | Create implementation plans with issue-shaped execution slices and structured project inputs |
 | `/workflows:architecture` | Produce a dedicated architecture improvement artifact before deepening and execution |
@@ -142,6 +141,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/workflows:review` | Run comprehensive code reviews |
 | `/workflows:triage` | Research todos, record chosen actions, then execute safe batches in swarm mode |
 | `/workflows:work` | Execute execution slices systematically |
+| `/workflows:debug` | Orchestrate reproduction, diagnosis, fix decisions, and design escalation for bugs and failures |
 | `/workflows:compound` | Document solved problems to compound team knowledge |
 | `/workflows:compound-refresh` | Refresh stale learnings and pattern docs in `docs/solutions/` |
 
@@ -158,7 +158,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/heal-skill` | Fix skill documentation issues |
 | `/brownfield-maintenance` | Audit and fill brownfield AI-layer gaps outside the main feature workflow |
 | `/report-bug` | Report a bug in the plugin |
-| `/reproduce-bug` | Reproduce bugs using logs and console |
+| `/reproduce-bug` | Reproduce bugs and collect structured evidence for diagnosis or escalation |
 | `/resolve_parallel` | Resolve TODO comments in parallel |
 | `/resolve_todo_parallel` | Resolve todos in parallel |
 | `/test-browser` | Run browser tests on PR-affected pages |
@@ -186,7 +186,6 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `create-agent-skills` | Expert guidance for creating Claude Code skills |
 | `frontend-design` | Create production-grade frontend interfaces |
 | `focused-ticket-priming` | Turn one plan packet into one compact ticket-local execution packet |
-| `ideate` | Generate and critically evaluate grounded improvement ideas before selecting one to brainstorm |
 | `laravel-conventions` | Modern Laravel coding standards reference |
 | `skill-creator` | Guide for creating effective Claude Code skills |
 
@@ -196,14 +195,15 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 |-------|-------------|
 | `brainstorming` | Explore requirements and approaches through collaborative dialogue |
 | `caveman` | Ultra-compressed communication mode for terse, technically exact responses |
-| `document-review` | Improve documents through structured self-review |
+| `document-review` | Review workflow artifacts with artifact-aware lenses and headless refinement |
 | `file-todos` | File-based todo tracking system |
 | `finishing-branch` | Structured branch completion with verification, merge/PR options, and cleanup |
 | `git-worktree` | Manage Git worktrees for parallel development |
 | `grill-me` | Stress-test plans and designs by interviewing one decision at a time |
 | `resolve-pr-parallel` | Resolve PR review comments in parallel |
+| `session-history` | Recover prior attempts from repo artifacts first, then bounded recent session history |
 | `setup` | Configure which review agents run for your project |
-| `systematic-debugging` | Structured 4-phase debugging methodology (observe, hypothesize, test, fix) |
+| `systematic-debugging` | Structured debugging with explicit causal chains, prediction tests, and design escalation gates |
 | `ubiquitous-language` | Build a DDD-style glossary and canonical domain vocabulary from the conversation |
 
 ### Multi-Agent Orchestration

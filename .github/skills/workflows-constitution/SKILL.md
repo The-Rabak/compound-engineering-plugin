@@ -8,7 +8,7 @@ description: Create or update the project constitution for downstream workflows
 
 # Create or Update a Project Constitution
 
-Create or update the repo-level constitution artifact that governs `ideate -> brainstorm -> plan -> work -> review`.
+Create or update the repo-level constitution artifact that governs `brainstorm -> plan -> work -> review`.
 
 This command writes a **living project artifact** at `docs/constitution.md`. It is not a feature brief, not a brainstorm, and not a plan. It defines the durable repo-wide rules that downstream workflows must honor.
 
@@ -170,18 +170,16 @@ Validate that all handoff frontmatter flags are `true`.
 
 After writing the constitution, summarize what downstream workflows must now do:
 
-- **`/workflows-ideate`** -- score ideas for constitution fit and avoid ideas that conflict with repo baselines unless they are framed as explicit amendment candidates
-- **`/workflows-brainstorm`** -- read the constitution before exploring approaches, and record any proposed amendment instead of silently drifting
+- **`/workflows-brainstorm`** -- read the constitution before idea shortlisting or approach exploration, score candidate directions for constitution fit, and record any proposed amendment instead of silently drifting
 - **`/workflows-plan`** -- record `constitution_version` and any `constitution_waivers`, then translate relevant rules into acceptance criteria and approvals
 - **`/workflows-work`** -- inject constitution guardrails into execution prompts and stop for approval when the constitution requires it
 - **`/workflows-review`** -- treat unwaived constitution violations as blocking
 
 Then offer next steps:
 
-1. Proceed to `/workflows-ideate`
-2. Proceed to `/workflows-brainstorm`
-3. Proceed to `/workflows-plan`
-4. Done for now
+1. Proceed to `/workflows-brainstorm`
+2. Proceed to `/workflows-plan`
+3. Done for now
 
 ## Constitution Template
 
@@ -198,7 +196,6 @@ owners:
   - [team-or-maintainer]
 review_cycle: [monthly|quarterly|on-major-changes]
 applies_to:
-  - ideate
   - brainstorm
   - plan
   - work
@@ -241,9 +238,6 @@ handoff:
 - Completion / blocked-state reporting expectations
 
 ## Phase Guardrails
-
-### Ideation Guardrails
-- What ideate must honor
 
 ### Brainstorm Guardrails
 - What brainstorm must honor

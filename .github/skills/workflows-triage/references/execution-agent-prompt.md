@@ -21,6 +21,8 @@ This template is the **injected context packet** that `/workflows-work` passes i
 
 The bundled `execution-agent` enforces clean-code, DRY, SOLID, feature-home boundary discipline, doc blocks above non-trivial functions/classes, imports at the top of files unless a real exception exists, explicit failure handling, and the structured execution report contract. Populate the scaffold below completely before dispatch.
 
+`## Why This Unit Exists` must be a compact WHY linkage block, not copied plan prose. Always provide the canonical source path (`brainstorm_ref` when present, otherwise `plan_ref`) plus a concise local intent line for this unit.
+
 ## Your Unit
 
 **Unit:** {{UNIT_TITLE}}

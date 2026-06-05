@@ -5,6 +5,21 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.15.0] - 2026-06-01
+
+### Added
+
+- **`session-history` skill** -- New artifact-first recall layer that searches repo-owned workflow artifacts before falling back to a bounded recent-session window when the harness exposes searchable session history.
+- **`/workflows:debug` command** -- New first-class debug workflow that orchestrates prior-context lookup, reproduction, causal diagnosis, fix-now vs diagnosis-only vs rethink-design decisions, and honest escalation paths.
+
+### Changed
+
+- **Ideation workflow simplification** -- Removed `/workflows:ideate` and the standalone `ideate` skill from the published workflow surface. Brainstorm now owns optional idea shortlisting (candidate generation + adversarial culling) in one repo-scan path, without default `docs/ideation/` artifact output.
+- **`/reproduce-bug` command** -- Reframed around reproduction and evidence gathering instead of fuzzy repeated investigation loops. It now supports plain bug reports and failing commands in addition to issue intake, treats browser automation as conditional, captures environment/setup blockers explicitly, and emits a structured handoff for downstream debugging.
+- **`systematic-debugging` skill** -- The four-phase method now enforces an explicit trigger -> mechanism -> failure causal chain, prediction-based testing for uncertain links, lightweight assumption audits, failed-fix invalidation, and design-escalation criteria when the problem is architectural rather than local.
+- **`document-review` skill** -- Expanded from brainstorm/plan refinement into an artifact-aware reviewer for brainstorms, plans, architecture docs, tickets, and compounded learnings, with concise headless-mode output for workflow invocation.
+- **Workflow handoffs** -- `brainstorm`, `plan`, `architecture`, `deepen-plan`, `to-issues`, `compound`, and `work` now reference the upgraded review/debug surfaces so artifact refinement and failure handling stay aligned across the full workflow chain.
+
 ## [4.14.0] - 2026-06-01
 
 ### Changed

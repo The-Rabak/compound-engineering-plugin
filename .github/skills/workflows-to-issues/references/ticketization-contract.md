@@ -23,10 +23,10 @@ A ticketization run requires:
 
 - `plan_ref` -- the source plan
 - `execution_shape` -- must already be explicit in the plan
-- plan WHY artifacts: Problem Narrative, User Story, Success Criteria, Architectural Context
+- canonical WHY source path (`brainstorm_ref` when present, otherwise `plan_ref`)
 - the architecture artifact at `architecture_ref`, or an explicit architecture handoff contract
 
-If the plan is missing the WHY artifacts, execution shape, or architecture guidance, stop and ask the user to repair that first instead of guessing.
+If the plan is missing canonical WHY linkage, execution shape, or architecture guidance, stop and ask the user to repair that first instead of guessing.
 
 ## Output location
 
@@ -91,25 +91,18 @@ Required fields:
 
 Every generated ticket must carry a compact execution packet that can stand on its own.
 
-Required fields:
+Use `ticket-execution-contract.md` as the exact source of truth for:
 
-- `Ticket`
-- `Kind` -- tracer-bullet | expansion | hardening | infra-track | fix-batch
-- `Serves`
-- `Feature home`
-- `Scope`
-- `Scope fence`
-- `Files`
-- `Depends on`
-- `Dependency type`
-- `Acceptance criteria`
-- `Evidence / test command`
-- `Shared / global notes`
-- `Parent refs` -- plan path, architecture path, and source slice/packet reference
-- `Deeper-dive refs` -- optional docs to read only when the ticket-local packet is insufficient
-- `Coupling notes` -- why this ticket is one unit instead of multiple tickets
+- required frontmatter
+- required body section order
+- local context rules
+- status lifecycle and execution-consumption semantics
 
-Use `ticket-execution-contract.md` as the exact source of truth for the concrete frontmatter and section order.
+Ticketization-specific packaging duties beyond that schema:
+
+- preserve `WHY linkage` -- canonical WHY source path plus one-line ticket purpose
+- preserve `Parent refs`, `Deeper-dive refs`, and `Coupling notes`
+- keep the packet compact instead of recreating the full plan or architecture artifact
 
 ## Context packaging rules
 
