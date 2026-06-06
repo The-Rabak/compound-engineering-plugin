@@ -96,6 +96,8 @@ The orchestrating agent (main conversation) performs these steps:
 
 </sequential_tasks>
 
+After the solution file is written, optionally run the `document-review` skill in **solution** mode when the artifact is dense, ambiguous, or likely to become a durable team reference. This headless pass should tighten searchability, institutional reuse, and prevention quality without changing the underlying meaning of the documented fix.
+
 ### Phase 3: Optional Enhancement
 
 **WAIT for Phase 2 to complete before proceeding.**

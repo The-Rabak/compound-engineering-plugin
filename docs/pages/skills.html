@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Skill Reference - Compounding Engineering</title>
-  <meta content="Complete reference for all 24 intelligent skills in the Compounding Engineering plugin." name="description" />
+  <meta content="Complete reference for all 27 intelligent skills in the Compounding Engineering plugin." name="description" />
   <meta content="width=device-width, initial-scale=1" name="viewport" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="../css/style.css" rel="stylesheet" type="text/css" />
@@ -30,9 +30,9 @@
           <div class="nav-section">
             <h3>Reference</h3>
             <ul>
-              <li><a href="agents.html">Agents (31)</a></li>
-              <li><a href="commands.html">Commands (25)</a></li>
-              <li><a href="skills.html" class="active">Skills (24)</a></li>
+              <li><a href="agents.html">Agents (34)</a></li>
+              <li><a href="commands.html">Commands (29)</a></li>
+              <li><a href="skills.html" class="active">Skills (27)</a></li>
               <li><a href="mcp-servers.html">MCP Servers (1)</a></li>
             </ul>
           </div>
@@ -45,9 +45,9 @@
           <div class="nav-section">
             <h3>On This Page</h3>
             <ul>
-              <li><a href="#architecture-design">Architecture &amp; Design (2)</a></li>
-<li><a href="#development-tools">Development Tools (7)</a></li>
-<li><a href="#content-workflow">Content &amp; Workflow (11)</a></li>
+              <li><a href="#architecture-design">Architecture &amp; Design (3)</a></li>
+<li><a href="#development-tools">Development Tools (8)</a></li>
+<li><a href="#content-workflow">Content &amp; Workflow (12)</a></li>
 <li><a href="#multi-agent">Multi-Agent Orchestration (1)</a></li>
 <li><a href="#file-transfer">File Transfer (1)</a></li>
 <li><a href="#browser-automation">Browser Automation (1)</a></li>
@@ -73,7 +73,7 @@
 
         <h1><i class="fa-solid fa-wand-magic-sparkles color-accent"></i> Skill Reference</h1>
         <p class="lead">
-          Skills are reusable knowledge packs that Claude can load on demand. The current plugin bundles 24 skills spanning planning, review workflows, browser automation, image generation, and repo operations.
+          Skills are reusable knowledge packs that Claude can load on demand. The current plugin bundles 27 skills spanning planning, review workflows, browser automation, image generation, and repo operations.
         </p>
 
         <div class="usage-box">
@@ -95,7 +95,7 @@ skill: create-agent-skills</code></pre>
 
 
 <section id="architecture-design">
-  <h2><i class="fa-solid fa-compass-drafting"></i> Architecture &amp; Design (2)</h2>
+  <h2><i class="fa-solid fa-compass-drafting"></i> Architecture &amp; Design (3)</h2>
   <table class="docs-table">
     <thead>
       <tr>
@@ -106,12 +106,13 @@ skill: create-agent-skills</code></pre>
     <tbody>
       <tr><td><code>agent-native-audit</code></td><td>Run a scored audit of agent-native architecture principles</td></tr>
       <tr><td><code>agent-native-architecture</code></td><td>Build AI agents using prompt-native architecture</td></tr>
+      <tr><td><code>adversarial-plan-audit</code></td><td>Run a deep adversarial review of plans and architecture before implementation</td></tr>
     </tbody>
   </table>
 </section>
 
 <section id="development-tools">
-  <h2><i class="fa-solid fa-code"></i> Development Tools (7)</h2>
+  <h2><i class="fa-solid fa-code"></i> Development Tools (8)</h2>
   <table class="docs-table">
     <thead>
       <tr>
@@ -124,6 +125,7 @@ skill: create-agent-skills</code></pre>
       <tr><td><code>compound-docs</code></td><td>Capture solved problems as categorized documentation</td></tr>
       <tr><td><code>create-agent-skills</code></td><td>Expert guidance for creating Claude Code skills</td></tr>
       <tr><td><code>frontend-design</code></td><td>Create production-grade frontend interfaces</td></tr>
+      <tr><td><code>focused-ticket-priming</code></td><td>Turn one plan packet into one compact ticket-local execution packet</td></tr>
       <tr><td><code>ideate</code></td><td>Generate and critically evaluate grounded improvement ideas before selecting one to brainstorm</td></tr>
       <tr><td><code>laravel-conventions</code></td><td>Modern Laravel coding standards reference</td></tr>
       <tr><td><code>skill-creator</code></td><td>Guide for creating effective Claude Code skills</td></tr>
@@ -132,7 +134,7 @@ skill: create-agent-skills</code></pre>
 </section>
 
 <section id="content-workflow">
-  <h2><i class="fa-solid fa-diagram-project"></i> Content &amp; Workflow (11)</h2>
+  <h2><i class="fa-solid fa-diagram-project"></i> Content &amp; Workflow (12)</h2>
   <table class="docs-table">
     <thead>
       <tr>
@@ -143,14 +145,15 @@ skill: create-agent-skills</code></pre>
     <tbody>
       <tr><td><code>brainstorming</code></td><td>Explore requirements and approaches through collaborative dialogue</td></tr>
       <tr><td><code>caveman</code></td><td>Ultra-compressed communication mode for terse, technically exact responses</td></tr>
-      <tr><td><code>document-review</code></td><td>Improve documents through structured self-review</td></tr>
+      <tr><td><code>document-review</code></td><td>Review workflow artifacts with artifact-aware lenses and headless refinement</td></tr>
       <tr><td><code>file-todos</code></td><td>File-based todo tracking system</td></tr>
       <tr><td><code>finishing-branch</code></td><td>Structured branch completion with verification, merge/PR options, and cleanup</td></tr>
       <tr><td><code>git-worktree</code></td><td>Manage Git worktrees for parallel development</td></tr>
       <tr><td><code>grill-me</code></td><td>Stress-test plans and designs by interviewing one decision at a time</td></tr>
       <tr><td><code>resolve-pr-parallel</code></td><td>Resolve PR review comments in parallel</td></tr>
+      <tr><td><code>session-history</code></td><td>Recover prior attempts from repo artifacts first, then bounded recent session history</td></tr>
       <tr><td><code>setup</code></td><td>Configure which review agents run for your project</td></tr>
-      <tr><td><code>systematic-debugging</code></td><td>Structured 4-phase debugging methodology (observe, hypothesize, test, fix)</td></tr>
+      <tr><td><code>systematic-debugging</code></td><td>Structured debugging with explicit causal chains, prediction tests, and design escalation gates</td></tr>
       <tr><td><code>ubiquitous-language</code></td><td>Build a DDD-style glossary and canonical domain vocabulary from the conversation</td></tr>
     </tbody>
   </table>

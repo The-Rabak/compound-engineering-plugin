@@ -127,9 +127,11 @@ Write every ticket using the exact schema from `ticket-execution-contract.md`, i
 
 Then record `tickets_ref` back into the plan frontmatter when possible. If frontmatter cannot be updated safely, add the ticket-set path under `## Related Artifacts`.
 
-### 5. Run the final ticket-set review sweep
+### 5. Run the document-review pass and final ticket-set review sweep
 
 Review the entire ticket set before finishing.
+
+First, load the `document-review` skill in **ticket-index** mode against the generated `index.md` plus the parent plan and architecture artifact or explicit handoff. Then apply the same skill in **ticket** mode across the generated ticket files. This pass can run headlessly and should focus on WHY tracing, ticket-local sufficiency, scope-fence honesty, dependency readability, and whether the ticket set is compact without being under-specified.
 
 Apply the shared `Named Agent Dispatch` protocol from `orchestration-protocol.md` before dispatching `ticket-flow-auditor`.
 

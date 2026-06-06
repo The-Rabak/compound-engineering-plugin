@@ -6,7 +6,7 @@ model: claude-sonnet-4-6
 
 # Systematic Debugging
 
-A structured methodology for debugging unexpected errors encountered during implementation. Prevents trial-and-error guessing by enforcing a disciplined observe-hypothesize-test-fix cycle.
+A structured methodology for debugging unexpected errors encountered during implementation. Prevents trial-and-error guessing by enforcing a disciplined observe-hypothesize-test-fix cycle with an explicit causal-chain gate.
 
 **Announce at start:** "I'm using the systematic-debugging skill to diagnose this issue."
 
@@ -38,6 +38,12 @@ Gather evidence before forming any theories. Do not skip this phase.
    - What happens (the error)
    - What should happen (expected behavior)
    - When it happens (always, sometimes, under specific conditions)
+6. **Define the boundary** -- Identify the failing surface precisely:
+   - entry point
+   - affected module or feature home
+   - dependencies involved
+   - whether this looks local, environmental, or cross-boundary
+7. **Record prior attempts** -- What fixes or hypotheses were already tried? Which ones failed?
 
 **Output of Phase 1:** A clear, factual description of the symptoms with no theories attached.
 
@@ -45,20 +51,38 @@ Gather evidence before forming any theories. Do not skip this phase.
 
 Form structured theories about the root cause. Do not jump to fixing yet.
 
-1. **List 3 possible root causes** ranked by likelihood:
-   - **Most likely:** [hypothesis based on error message and context]
-   - **Possible:** [alternative explanation]
-   - **Less likely but worth checking:** [edge case or environmental cause]
+1. **List 3 possible root causes** ranked by likelihood.
 
-2. **For each hypothesis, identify:**
+2. **For each hypothesis, write the causal chain explicitly:**
+
+   ```text
+   Trigger -> Mechanism -> Failure
+   ```
+
+   Example:
+
+   ```text
+   Empty cache key -> config loader returns fallback shape -> validator receives missing field -> request fails with 500
+   ```
+
+3. **Identify the uncertain links** in each chain.
+
+4. **For each hypothesis, define:**
    - What evidence would confirm it
    - What evidence would rule it out
-   - How to test it without changing production code
+   - One prediction the system should make if the hypothesis is true
+   - How to test that prediction without implementing the fix yet
+
+5. **Run a lightweight assumption audit:**
+   - Which inputs am I assuming are valid?
+   - Which environment facts am I assuming are true?
+   - Which "this should never happen" beliefs need verification?
 
 **Do NOT:**
 - Start fixing before completing this phase
 - Settle on one theory without considering alternatives
 - Assume the most obvious cause is correct without verification
+- Proceed without at least one explicit trigger -> mechanism -> failure chain
 
 ### Phase 3: Test
 
@@ -73,6 +97,12 @@ Verify or eliminate each hypothesis systematically. Start with the most likely.
 3. **If ruled out:** Test the next hypothesis
 4. **If all 3 ruled out:** Return to Phase 2 with new hypotheses based on what you learned
 
+For every uncertain link in the causal chain, test a prediction:
+
+- "If the config is malformed before validation, the raw config dump should already be missing field X"
+- "If the queue worker is using stale code, restarting it should change the stack frame path"
+- "If the issue is permission-based, the same request should succeed under the admin fixture"
+
 **Techniques:**
 - **Binary search:** Comment out half the changes, see if the error persists. Narrow down.
 - **Isolation:** Run the failing code in isolation (unit test, REPL, minimal reproduction)
@@ -83,10 +113,11 @@ Verify or eliminate each hypothesis systematically. Start with the most likely.
 - Make changes to fix the problem while still in this phase
 - Skip hypotheses because you "feel" the first one is right
 - Change multiple things at once (change one variable at a time)
+- Keep trusting a hypothesis after a failed fix or failed prediction. Invalidate it and loop back explicitly.
 
 ### Phase 4: Fix
 
-Apply a targeted fix to the confirmed root cause.
+Apply a targeted fix to the confirmed root cause. You are only allowed to enter this phase once the causal chain is explicit enough to explain why the failure happens.
 
 1. **Fix the root cause** -- not the symptom. If the error is "undefined is not a function," the fix is not adding a null check -- it is understanding WHY the value is undefined and fixing THAT.
 
@@ -102,6 +133,19 @@ Apply a targeted fix to the confirmed root cause.
 
 5. **Remove diagnostics** -- Remove any log statements, debug prints, or breakpoints added during Phase 3.
 
+6. **Invalidate failed fixes explicitly** -- If the attempted fix does not hold, say what part of the chain was wrong and return to Phase 1 or 2. Never silently stack another guess on top.
+
+### Design Escalation Gate
+
+Stop treating the problem as a local bug and recommend a design-level workflow when any of these are true:
+
+- the real fix changes feature-home ownership or shared/global boundaries
+- the failure exposes a wrong abstraction, wrong contract, or missing seam
+- multiple attempted local fixes fail because the architecture assumption is wrong
+- the smallest honest fix is no longer small
+
+When that happens, recommend `/workflows:debug` for orchestration or escalate to `/workflows:brainstorm`, `/workflows:architecture`, or `/deepen-plan` as appropriate.
+
 ## After Debugging
 
 ### Document the Root Cause
@@ -111,6 +155,7 @@ Include in your execution report:
 ```markdown
 ### Debugging Session
 - **Symptom:** [what failed]
+- **Causal chain:** [trigger -> mechanism -> failure]
 - **Root cause:** [what was actually wrong]
 - **Fix:** [what was changed]
 - **Prevention:** [how to prevent this in the future]
@@ -131,3 +176,4 @@ If you discovered a pattern that would help prevent this issue in the future:
 - **Stack Overflow driven development:** Copying a fix from the internet without understanding what it does or why it applies to your situation.
 - **Symptom masking:** Adding a try/catch, null check, or default value that hides the real problem instead of fixing it.
 - **Tunnel vision:** Fixating on one hypothesis without considering alternatives. The first theory is often wrong.
+- **Chainless fixing:** Changing code before you can state the trigger -> mechanism -> failure path with reasonable confidence.
