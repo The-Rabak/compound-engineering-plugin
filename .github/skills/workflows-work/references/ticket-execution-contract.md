@@ -52,6 +52,8 @@ Recommended body shape:
 - Keep zero-padded numeric prefixes in execution order: `01-...`, `02-...`, `03-...`
 - Use the slug to describe the outcome, not the layer or implementation detail
 
+`ticketization-contract.md` should reference this file instead of restating the concrete ticket schema.
+
 ## Required ticket frontmatter
 
 Every ticket file must include this frontmatter shape:
@@ -99,13 +101,15 @@ The `## Local Context` section is the execution packet.
 
 It must include:
 
-- the smallest WHY summary needed for this ticket
+- canonical WHY source path (`brainstorm_ref` when present, otherwise `plan_ref`)
+- one-line local intent (`this ticket serves: ...`) tied to the parent outcome
 - the concrete files and interfaces that matter now
 - architectural boundary notes that keep the feature home honest
 - explicit unknowns or open questions that an execution agent must surface instead of guessing
 
 It must NOT:
 
+- copy Problem Narrative/User Story paragraphs into the ticket packet
 - copy the whole plan
 - restate the whole architecture artifact
 - duplicate repo-global guardrails that already belong in global context

@@ -384,9 +384,9 @@ Think like a product manager -- what would make this issue clear, actionable, an
 
 **Content Planning:**
 
-- [ ] Choose appropriate detail level based on issue complexity and audience
+- [ ] Use the adaptive template spine first; add optional sections only when they change decisions
 - [ ] Keep architecture minimal by default; include only components required to meet current success criteria
-- [ ] List all necessary sections for the chosen template
+- [ ] Record omitted optional sections only when their absence needs explicit callout
 - [ ] Gather supporting materials (error logs, screenshots, design mockups)
 - [ ] Prepare code examples or reproduction steps if applicable, name the mock filenames in the lists
 
@@ -452,32 +452,45 @@ The SpecFlow Analyzer should evaluate:
 - [ ] Update acceptance criteria based on SpecFlow findings
 - [ ] **Flag any flows that don't trace back to the user story** -- these may be scope creep or may reveal a gap in the user story itself
 
-### 4. Choose Implementation Detail Level
+### 4. Build One Adaptive Plan Template
 
-**Important for `/workflows-work` compatibility:** All detail levels can be executed, but each level must still declare an execution shape and produce the matching packet section. `vertical-slices` is the default and usually the best choice. MORE and A LOT provide the richest packets (scope fence, dependencies, evidence, and safety notes) and therefore give the most predictable subagent orchestration.
+**Important for `/workflows-work` compatibility:** Every plan shape must still declare `execution_shape` and include the matching packet section from `references/execution-shape.md`.
 
-**All detail levels include WHY sections.** The Problem Narrative, User Story, Architectural Context, and Success Criteria are mandatory at every level -- they are the contract that downstream phases depend on. The difference between levels is how much implementation detail surrounds them.
+**WHY-by-reference rule:** The plan still carries the canonical WHY anchor (`Problem Narrative`, `User Story`, `Architectural Context`, `Success Criteria`), while downstream execution/review/ticket artifacts reference the source path (`brainstorm_ref` or `plan_ref`) plus concise local intent instead of copied WHY prose.
 
-Select how comprehensive you want the issue to be, simpler is mostly better.
+Use one adaptive template. Start with the decision-bearing spine, then include optional sections only when they materially change scope, sequencing, risks, validation, or approvals.
 
-**Simplicity-first selection rule:**
-- Start at **MINIMAL** and only move to **MORE** or **A LOT** when there is clear, current-scope justification.
-- If choosing **A LOT**, add a short `### Complexity Justification` section that names the concrete risk/constraint requiring that depth.
-- Never use higher detail to speculate about future architecture; move speculative items to `## Future Considerations`.
+#### Decision-bearing spine (always emit)
 
-#### 📄 MINIMAL (Quick Issue)
+- Frontmatter with `handoff`, `tdd`, and `execution_shape`
+- `## Problem Narrative`
+- `## User Story`
+- `## Architectural Context`
+- `## Success Criteria`
+- `## TDD & Evidence Contract`
+- `## Execution Shape`
+- `## Constitution Alignment`
+- `## Implementation`
+- Exactly one execution packet section matching `execution_shape.mode`
+- `## References`
 
-**Best for:** Simple bugs, small improvements, clear features
+#### Optional sections catalog (include only when decision-bearing)
 
-**Includes:**
+For every optional section below, use this rule:
+- **Include only when this section changes a decision**
+- **If not needed, omit it entirely (omit if N/A)**
 
-- WHY anchor (problem narrative, user story, arch context, success criteria) -- brief
-- Basic acceptance criteria
-- Essential context only
+- `## Stakeholder Impact` (when stakeholder trade-offs affect sequencing or approvals)
+- `## Technical Considerations` (when architecture/security/performance constraints change implementation choices)
+- `## Alternative Approaches Considered` (when rejected options explain why the chosen path is safer or simpler)
+- `## Dependencies & Risks` (when external blockers or risk controls affect ordering or go/no-go)
+- `## Success Metrics` (when post-release measurement changes acceptance or rollout strategy)
+- `## Future Considerations` (when valuable ideas are intentionally deferred to protect current scope)
+- `## Complexity Justification` (**required** when adding non-trivial complexity beyond the simplicity baseline)
 
-**Note:** MINIMAL plans may still contain only a few units, but they must include at least one execution-ready packet from the selected mode before `/workflows-work` should execute them. When in doubt, choose a tracer-bullet slice.
+Never add optional sections as empty placeholders.
 
-**Structure:**
+#### Adaptive template structure
 
 ````markdown
 ---
@@ -514,12 +527,9 @@ execution_shape:
 # [Issue Title]
 
 ## Problem Narrative
-
-[2-4 sentences: who has the problem, what triggers it, what the impact is.
-Carried forward from brainstorm or constructed in Step 0.]
+[2-4 sentences: who has the problem, what triggers it, and the impact.]
 
 ## User Story
-
 As a [persona],
 I need to [action]
 so that [outcome],
@@ -527,56 +537,51 @@ because currently [pain point]
 which causes [impact].
 
 ## Architectural Context
-
-- **Lives in:** [service/module/layer -- with actual file paths from research]
-- **Feature home:** [primary feature namespace or directory for this work]
+- **Lives in:** [service/module/layer with file paths]
+- **Feature home:** [primary namespace/directory]
 - **Interacts with:** [neighboring systems/modules]
 - **Entry point:** [UI/API/CLI/event]
+- **Data:** [only when needed to make decisions]
+- **Dependencies:** [only when they affect order/scope]
 
 ## Success Criteria
-
-- [ ] [Measurable outcome tied to user story's "so that"]
+- [ ] [Measurable user outcome tied to the story]
 - [ ] [Observable behavior proving the problem is solved]
 
 ## TDD & Evidence Contract
-
-Use the exact section shape from `references/tdd-evidence-contract.md` with the resolved values for this plan. Do not omit any bullet, and make every deviation explicit with `replacement_evidence`.
+Use the exact section shape from `references/tdd-evidence-contract.md` with resolved values for this plan. Make every deviation explicit with `replacement_evidence`.
 
 ## Execution Shape
-
 - **Mode:** vertical-slices
-- **Why:** The work has a real tracer-bullet path, so default to end-to-end slices.
+- **Why:** [Why this mode matches the real work]
 
 ## Constitution Alignment
-
-- **Relevant principles:** [Project rules that apply to this work]
-- **Required approvals:** [Any approvals mandated by the constitution]
-- **Waivers:** [None, or explicit approved exceptions]
+- **Relevant principles:** [Project rules that apply]
+- **Required approvals:** [Any required approvals]
+- **Waivers:** [None, or approved exceptions]
 
 ## Implementation
-
-[Brief description of what to build and how]
+[Brief approach summary focused on current scope]
 
 ## Execution Slices
-
-Use this default section only when `execution_shape.mode` is `vertical-slices`. If the selected mode is `infra-track` or `fix-batch`, replace this section with the matching packet section from `references/execution-shape.md`.
+Use this section only when `execution_shape.mode` is `vertical-slices`. If mode is `infra-track` or `fix-batch`, replace with the matching packet section from `references/execution-shape.md`.
 
 ##### Slice 1.1: [Tracer Bullet Slice Title]
 **Slice type:** tracer-bullet
-**Serves:** [Which aspect of the user story / which success criterion this slice proves]
-**Demo scenario:** [Describe the smallest end-to-end behavior this slice makes observable]
+**Serves:** [Which success criterion this slice proves]
+**Demo scenario:** [Smallest end-to-end observable behavior]
 **Feature home:** `path/to/feature-home/`
-**Files:** `path/to/file1.php`, `path/to/file2.php`
+**Files:** `path/to/file1.ext`, `path/to/file2.ext`
 **Depends on:** None
 **Dependency type:** real | stub-available | parallel-safe
 
 ###### What to build
-[Brief description of the thin end-to-end path]
+[Thin vertical cut]
 
 ###### Scope
-- **Owns:** [What this slice is responsible for]
-- **Non-goals:** [What this slice intentionally does not solve yet]
-- **Scope fence:** [What would count as widening the slice too far]
+- **Owns:** [...]
+- **Non-goals:** [...]
+- **Scope fence:** [...]
 
 ###### Acceptance criteria
 - [ ] Criterion 1
@@ -584,568 +589,41 @@ Use this default section only when `execution_shape.mode` is `vertical-slices`. 
 
 ###### Evidence
 - **Test command:** `<project-appropriate test command>`
-- **Evidence focus:** [What this command proves for the tracer bullet]
+- **Evidence focus:** [What this proves]
+
+<!-- Optional sections from the catalog go here only when they change decisions; otherwise omit if N/A -->
 
 ## References
-
 - Related issue: #[issue_number]
 - Documentation: [relevant_docs_url]
 ````
 
-#### 📋 MORE (Standard Issue)
+#### Representative routine plan (compact and scannable)
 
-**Best for:** Most features, complex bugs, team collaboration
-
-**Includes everything from MINIMAL plus:**
-
-- Detailed background and motivation
-- Technical considerations
-- Issue-shaped execution slices with story tracing
-- Success metrics
-- Dependencies and risks
-
-**Structure:**
+This example is intentionally short because no optional sections change decisions. It is valid as-is.
 
 ```markdown
----
-title: [Issue Title]
-type: [feat|fix|refactor]
-status: active
-date: YYYY-MM-DD
-constitution_version: [version from docs/constitution.md, or null]
-constitution_waivers: []
-brainstorm_ref: [path to brainstorm doc, or null]
-source_docs:
-  tickets: []
-  docs: []
-  figma: []
-  plans: []
-handoff:
-  problem_narrative: true
-  user_story: true
-  architectural_context: true
-  success_criteria: true
-tdd:
-  precedence: plan_overrides_local
-  mode: inherit # inherit | ralph | standard
-  loop: inherit # inherit | red-green-refactor | implementation-first
-  evidence:
-    unit: inherit # inherit | required | optional
-    e2e: inherit # inherit | required | optional
-  exceptions: [] # [{ scope, reason, replacement_evidence }]
-execution_shape:
-  mode: vertical-slices # vertical-slices | infra-track | fix-batch
-  rationale: ""
----
-
-# [Issue Title]
+# fix: normalize webhook retry logging
 
 ## Problem Narrative
-
-[The synthesized problem statement. WHY we're building this.
-2-4 sentences: who has the problem, what triggers it, what the impact is.]
+Retry attempts are logged with inconsistent fields, which makes support triage slow during incidents.
 
 ## User Story
-
-As a [persona],
-I need to [action]
-so that [outcome],
-because currently [pain point]
-which causes [impact].
-
-## Architectural Context
-
-- **Lives in:** [service/module/layer -- grounded in repo research]
-- **Feature home:** [primary feature namespace or directory for this work]
-- **Interacts with:** [neighboring systems/modules with file paths]
-- **Entry point:** [UI/API/CLI/event]
-- **Data:** [what data flows, where it lives]
-- **Dependencies:** [what this depends on, what may depend on it]
-- **Conventions:** [relevant CLAUDE.md or project conventions]
+As an on-call engineer, I need retry logs to use one schema so that I can filter failures quickly during incidents.
 
 ## Success Criteria
-
-- [ ] [Measurable outcome 1 -- tied to user story's "so that"]
-- [ ] [Measurable outcome 2 -- observable behavior]
-- [ ] [Measurable outcome 3 -- proving the problem is solved]
-
-## TDD & Evidence Contract
-
-Use the exact section shape from `references/tdd-evidence-contract.md` with the resolved values for this plan. Do not omit any bullet, and make every deviation explicit with `replacement_evidence`.
+- [ ] Every retry log includes `attempt`, `delay_ms`, and `job_id`
+- [ ] Support can filter failed retries by `job_id` in one query
 
 ## Execution Shape
-
 - **Mode:** vertical-slices
-- **Why:** The default tracer-bullet decomposition matches the real behavior being delivered.
-
-## Constitution Alignment
-
-- **Relevant principles:** [Project rules that apply to this work]
-- **Applicable baselines:** [Testing, security, docs, operations, portability, etc.]
-- **Required approvals:** [Any approvals mandated by the constitution]
-- **Waivers:** [None, or explicit approved exceptions]
-
-## Overview
-
-[Comprehensive description of what we're building and the chosen approach]
-
-## Technical Considerations
-
-- Architecture impacts
-- Performance implications
-- Security considerations
+- **Why:** One tracer bullet can prove end-to-end logging normalization.
 
 ## Execution Slices
-
-Use this default section only when `execution_shape.mode` is `vertical-slices`. If the selected mode is `infra-track` or `fix-batch`, replace this section with the matching packet section from `references/execution-shape.md`.
-
-#### Phase 1: [Optional grouping / milestone]
-**Purpose:** [Why these slices belong together or why this track exists]
-**Not executable by itself:** `/workflows-work` executes the slices below, not the phase wrapper.
-
-##### Slice 1.1: [Tracer Bullet Slice Title]
+##### Slice 1.1: normalize retry logger fields
 **Slice type:** tracer-bullet
-**Serves:** [Which aspect of the user story / which success criterion this slice proves]
-**Demo scenario:** [Describe the smallest end-to-end behavior this slice makes observable]
-**Feature home:** `path/to/feature-home/`
-**Files:** `path/to/file1.php`, `path/to/file2.php`
-**Depends on:** None
-**Dependency type:** parallel-safe
-
-###### What to build
-[Describe the thin vertical cut through the system]
-
-###### Scope
-- **Owns:** [What this slice is responsible for]
-- **Non-goals:** [What it intentionally does not solve yet]
-- **Scope fence:** [What would widen the slice too far]
-
-###### Acceptance criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-###### Evidence
-- **Test command:** `<project-appropriate test command>`
-- **Evidence focus:** [What the command proves]
-
-##### Slice 1.2: [Expansion Slice Title]
-**Slice type:** expansion
-**Serves:** [Which aspect of the user story / which success criterion this slice extends]
-**Demo scenario:** [Describe the next observable behavior]
-**Files:** `path/to/file3.php`
-**Depends on:** Slice 1.1
-**Dependency type:** real
-
-###### What to build
-[Describe the next thin vertical cut]
-
-###### Scope
-- **Owns:** [What this slice changes]
-- **Non-goals:** [What stays out]
-- **Scope fence:** [Boundary for this expansion]
-
-###### Acceptance criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-###### Evidence
-- **Test command:** `<project-appropriate test command>`
-- **Evidence focus:** [What the command proves]
-
-#### Phase 2: [Optional grouping / milestone]
-**Purpose:** [Why the next slices are grouped here]
-
-##### Slice 2.1: [Hardening or follow-on slice]
-**Slice type:** expansion | hardening
-**Serves:** [Which aspect of the user story / which success criterion this slice delivers]
-**Demo scenario:** [Describe the observable behavior or guardrail added here]
-**Files:** `path/to/file4.php`
-**Depends on:** Slice 1.2
-**Dependency type:** real
-
-###### What to build
-[Describe the slice]
-
-###### Scope
-- **Owns:** [What this slice changes]
-- **Non-goals:** [What stays out]
-- **Scope fence:** [Boundary for this slice]
-
-###### Acceptance criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-###### Evidence
-- **Test command:** `<project-appropriate test command>`
-- **Evidence focus:** [What the command proves]
-
-## Acceptance Criteria
-
-- [ ] Detailed requirement 1
-- [ ] Detailed requirement 2
-- [ ] Testing requirements
-
-## Success Metrics
-
-[How we measure success -- tied to the user story and problem narrative]
-
-## Dependencies & Risks
-
-[What could block or complicate this]
-
-## References & Research
-
-- Similar implementations: [file_path:line_number]
-- Best practices: [documentation_url]
-- Related PRs: #[pr_number]
-```
-
-#### 📚 A LOT (Comprehensive Issue)
-
-**Best for:** Major features, architectural changes, complex integrations
-
-**Includes everything from MORE plus:**
-
-- Detailed implementation plan with slice groups
-- Alternative approaches considered (traced to user story)
-- Extensive technical specifications
-- Resource requirements and timeline
-- Future considerations and extensibility
-- Risk mitigation strategies
-- Documentation requirements
-
-**Structure:**
-
-```markdown
----
-title: [Issue Title]
-type: [feat|fix|refactor]
-status: active
-date: YYYY-MM-DD
-constitution_version: [version from docs/constitution.md, or null]
-constitution_waivers: []
-brainstorm_ref: [path to brainstorm doc, or null]
-source_docs:
-  tickets: []
-  docs: []
-  figma: []
-  plans: []
-handoff:
-  problem_narrative: true
-  user_story: true
-  architectural_context: true
-  success_criteria: true
-tdd:
-  precedence: plan_overrides_local
-  mode: inherit # inherit | ralph | standard
-  loop: inherit # inherit | red-green-refactor | implementation-first
-  evidence:
-    unit: inherit # inherit | required | optional
-    e2e: inherit # inherit | required | optional
-  exceptions: [] # [{ scope, reason, replacement_evidence }]
-execution_shape:
-  mode: vertical-slices # vertical-slices | infra-track | fix-batch
-  rationale: ""
----
-
-# [Issue Title]
-
-## Problem Narrative
-
-[Detailed problem analysis. WHY we're building this.
-Who has the problem, what triggers it, what the impact is, and what happens if we don't solve it.]
-
-## User Story
-
-As a [persona],
-I need to [action]
-so that [outcome],
-because currently [pain point]
-which causes [impact].
-
-### Secondary Stories (if applicable)
-
-As a [persona 2], I need to [action] so that [outcome].
-
-## Architectural Context
-
-- **Lives in:** [service/module/layer -- grounded in repo research with file paths]
-- **Feature home:** [primary feature namespace or directory for this work]
-- **Interacts with:** [neighboring systems/modules with specific integration points]
-- **Entry point:** [UI/API/CLI/event -- specific routes, components, or endpoints]
-- **Data:** [what data flows, where it lives, schema implications]
-- **Dependencies:** [what this depends on, what may depend on it]
-- **Conventions:** [relevant CLAUDE.md or project conventions]
-- **Boundary constraints:** [what this should NOT touch or change]
-
-## Success Criteria
-
-- [ ] [Measurable outcome 1 -- tied to user story]
-- [ ] [Measurable outcome 2 -- observable behavior]
-- [ ] [Measurable outcome 3 -- proving the problem is solved]
-- [ ] [Non-functional: performance target]
-- [ ] [Non-functional: security requirement]
-
-## TDD & Evidence Contract
-
-Use the exact section shape from `references/tdd-evidence-contract.md` with the resolved values for this plan. Do not omit any bullet, and make every deviation explicit with `replacement_evidence`.
-
-## Execution Shape
-
-- **Mode:** vertical-slices
-- **Why:** The plan delivers meaningful user-visible tracer bullets, so slices stay the best default.
-
-## Constitution Alignment
-
-- **Relevant principles:** [Project rules that apply to this work]
-- **Applicable baselines:** [Testing, security, docs, operations, portability, etc.]
-- **Required approvals:** [Any approvals mandated by the constitution]
-- **Waivers:** [None, or explicit approved exceptions]
-
-## Stakeholder Impact
-
-- **End users:** [How their experience changes -- from user story]
-- **Developers:** [How this affects the codebase -- from architectural context]
-- **Operations:** [Deployment, monitoring, infrastructure impact]
-- **Business:** [Revenue, cost, compliance, timeline impact]
-
-## Overview
-
-[Executive summary of what we're building, the chosen approach, and why this approach best serves the user story]
-
-## Proposed Solution
-
-[Comprehensive solution design]
-
-## Technical Approach
-
-### Architecture
-
-[Detailed technical design, grounded in the architectural context map]
-
-### Execution Slices
-
-Use this default section only when `execution_shape.mode` is `vertical-slices`. If the selected mode is `infra-track` or `fix-batch`, replace this section with the matching packet section from `references/execution-shape.md`.
-
-#### Phase 1: [Tracer bullet track]
-**Purpose:** [Why these slices come first]
-**Rationale:** [What this track proves before later widening]
-
-##### Slice 1.1: [Tracer Bullet Slice Title]
-**Slice type:** tracer-bullet
-**Serves:** [Which aspect of the user story / which success criteria this slice proves]
-**Demo scenario:** [Describe the smallest end-to-end behavior]
-**Feature home:** `path/to/feature-home/`
-**Files:** `path/to/file1.php`, `path/to/file2.php`
-**Depends on:** None
-**Dependency type:** real | stub-available | parallel-safe
-**Blast radius:** low | medium | high
-**Shared state changes:** [None, or list]
-**Rollback path:** [How to back out safely if risky]
-
-###### What to build
-[Describe the tracer bullet as an issue-sized vertical slice]
-
-###### Scope
-- **Owns:** [What this slice is responsible for]
-- **Non-goals:** [What intentionally waits for later slices]
-- **Scope fence:** [What would widen the slice too far]
-
-###### Acceptance criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-###### Evidence
-- **Test command:** `<project-appropriate test command>`
-- **Evidence focus:** [What the command proves]
-
-##### Slice 1.2: [Follow-on expansion slice]
-**Slice type:** expansion
-**Serves:** [Which aspect of the user story / which success criteria this slice extends]
-**Demo scenario:** [Describe the next observable behavior]
-**Files:** `path/to/file3.php`
-**Depends on:** Slice 1.1
-**Dependency type:** real
-**Blast radius:** low | medium | high
-**Shared state changes:** [None, or list]
-**Rollback path:** [How to back out safely if risky]
-
-###### What to build
-[Describe the slice]
-
-###### Scope
-- **Owns:** [What this slice changes]
-- **Non-goals:** [What stays out]
-- **Scope fence:** [Boundary for this slice]
-
-###### Acceptance criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-###### Evidence
-- **Test command:** `<project-appropriate test command>`
-- **Evidence focus:** [What the command proves]
-
-#### Phase 2: [Core widening track]
-**Purpose:** [Why these slices come after the tracer bullet]
-**Rationale:** [What this track widens or hardens]
-
-##### Slice 2.1: [Core slice]
-**Slice type:** expansion | hardening
-**Serves:** [Which aspect of the user story / which success criteria this slice delivers]
-**Demo scenario:** [Describe the user-visible behavior]
-**Files:** `path/to/file4.php`, `path/to/file5.php`
-**Depends on:** Slice 1.2
-**Dependency type:** real
-**Blast radius:** low | medium | high
-**Shared state changes:** [None, or list]
-**Rollback path:** [How to back out safely if risky]
-
-###### What to build
-[Describe the slice]
-
-###### Scope
-- **Owns:** [What this slice changes]
-- **Non-goals:** [What stays out]
-- **Scope fence:** [Boundary for this slice]
-
-###### Acceptance criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-###### Evidence
-- **Test command:** `<project-appropriate test command>`
-- **Evidence focus:** [What the command proves]
-
-##### Slice 2.2: [Parallel-safe or stub-removal slice]
-**Slice type:** expansion | hardening
-**Serves:** [Which aspect of the user story / which success criteria this slice delivers]
-**Demo scenario:** [Describe the observable outcome]
-**Files:** `path/to/file6.php`
-**Depends on:** Slice 2.1
-**Dependency type:** real | stub-available | parallel-safe
-**Blast radius:** low | medium | high
-**Shared state changes:** [None, or list]
-**Rollback path:** [How to back out safely if risky]
-
-###### What to build
-[Describe the slice]
-
-###### Scope
-- **Owns:** [What this slice changes]
-- **Non-goals:** [What stays out]
-- **Scope fence:** [Boundary for this slice]
-
-###### Acceptance criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-###### Evidence
-- **Test command:** `<project-appropriate test command>`
-- **Evidence focus:** [What the command proves]
-
-#### Phase 3: [Hardening / rollout track]
-**Purpose:** [Why these slices close the loop]
-
-##### Slice 3.1: [Hardening slice]
-**Slice type:** hardening
-**Serves:** [Which success criteria / quality aspects this slice delivers]
-**Demo scenario:** [Describe the behavior or safety improvement]
-**Files:** `path/to/file7.php`
-**Depends on:** Slice 2.2
-**Dependency type:** real
-**Blast radius:** low | medium | high
-**Shared state changes:** [None, or list]
-**Rollback path:** [How to back out safely if risky]
-
-###### What to build
-[Describe the slice]
-
-###### Scope
-- **Owns:** [What this slice changes]
-- **Non-goals:** [What stays out]
-- **Scope fence:** [Boundary for this slice]
-
-###### Acceptance criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-###### Evidence
-- **Test command:** `<project-appropriate test command>`
-- **Evidence focus:** [What the command proves]
-
-### Slice-to-Story Traceability
-
-| Success Criterion | Delivered by Slice(s) | Demo scenarios |
-|---|---|---|
-| [Criterion 1 from Success Criteria] | Slice 1.1, Slice 2.1 | [Scenario names] |
-| [Criterion 2 from Success Criteria] | Slice 2.1, Slice 2.2 | [Scenario names] |
-
-## Alternative Approaches Considered
-
-[Other solutions evaluated and why rejected -- **relative to the user story and success criteria**, not just technical tradeoffs]
-
-## Acceptance Criteria
-
-### Functional Requirements
-
-- [ ] Detailed functional criteria
-
-### Non-Functional Requirements
-
-- [ ] Performance targets
-- [ ] Security requirements
-- [ ] Accessibility standards
-
-### Quality Gates
-
-- [ ] Unit + e2e evidence captured, or a justified exception with replacement evidence
-- [ ] Documentation completeness
-- [ ] Code review approval
-
-## Success Metrics
-
-[Detailed KPIs and measurement methods -- tied to user story outcomes]
-
-## Dependencies & Prerequisites
-
-[Detailed dependency analysis]
-
-## Risk Analysis & Mitigation
-
-[Comprehensive risk assessment -- including risks to delivering the user story, not just technical risks]
-
-## Resource Requirements
-
-[Team, time, infrastructure needs]
-
-## Future Considerations
-
-[Extensibility and long-term vision]
-
-## Documentation Plan
-
-[What docs need updating]
-
-## References & Research
-
-### Internal References
-
-- Architecture decisions: [file_path:line_number]
-- Similar features: [file_path:line_number]
-- Configuration: [file_path:line_number]
-
-### External References
-
-- Framework documentation: [url]
-- Best practices guide: [url]
-- Industry standards: [url]
-
-### Related Work
-
-- Previous PRs: #[pr_numbers]
-- Related issues: #[issue_numbers]
-- Design documents: [links]
+**Serves:** success criterion 1 and 2
+...
 ```
 
 ### 5. Issue Creation & Formatting
@@ -1225,7 +703,7 @@ public function processUser(User $user): array
 
 - [ ] Title is searchable and descriptive
 - [ ] Labels accurately categorize the issue
-- [ ] All template sections are complete
+- [ ] All included sections are complete; omitted optional sections are intentionally omitted
 - [ ] Links and references are working
 - [ ] Acceptance criteria are measurable
 - [ ] Architecture is the simplest viable option for the current user story and success criteria
@@ -1305,7 +783,7 @@ Based on selection:
 - **`/workflows-architecture`** → Call the /workflows-architecture command with the plan file path
 - **`/deepen-plan`** → Call the /deepen-plan command with the plan file path only after architecture improvement is complete and `architecture_ref` or a labeled handoff artifact has been recorded
 - **`/workflows-to-issues`** → Call `/workflows-to-issues` with the plan file path after architecture guidance is explicit; recommend this after `/deepen-plan`, but allow it directly after `/workflows-plan` when the user wants earlier backlog shaping
-- **Review and refine** → Load `document-review` skill.
+- **Review and refine** → Load the `document-review` skill in **plan** mode against the plan and any linked brainstorm / architecture context already recorded, using concise headless output when this handoff runs non-interactively.
 - **`/workflows-work`** → Call the /workflows-work command with the plan file path once the architecture artifact or explicit architecture handoff contract is available
 - **`/workflows-work` on remote** → Run `/workflows-work docs/plans/<plan_filename>.md &` after the architecture handoff is explicit so execution agents do not guess at boundaries
 - **Create Issue** → See "Issue Creation" section below
@@ -1348,13 +826,14 @@ The plan document is a structured contract consumed by all downstream phases. He
 - **Must preserve**: Problem Narrative, User Story, and handoff contract unchanged
 
 **`/workflows-to-issues`** reads:
-- plan WHY artifacts and execution packets -- these become the ticket set's purpose and base work units
+- plan WHY artifacts and execution packets -- these become the canonical source and base work units
 - `architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract -- supplies feature homes, shared/global boundaries, context tiers, and drift checks for ticket shaping
 - `tdd` frontmatter + `## TDD & Evidence Contract` -- preserves evidence expectations inside each ticket packet
+- **Packaging rule:** tickets keep WHY linkage by path (`brainstorm_ref` when present, otherwise `plan_ref`) plus concise local intent, not full copied WHY blocks
 - **Must write**: a local ticket set in `docs/tickets/` plus `tickets_ref` or a labeled related-artifact link back into the plan
 
 **`/workflows-work`** reads:
-- **Problem Narrative & User Story** -- the orchestrator uses these to validate task outcomes make sense in context, not just pass tests
+- **Canonical WHY source refs** (`brainstorm_ref`/`plan_ref`) + concise unit purpose lines -- the orchestrator uses these to validate task outcomes make sense in context, not just pass tests
 - **Architectural Context** -- feeds directly into `{{ARCHITECTURAL_CONTEXT}}` in each execution agent's prompt loaded from the canonical execution-agent template. This is WHY grounded arch context matters -- every subagent gets system-level awareness
 - **Implementation phases & tasks** -- the execution chunk structure (Feature home, Files, Depends on, Success criteria, Test command)
 - **Success Criteria** -- the orchestrator checks final outcomes against these, not just individual task passes
@@ -1363,14 +842,14 @@ The plan document is a structured contract consumed by all downstream phases. He
 - **`references/vertical-slice-architecture.md` + architecture handoff** -- keep business logic in the feature home while shared/global abstractions stay shared when DRY/SOLID requires it
 
 **`/workflows-review`** reads:
-- **Problem Narrative & User Story** -- the frame for evaluating whether the implementation solves the right problem
-- **Success Criteria** -- the measurable outcomes that the review should verify
+- **Canonical WHY source refs** (`brainstorm_ref`/`plan_ref`) + concise review focus line -- the frame for evaluating whether the implementation solves the right problem
+- **Success-criteria focus labels** -- the measurable outcomes that the review should verify
 - **Architectural Context** -- used to evaluate whether the implementation respects system boundaries and integration points
 - **`architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract** -- supplies the architecture intent, feature homes, shared/global boundary decisions, context tiers, deletion-test outcomes, interfaces, seams, adapters, and contracts that reviewers must verify or flag as drift
 - **`tdd` frontmatter + `## TDD & Evidence Contract`** -- review must verify the declared evidence exists and that any deviation from Ralph/unit+e2e is explicitly justified
 - **`execution_shape` + execution packets** -- review uses the chosen mode to judge whether the work was decomposed honestly and executed completely
 - **Constitution Alignment and waivers** -- used to distinguish approved exceptions from blocking constitution violations
-- **Stakeholder Impact** (A LOT level) -- informs stakeholder-perspective review
+- **Stakeholder Impact** (when present) -- informs stakeholder-perspective review
 - **Named reviewer ownership** -- `/workflows-review` owns named review-agent coordination, template loading, and WHY-context injection for reviewer prompts
 
 NEVER CODE! Just research and write the plan.

@@ -1,7 +1,7 @@
 ---
 name: reproduce-bug
-description: Reproduce and investigate a bug using logs, console inspection, and browser screenshots
-argument-hint: '[issue number or description]'
+description: Reproduce a bug and collect structured evidence for diagnosis, fix planning, or escalation
+argument-hint: '[issue number, issue URL, failing command, or bug description]'
 platforms:
   claude:
     disable-model-invocation: true
@@ -9,93 +9,131 @@ platforms:
 
 # Reproduce Bug Command
 
-Look at github issue #$ARGUMENTS and read the issue description and comments.
+This command's job is to produce a **credible reproduction record and evidence pack**.
 
-## Phase 1: Log Investigation
+It is **not** a generic "keep poking until you have a theory" loop. Diagnosis can follow, but the primary contract here is:
 
-Run the following agents in parallel to investigate the bug:
+1. normalize the bug report
+2. establish the environment/setup requirements
+3. reproduce the issue or prove why reproduction is currently blocked
+4. collect bounded evidence for the next debugging step
+
+If the arguments reference a GitHub issue or tracker URL, read the issue description and relevant comments first.
+If the arguments are a failing command, error text, or plain bug description, treat that as the bug intake directly.
+
+## Phase 0: Normalize the Intake
+
+Before doing any deep investigation, write down:
+
+- **Expected behavior**
+- **Observed behavior**
+- **Known trigger or user flow**
+- **Surface type**: CLI / API / background job / browser / visual / unknown
+- **Requested outcome**: reproduce only, gather evidence, or prepare for full debug/fix
+
+If key inputs are missing, ask for them instead of inventing a repro story.
+
+## Phase 1: Artifact-First Research
+
+Load the `session-history` skill first so you can search repo-owned artifacts before falling back to transient session history.
+
+Then run one focused research pass.
 
 Before dispatching `repo-research-analyst` or `learnings-researcher`, use the platform's file-search tool against the bundled agent directory to look for `<agent-name>.md`, then use the file-read tool to load the full template. Only if the bundled template cannot be loaded should you fall back to `ov_load_global_agent "<agent-name>"`. Before dispatching, quote the first non-empty line of the loaded template and record the source used. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch. Never dispatch a named agent by name alone.
 
-1. Task repo-research-analyst(issue_description) - Search codebase for relevant code paths
-2. Task learnings-researcher(issue_description) - Check if similar bugs have been solved before
+Run in parallel:
 
-Think about the places it could go wrong looking at the codebase. Look for logging output we can look for.
+1. `repo-research-analyst` -- map likely code paths, entry points, logs, and neighboring modules
+2. `learnings-researcher` -- look for prior fixes or known failure patterns in `docs/solutions/`
 
-Run the agents again to find any logs that could help us reproduce the bug.
+Do **not** keep rerunning the same agents in a fuzzy loop. Only rerun if new evidence materially changes the target area.
 
-Keep running these agents until you have a good idea of what is going on.
+## Phase 2: Establish the Reproduction Contract
 
-## Phase 2: Visual Reproduction with agent-browser
+Before attempting reproduction, identify the minimum setup required:
 
-If the bug is UI-related or involves user flows, use agent-browser to visually reproduce it:
+- branch / commit / environment
+- seed data or fixtures
+- user account / permissions / feature flags
+- services that must be running
+- migrations or background workers
+- external dependencies or mock requirements
 
-### Step 1: Verify Server is Running
+If any of these are unknown or missing, surface that as a reproduction blocker. Do not pretend the bug was "not reproducible" when the environment was incomplete.
 
-```bash
-agent-browser open http://localhost:3000
-agent-browser snapshot -i
+## Phase 3: Choose the Reproduction Lane
+
+Pick the narrowest lane that can produce trustworthy evidence.
+
+### Lane A: CLI / API / test / server-side reproduction
+
+Prefer this lane when the issue can be shown through:
+
+- a failing test
+- a failing command
+- a request/response path
+- logs or stack traces
+- a minimal script or fixture
+
+Try to reduce the scenario to the smallest repeatable command or input set.
+
+### Lane B: Browser or visual reproduction
+
+Use browser automation only when the bug truly lives in a user flow, UI state transition, or visual rendering path.
+
+If using `agent-browser`:
+
+1. verify the target server is running
+2. navigate only to the relevant area
+3. capture snapshots/screenshots only at meaningful checkpoints
+4. record the exact sequence of user actions and resulting console/network evidence
+
+Browser work is **conditional**, not the default center of the workflow.
+
+## Phase 4: Reproduce or Prove the Blocker
+
+Attempt the reproduction with the chosen lane.
+
+For every serious attempt, record:
+
+- the exact command or user steps
+- relevant inputs and setup
+- expected result
+- actual result
+- logs, stack traces, screenshots, or console output
+- whether the issue reproduced, partially reproduced, or stayed blocked
+
+Stop once you have one of these outcomes:
+
+1. **Reproduced** -- the bug occurs reliably enough to hand off
+2. **Partially reproduced** -- some symptoms match, but a condition is still missing
+3. **Blocked** -- reproduction cannot continue until a named dependency or missing fact is provided
+
+Do not continue indefinitely once the outcome is clear.
+
+## Phase 5: Structured Handoff
+
+Return a concise evidence pack using this shape:
+
+```markdown
+## Reproduction Result
+
+- **Status:** reproduced | partially reproduced | blocked
+- **Expected:** ...
+- **Observed:** ...
+- **Setup / prerequisites:** ...
+- **Exact repro steps or command:** ...
+- **Evidence:** logs / stack traces / screenshots / failing test output
+- **Likely touchpoints:** `path/to/file`, `path/to/other/file`
+- **Open uncertainty:** ...
+- **Recommended next step:** `/workflows:debug` | `systematic-debugging` | direct fix | ask for missing setup
 ```
 
-If server not running, inform user to start the development server for the project.
+If you found a likely cause, label it as a **hypothesis** unless it was verified by evidence.
 
-### Step 2: Navigate to Affected Area
+## Guardrails
 
-Based on the issue description, navigate to the relevant page:
-
-```bash
-agent-browser open "http://localhost:3000/[affected_route]"
-agent-browser snapshot -i
-```
-
-### Step 3: Capture Screenshots
-
-Take screenshots at each step of reproducing the bug:
-
-```bash
-agent-browser screenshot "bug-[issue]-step-1.png"
-```
-
-### Step 4: Follow User Flow
-
-Reproduce the exact steps from the issue:
-
-1. **Read the issue's reproduction steps**
-2. **Execute each step using agent-browser:**
-   - `agent-browser click @ref` for clicking elements
-   - `agent-browser fill @ref "text"` for filling forms
-   - `agent-browser snapshot -i` to see the current state
-   - `agent-browser screenshot filename.png` to capture evidence
-
-3. **Check for console errors** by inspecting the snapshot output for error indicators.
-
-### Step 5: Capture Bug State
-
-When you reproduce the bug:
-
-1. Take a screenshot of the bug state
-2. Document any console errors
-3. Document the exact steps that triggered it
-
-```bash
-agent-browser screenshot "bug-[issue]-reproduced.png"
-```
-
-## Phase 3: Document Findings
-
-**Reference Collection:**
-
-- [ ] Document all research findings with specific file paths (e.g., `app/Services/ExampleService.php:42`)
-- [ ] Include screenshots showing the bug reproduction
-- [ ] List console errors if any
-- [ ] Document the exact reproduction steps
-
-## Phase 4: Report Back
-
-Add a comment to the issue with:
-
-1. **Findings** - What you discovered about the cause
-2. **Reproduction Steps** - Exact steps to reproduce (verified)
-3. **Screenshots** - Visual evidence of the bug (upload captured screenshots)
-4. **Relevant Code** - File paths and line numbers
-5. **Suggested Fix** - If you have one
+- Do not post issue comments unless the user explicitly asked for that side effect.
+- Do not claim a bug is fixed from this command alone.
+- Do not blur reproduction and diagnosis into one unstructured narrative.
+- Do not keep looping after the run is clearly reproduced or clearly blocked.

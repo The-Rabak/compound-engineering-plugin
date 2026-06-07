@@ -12,12 +12,9 @@ argument-hint: "[path to plan file]"
 
 This command takes an existing plan (from `/workflows:plan`) and, when available, the architecture improvement artifact from `/workflows:architecture`. If no artifact exists yet, it must assemble an **explicit architecture handoff contract** from the plan instead of treating architecture as hidden context. Every enhancement is **grounded in the plan's WHY artifacts** -- the problem narrative, user story, architectural context, success criteria, the explicit architecture contract, and the plan's TDD/evidence contract -- so that deepening adds purpose-aligned depth, not generic complexity.
 
-Each major element gets its own dedicated research sub-agent to find:
-- Best practices and industry patterns **relevant to the user story**
-- Performance optimizations **that matter for the stated success criteria**
-- UI/UX improvements (if applicable) **aligned with the user's needs**
-- Quality enhancements and edge cases **that could threaten success criteria**
-- Real-world implementation examples **in similar architectural contexts**
+Default mode: targeted deepening. Research only unresolved questions, risks, or decisions that the plan explicitly leaves open, then fold findings directly into the relevant section.
+
+Exhaustive fan-out is opt-in. Only run broad "cover everything" sweeps when the user explicitly requests exhaustive depth.
 
 The result is a deeply grounded, production-ready plan that remains tightly coupled to WHY we're building it while honoring the deletion-test, interface, seam, and adapter decisions captured in the architecture artifact or explicit architecture handoff contract. Deepening may add detail, remove unnecessary detail, or defer optional complexity when that yields a clearer and more executable plan.
 
@@ -287,12 +284,12 @@ cat [skill-path]/SKILL.md
 
 For each skill discovered:
 - Read its SKILL.md description
-- Check if any plan sections match the skill's domain
-- If there's a match, spawn a sub-agent to apply that skill's knowledge
+- Check if any unresolved question, risk, or decision in the plan matches the skill's domain
+- If there's a match, spawn a sub-agent to apply that skill's knowledge to that unresolved area only
 
-**Step 4: Spawn a sub-agent for EVERY matched skill**
+**Step 4: Spawn targeted skill sub-agents**
 
-**CRITICAL: For EACH skill that matches, spawn a separate sub-agent and instruct it to USE that skill.**
+Only launch skill sub-agents that directly help close an open question or risk tied to the user story/success criteria.
 
 For each matched skill:
 ```
@@ -311,24 +308,23 @@ WHY CONTEXT (use this to ground the skill's recommendations):
 - User Story: [user story]
 - Success Criteria: [success criteria]
 
-4. Return the skill's full output. Filter recommendations that don't serve the user story.
+4. Return distilled recommendations that directly resolve the open question/risk in scope. Filter out anything that doesn't serve the user story or success criteria.
 
 The skill tells you what to do - follow it. Execute the skill completely."
 ```
 
 Always use the discovered `[skill-path]` and read `SKILL.md` from that exact location. Do not hardcode Claude-specific paths when spawning skill subagents.
 
-**Spawn ALL skill sub-agents in PARALLEL:**
-- 1 sub-agent per matched skill
-- Each sub-agent reads and uses its assigned skill
-- All run simultaneously
-- 10, 20, 30 skill sub-agents is fine
+**Launch skill sub-agents in parallel when useful:**
+- 1 sub-agent per matched unresolved area
+- Keep dispatch focused on what's still unclear or risky in the plan
+- Default to the smallest set of sub-agents needed to sharpen execution readiness
 
 **Each sub-agent:**
 1. Reads its skill's SKILL.md
 2. Follows the skill's workflow/instructions
 3. Applies the skill to the plan
-4. Returns whatever the skill produces (code, recommendations, patterns, reviews, etc.)
+4. Returns focused recommendations tied to the unresolved question/risk
 
 **Example spawns:**
 ```
@@ -341,7 +337,7 @@ Task general-purpose: "Use the agent-native-architecture skill at [discovered sk
 Task general-purpose: "Use the security-patterns skill at [discovered skill path]. Read SKILL.md and apply it to: [full plan]"
 ```
 
-**No limit on skill sub-agents. Spawn one for every skill that could possibly be relevant.**
+Exhaustive fan-out is opt-in and should only run when the user explicitly asks for maximum breadth.
 
 ### 3. Discover and Apply Learnings/Solutions
 
@@ -475,10 +471,12 @@ docs/solutions/authentication-issues/jwt-expiry.md           # plan has no auth
 ### 4. Launch Per-Section Research Agents
 
 <thinking>
-For each major section in the plan, spawn dedicated sub-agents to research improvements. Ground each agent in the plan's WHY artifacts so research stays purpose-aligned.
+Only launch research agents where the plan still has unresolved questions, unclear tradeoffs, or unmitigated risks. Ground each agent in the plan's WHY artifacts so research stays purpose-aligned.
 </thinking>
 
-**For each identified section, launch parallel research with WHY context:**
+Only launch research/review agents for unresolved questions.
+
+**For each unresolved area, launch focused research with WHY context:**
 
 ```
 Task Explore: "Research best practices, patterns, and real-world examples for: [section topic].
@@ -494,7 +492,7 @@ Find:
 - Performance considerations that could affect the stated success criteria
 - Common pitfalls that could threaten the user story outcome
 - Documentation and tutorials for this architectural context
-Return concrete, actionable recommendations. Filter out recommendations that don't serve the user story or success criteria."
+Return concrete, actionable recommendations that resolve this unresolved area. Filter out recommendations that don't serve the user story or success criteria."
 ```
 
 **Also use Context7 MCP for framework documentation:**
@@ -507,61 +505,33 @@ mcp__plugin_compound-engineering_context7__query-docs: Query documentation for s
 
 **Use WebSearch for current best practices:**
 
-Search for recent (2024-2026) articles, blog posts, and documentation on topics in the plan.
+Search for recent (2024-2026) articles, blog posts, and documentation only for unresolved topics.
 
-### 5. Discover and Run ALL Review Agents
+### 5. Discover and Run Targeted Review Agents
 
 <thinking>
-Dynamically discover every available agent and run them ALL against the plan. Don't filter, don't skip, don't assume relevance. 40+ parallel agents is fine. Use everything available. But give each agent the WHY context so their reviews are grounded.
+Discover available agents, then select only the agents needed to resolve open risks/decisions in the plan. Keep breadth explicit and intentional.
 </thinking>
 
-**Step 1: Discover ALL available agents from ALL sources**
+**Step 1: Discover available agents**
 
-```bash
-# 1. Project-local agents (highest priority - project-specific)
-find [project agent dir] -name "*.md" 2>/dev/null
+Use the same discovery sources as before (project-local, platform-global, installed plugins, local plugins). Read each discovered agent's description.
 
-# 2. User's platform-global agents (for example ~/.claude/agents or ~/.config/opencode/agents)
-find [platform global agents dir] -name "*.md" 2>/dev/null
+**Step 2: Select agents by unresolved risk/decision**
 
-# 3. Installed plugin/package agents (all subdirectories) if the harness exposes them
-find [installed plugin agent dirs] -name "*.md" 2>/dev/null
+Create a short mapping:
+- unresolved question/risk
+- why it matters to user story or success criteria
+- best-fit agent(s)
 
-# 4. Broad fallback: search every discovered plugin/package location for agents
-find [platform plugin roots] -path "*/agents/*.md" 2>/dev/null
+Skip agents that do not materially improve the current unresolved areas.
 
-# 5. If the harness exposes plugin metadata, inspect it to find additional local plugin locations
-cat [installed plugin metadata file]
-
-# 6. For local plugin/package entries, inspect their source directories directly
-```
-
-**Important:** Check EVERY source. Include agents from:
-- Project-local agent directories
-- User's platform-global agent directory
-- compound-engineering plugin (but SKIP workflow/ agents - only use review/, research/, design/, docs/)
-- ALL other installed plugins (agent-sdk-dev, frontend-design, etc.)
-- Any local plugins
-
-**For compound-engineering plugin specifically:**
-- USE: `agents/review/*` (all reviewers)
-- USE: `agents/research/*` (all researchers)
-- USE: `agents/design/*` (design agents)
-- USE: `agents/docs/*` (documentation agents)
-- SKIP: `agents/workflow/*` (these are workflow orchestrators, not reviewers)
-
-**Step 2: For each discovered agent, read its description**
-
-Read the first few lines of each agent file to understand what it reviews/analyzes.
-
-**Step 3: Launch ALL agents in parallel**
-
-For EVERY agent discovered, launch a Task in parallel with WHY context:
+**Step 3: Launch selected agents with WHY context**
 
 Before dispatching any named agent discovered in this step, apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md`. Pass the WHY context block from this workflow together with the loaded template.
 
 ```
-Task [agent-name]: "Review this plan using your expertise.
+Task [agent-name]: "Review this plan using your expertise for this unresolved area: [question/risk].
 
 WHY CONTEXT (use this to evaluate whether the plan solves the right problem):
 - Problem Narrative: [problem narrative]
@@ -569,35 +539,27 @@ WHY CONTEXT (use this to evaluate whether the plan solves the right problem):
 - Success Criteria: [success criteria list]
 - Architectural Context: [arch context summary]
 
-Apply all your checks and patterns. Flag anything that could prevent the user story from being achieved. Plan content: [full plan content]"
+Focus on this unresolved area and return concrete recommendations that improve execution confidence without unnecessary scope growth. Plan content: [full plan content]"
 ```
 
-**CRITICAL RULES:**
-- Do NOT filter agents by "relevance" - run them ALL
-- Do NOT skip agents because they "might not apply" - let them decide
-- Launch ALL agents in a SINGLE message with multiple Task tool calls
-- 20, 30, 40 parallel agents is fine - use everything
-- Each agent may catch something others miss
-- The goal is MAXIMUM coverage, not efficiency
+**Exhaustive mode (opt-in only):**
+- If and only if the user explicitly asks for exhaustive breadth, run a broad fan-out across all discovered review/research agents.
+- Label that run as `exhaustive` in your notes so downstream readers know breadth was intentionally expanded.
 
-**Step 4: Also discover and run research agents**
-
-Research agents (like `best-practices-researcher`, `framework-docs-researcher`, `git-history-analyzer`, `repo-research-analyst`) should also be run for relevant plan sections.
-
-### 6. Wait for ALL Agents and Synthesize Everything
+### 6. Synthesize Targeted Findings
 
 <thinking>
-Wait for ALL parallel agents to complete - skills, research agents, review agents, everything. Then synthesize all findings through the lens of the plan's WHY artifacts. Prioritize enhancements that serve the user story and success criteria.
+Wait for the selected targeted agents to complete, then synthesize findings through the lens of the plan's WHY artifacts. Prioritize enhancements that serve the user story and success criteria.
 </thinking>
 
-**Collect outputs from ALL sources:**
+**Collect outputs from the selected sources:**
 
-1. **Skill-based sub-agents** - Each skill's full output (code examples, patterns, recommendations)
+1. **Skill-based sub-agents** - Recommendations tied to unresolved areas
 2. **Learnings/Solutions sub-agents** - Relevant documented learnings from /workflows:compound
-3. **Research agents** - Best practices, documentation, real-world examples
-4. **Review agents** - All feedback from every reviewer (architecture, security, performance, simplicity, etc.)
+3. **Research agents** - Best practices, documentation, real-world examples for open risks/decisions
+4. **Review agents** - Focused feedback from selected reviewers
 5. **Context7 queries** - Framework documentation and patterns
-6. **Web searches** - Current best practices and articles
+6. **Web searches** - Current best practices and articles for unresolved topics
 
 **For each agent's findings, extract and classify by WHY alignment:**
 
@@ -627,7 +589,7 @@ Wait for ALL parallel agents to complete - skills, research agents, review agent
 - **For each recommendation, note which success criterion it serves or which risk it mitigates**
 
 **Simplicity distillation pass (orchestrator responsibility):**
-- Keep "run everything" agent coverage intact; filter only at synthesis time
+- Preserve targeted deepening by default; avoid broad fan-out unless explicitly requested
 - Prefer the least-complex change that satisfies the user story and success criteria
 - Remove or defer recommendations that are speculative, redundant, or not required now
 - Add complexity only when backed by concrete evidence from research, codebase constraints, or risk mitigation needs
@@ -657,82 +619,31 @@ If research suggests changes to these, add a `### WHY Reassessment` note at the 
 **RULE: Simplicity over accretion.**
 - You may redact or simplify non-essential implementation detail that does not materially serve the user story or success criteria.
 - Keep packet structure and tracing intact while trimming unnecessary architectural ceremony.
-- If simplification removes previously proposed complexity, record it in the enhancement summary with a reason.
+- If simplification removes previously proposed complexity, capture the reason in an optional compact change note when useful.
 
 **Enhancement format for each section:**
+
+Integrate findings inline into the relevant plan section. Do not append raw sub-agent dumps.
 
 ```markdown
 ## [Original Section Title]
 
 [Original content preserved -- including any execution-shape and packet tracing lines]
 
-### Research Insights
-
-**Best Practices** (serves: [which success criterion]):
-- [Concrete recommendation 1]
-- [Concrete recommendation 2]
-
-**Performance Considerations** (serves: [which success criterion]):
-- [Optimization opportunity]
-- [Benchmark or metric to target]
-
-**Implementation Details:**
-```[language]
-// Concrete code example from research
+- [Deepening update: concrete recommendation tied to a success criterion or risk]
+- [Constraint/tradeoff clarified and where it applies]
+- [Evidence/reference link only when it materially supports the update]
 ```
 
-**Edge Cases** (risk to: [which user story aspect]):
-- [Edge case 1 and how to handle]
-- [Edge case 2 and how to handle]
-
-**References:**
-- [Documentation URL 1]
-- [Documentation URL 2]
-```
-
-### 8. Add Enhancement Summary
-
-At the top of the plan, add a summary section:
+Optional compact change note (include only when it materially helps reviewers understand what changed):
 
 ```markdown
-## Enhancement Summary
-
-**Deepened on:** [Date]
-**Sections enhanced:** [Count]
-**Research agents used:** [List]
-
-### WHY Integrity Check
-- Problem Narrative: [preserved / flagged for reassessment]
-- User Story: [preserved / flagged for reassessment]
-- Architectural Context: [preserved / expanded / flagged for reassessment]
-- Success Criteria: [preserved / flagged for reassessment]
-- Execution shape: [preserved / flagged for reassessment]
-- Packet tracing: [all packets still trace to user story or enabling outcome: yes/no]
-
-### TDD Contract Check
-- Precedence: [plan overrides local / inherit uses local / fallback default noted]
-- Effective loop: [red-green-refactor / implementation-first]
-- Evidence: [unit required?] [e2e required?]
-- Exceptions: [none / justified and preserved]
-
-### Key Improvements
-1. [Major improvement 1] (serves: [success criterion])
-2. [Major improvement 2] (serves: [success criterion])
-3. [Major improvement 3] (serves: [success criterion])
-
-### New Considerations Discovered
-- [Important finding 1]
-- [Important finding 2]
-
-### Scope Warnings (if any)
-- [Enhancement that was flagged as beyond current user story]
-
-### Simplifications Applied
-- [Removed/deferred complexity] (reason: [why it was unnecessary now])
-- [Retained complexity with justification] (serves: [success criterion or risk])
+### Optional compact change note
+- Updated sections: [list]
+- Why these updates matter: [1-2 concise bullets tied to success criteria/risks]
 ```
 
-### 9. Update Plan File
+### 8. Update Plan File
 
 **Write the enhanced plan:**
 - Preserve original filename
@@ -749,11 +660,11 @@ Before finalizing:
 
 **Content integrity:**
 - [ ] All original content preserved
-- [ ] Research insights clearly marked and attributed
+- [ ] Findings are integrated inline in the relevant sections (no raw append dumps)
 - [ ] Code examples are syntactically correct
 - [ ] Links are valid and relevant
 - [ ] No contradictions between sections
-- [ ] Enhancement summary accurately reflects changes
+- [ ] Optional compact change note included only when it improves clarity
 - [ ] Execution packets have execution-ready structure for the selected mode
 - [ ] TDD contract is explicit, precedence is documented, and unit/e2e evidence stays aligned with packet validation commands unless an exception says otherwise
 - [ ] Simplification pass completed: non-essential complexity removed or deferred, and necessary complexity explicitly justified
@@ -765,7 +676,7 @@ Before finalizing:
 - [ ] Every packet still has its tracing line
 - [ ] No new packets were added without a tracing line connecting them to the user story or enabling outcome
 - [ ] Enhancements tagged with which success criterion they serve
-- [ ] Scope-expanding recommendations flagged in "Scope Warnings" rather than silently added to packets
+- [ ] Scope-expanding recommendations are explicitly marked rather than silently added to packets
 - [ ] If WHY reassessment was needed, it's in a clearly marked section at the end (not inline edits)
 - [ ] `tdd` frontmatter and `## TDD & Evidence Contract` still agree on precedence, effective loop, evidence, and exceptions
 
@@ -784,7 +695,7 @@ After writing the enhanced plan, use the **AskUserQuestion tool** to present the
 
 Based on selection:
 - **View diff** → Run `git diff [plan_path]` or show before/after
-- **Review and refine** → Load the `document-review` skill against the enhanced plan and the architecture artifact or explicit handoff contract that informed it
+- **Review and refine** → Load the `document-review` skill in **plan** mode against the enhanced plan and the architecture artifact or explicit handoff contract that informed it, keeping the review concise and handoff-focused
 - **`/workflows:work`** → Call the /workflows:work command with the plan file path so execution loads the same architecture artifact or explicit handoff contract
 - **Deepen further** → Ask which sections need more research, then re-run those agents
 - **Revert** → Restore from git or backup
@@ -803,41 +714,13 @@ Use React Query for data fetching with optimistic updates.
 ## Technical Approach
 
 Use React Query for data fetching with optimistic updates.
+- Set `staleTime`/`cacheTime` explicitly to match freshness requirements (serves: reduce unnecessary refetching in success criterion #2).
+- Standardize `queryKey` factories to prevent stale invalidation paths (risk mitigated: hidden cache misses).
+- Add targeted retry/error-boundary behavior for transient network failures in query-dependent screens.
 
-### Research Insights
-
-**Best Practices:**
-- Configure `staleTime` and `cacheTime` based on data freshness requirements
-- Use `queryKey` factories for consistent cache invalidation
-- Implement error boundaries around query-dependent components
-
-**Performance Considerations:**
-- Enable `refetchOnWindowFocus: false` for stable data to reduce unnecessary requests
-- Use `select` option to transform and memoize data at query level
-- Consider `placeholderData` for instant perceived loading
-
-**Implementation Details:**
-```typescript
-// Recommended query configuration
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 2,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-```
-
-**Edge Cases:**
-- Handle race conditions with `cancelQueries` on component unmount
-- Implement retry logic for transient network failures
-- Consider offline support with `persistQueryClient`
-
-**References:**
-- https://tanstack.com/query/latest/docs/react/guides/optimistic-updates
-- https://tkdodo.eu/blog/practical-react-query
+### Optional compact change note
+- Updated section: Technical Approach
+- Why: tightened cache behavior and failure handling for the plan's responsiveness/reliability criteria
 ```
 
 NEVER CODE! Just research and enhance the plan.

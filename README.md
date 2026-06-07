@@ -16,7 +16,7 @@ Most AI engineering toolkits are loose collections of prompts. This repo is opin
 
 The core value is the workflow:
 
-`constitution -> ideate -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> compound`
+`constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> compound`
 
 Each phase has a defined purpose, handoff, and artifact. The system is designed to reduce drift between what you intended, what you built, and what got reviewed.
 
@@ -84,7 +84,6 @@ This repo is built for:
 | Phase | What it produces | Why it exists |
 |---|---|---|
 | `/workflows:constitution` | repo-wide principles and guardrails | keeps project-wide policy out of feature-specific docs |
-| `/workflows:ideate` | grounded candidate directions | avoids rushing into the first idea |
 | `/workflows:brainstorm` | feature-level WHY / WHAT / WHERE handoff | clarifies the problem and intended outcome |
 | `/workflows:plan` | execution-ready HOW | chooses an execution shape, then breaks work into slices or other execution packets with dependencies and success criteria |
 | `/workflows:architecture` | architecture artifact in `docs/architecture/` | forces the important structural decisions into the open |
@@ -215,7 +214,6 @@ compound-engineering-plugin/
 Workflow artifacts live under `docs/`:
 
 - `docs/constitution.md` -- repo-level constitution
-- `docs/ideation/` -- ideation artifacts
 - `docs/brainstorms/` -- feature-level spec and handoff docs
 - `docs/plans/` -- implementation plans
 - `docs/architecture/` -- architecture improvement artifacts between planning and deepening

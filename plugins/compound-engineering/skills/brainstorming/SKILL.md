@@ -50,6 +50,19 @@ Before diving into questions, assess whether brainstorming is needed.
 
 If requirements are clear, suggest: "Your requirements seem clear. Consider proceeding directly to planning or implementation."
 
+### Phase 0.5: Optional Idea Shortlisting (When No Feature Is Chosen)
+
+If the user has not chosen a concrete feature yet, handle ideation in this workflow before collaborative questioning:
+
+1. Use the same repository grounding collected for brainstorming. **Do not trigger a second repo scan.**
+2. Generate 8-12 grounded candidate ideas.
+3. Apply adversarial filtering:
+   - reject vague, duplicate, low-leverage, or constitution-conflicting ideas
+   - keep 3-5 survivors with brief rejection reasons
+4. Present survivors, ask the user to pick one, then continue brainstorming that selected direction.
+
+Do not route through a separate `/workflows:ideate` track and do not write a default `docs/ideation/` artifact.
+
 ### Phase 1: Understand the Problem and the People
 
 Ask questions **one at a time** to understand the user's problem space and the people affected. The goal is not just to understand WHAT they want but WHY they need it.

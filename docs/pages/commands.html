@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Command Reference - Compounding Engineering</title>
-  <meta content="Complete reference for all 25 slash commands in the Compounding Engineering plugin." name="description" />
+  <meta content="Complete reference for all 29 slash commands in the Compounding Engineering plugin." name="description" />
   <meta content="width=device-width, initial-scale=1" name="viewport" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="../css/style.css" rel="stylesheet" type="text/css" />
@@ -30,9 +30,9 @@
           <div class="nav-section">
             <h3>Reference</h3>
             <ul>
-              <li><a href="agents.html">Agents (31)</a></li>
-              <li><a href="commands.html" class="active">Commands (25)</a></li>
-              <li><a href="skills.html">Skills (24)</a></li>
+              <li><a href="agents.html">Agents (34)</a></li>
+              <li><a href="commands.html" class="active">Commands (29)</a></li>
+              <li><a href="skills.html">Skills (27)</a></li>
               <li><a href="mcp-servers.html">MCP Servers (1)</a></li>
             </ul>
           </div>
@@ -45,7 +45,7 @@
           <div class="nav-section">
             <h3>On This Page</h3>
             <ul>
-              <li><a href="#workflow-commands">Workflow (8)</a></li>
+              <li><a href="#workflow-commands">Workflow (12)</a></li>
 <li><a href="#utility-commands">Utility (17)</a></li>
             </ul>
           </div>
@@ -68,7 +68,7 @@
 
         <h1><i class="fa-solid fa-terminal color-accent"></i> Command Reference</h1>
         <p class="lead">
-          The plugin currently ships 25 slash commands: 8 workflow commands under the <code>/workflows:</code> namespace and 17 utility commands. This page is an inventory-first refresh, optimized for accurate names and counts.
+          The plugin currently ships 29 slash commands: 12 workflow commands under the <code>/workflows:</code> namespace and 17 utility commands. This page is an inventory-first refresh, optimized for accurate names and counts.
         </p>
 
         <div class="usage-box">
@@ -82,7 +82,7 @@
         </div>
 
         <section id="workflow-commands">
-          <h2><i class="fa-solid fa-arrows-spin"></i> Workflow Commands (8)</h2>
+          <h2><i class="fa-solid fa-arrows-spin"></i> Workflow Commands (12)</h2>
           <p>These are the canonical workflow entrypoints shipped by the plugin.</p>
           <table class="docs-table">
             <thead>
@@ -96,8 +96,12 @@
               <tr><td><code>/workflows:ideate</code></td><td>Generate and rank grounded improvement ideas before selecting one to brainstorm</td></tr>
               <tr><td><code>/workflows:brainstorm</code></td><td>Explore requirements and approaches before planning</td></tr>
               <tr><td><code>/workflows:plan</code></td><td>Create implementation plans with structured project inputs (tickets, docs, designs)</td></tr>
+              <tr><td><code>/workflows:architecture</code></td><td>Produce a dedicated architecture improvement artifact before deepening and execution</td></tr>
+              <tr><td><code>/workflows:to-issues</code></td><td>Convert plans into local vertical-slice ticket artifacts with scoped execution context</td></tr>
               <tr><td><code>/workflows:review</code></td><td>Run comprehensive code reviews</td></tr>
-              <tr><td><code>/workflows:work</code></td><td>Execute work items systematically</td></tr>
+              <tr><td><code>/workflows:triage</code></td><td>Research todos, record chosen actions, then execute safe batches in swarm mode</td></tr>
+              <tr><td><code>/workflows:work</code></td><td>Execute execution slices systematically</td></tr>
+              <tr><td><code>/workflows:debug</code></td><td>Orchestrate reproduction, diagnosis, fix decisions, and design escalation for bugs and failures</td></tr>
               <tr><td><code>/workflows:compound</code></td><td>Document solved problems to compound team knowledge</td></tr>
               <tr><td><code>/workflows:compound-refresh</code></td><td>Refresh stale learnings and pattern docs in docs/solutions/</td></tr>
             </tbody>
@@ -123,10 +127,10 @@
               <tr><td><code>/generate_command</code></td><td>Generate new slash commands</td></tr>
               <tr><td><code>/heal-skill</code></td><td>Fix skill documentation issues</td></tr>
               <tr><td><code>/report-bug</code></td><td>Report a bug in the plugin</td></tr>
-              <tr><td><code>/reproduce-bug</code></td><td>Reproduce bugs using logs and console</td></tr>
+              <tr><td><code>/brownfield-maintenance</code></td><td>Audit and fill brownfield AI-layer gaps outside the main feature workflow</td></tr>
+              <tr><td><code>/reproduce-bug</code></td><td>Reproduce bugs and collect structured evidence for diagnosis or escalation</td></tr>
               <tr><td><code>/resolve_parallel</code></td><td>Resolve TODO comments in parallel</td></tr>
               <tr><td><code>/resolve_todo_parallel</code></td><td>Resolve todos in parallel</td></tr>
-              <tr><td><code>/triage</code></td><td>Triage and prioritize issues</td></tr>
               <tr><td><code>/test-browser</code></td><td>Run browser tests on PR-affected pages</td></tr>
               <tr><td><code>/feature-video</code></td><td>Record video walkthroughs and add to PR description</td></tr>
               <tr><td><code>/ralph-loop</code></td><td>Start a self-referential loop until completion promise is met</td></tr>

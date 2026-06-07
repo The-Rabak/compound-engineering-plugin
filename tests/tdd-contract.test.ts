@@ -58,6 +58,23 @@ describe("TDD contract surfaces", () => {
     expect(deepenPrompt).toContain("justified exception")
   })
 
+  test("deepen-plan defaults to targeted inline deepening instead of append-heavy summaries", async () => {
+    const deepenPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "deepen-plan.md",
+    )
+
+    expect(deepenPrompt).toContain("Default mode: targeted deepening")
+    expect(deepenPrompt).toContain("Exhaustive fan-out is opt-in")
+    expect(deepenPrompt).toContain("Integrate findings inline into the relevant plan section")
+    expect(deepenPrompt).toContain("Optional compact change note")
+    expect(deepenPrompt).not.toContain("The goal is MAXIMUM coverage, not efficiency")
+    expect(deepenPrompt).not.toContain("## Enhancement Summary")
+    expect(deepenPrompt).not.toContain("### Research Insights")
+  })
+
   test("work command makes Ralph the default execution path and requires stable evidence", async () => {
     const workPrompt = await readRepoFile(
       "portable",

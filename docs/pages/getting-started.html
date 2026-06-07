@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Getting Started - Compounding Engineering</title>
-  <meta content="Install and start using the current Compounding Engineering plugin inventory: 31 agents, 25 commands, 24 skills, and 1 MCP server." name="description" />
+  <meta content="Install and start using the current Compounding Engineering plugin inventory: 34 agents, 29 commands, 27 skills, and 1 MCP server." name="description" />
   <meta content="width=device-width, initial-scale=1" name="viewport" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="../css/style.css" rel="stylesheet" type="text/css" />
@@ -32,9 +32,9 @@
           <div class="nav-section">
             <h3>Reference</h3>
             <ul>
-              <li><a href="agents.html">Agents (31)</a></li>
-              <li><a href="commands.html">Commands (25)</a></li>
-              <li><a href="skills.html">Skills (24)</a></li>
+              <li><a href="agents.html">Agents (34)</a></li>
+              <li><a href="commands.html">Commands (29)</a></li>
+              <li><a href="skills.html">Skills (27)</a></li>
               <li><a href="mcp-servers.html">MCP Servers (1)</a></li>
             </ul>
           </div>
@@ -71,7 +71,7 @@
       <article class="docs-article">
         <h1>Getting Started with Compounding Engineering</h1>
         <p class="lead">
-          The current plugin release ships 31 agents, 25 slash commands, 24 skills, and 1 MCP server. This page focuses on the current inventory and command names used by version 4.5.0.
+          The current plugin release ships 34 agents, 29 slash commands, 27 skills, and 1 MCP server. This page focuses on the current inventory and command names used by version 4.15.0.
         </p>
 
         <section id="installation">
@@ -111,10 +111,10 @@ claude agent security-sentinel "Audit the auth flow"</code></pre></div>
           <table class="docs-table">
             <thead><tr><th>Category</th><th>Count</th><th>Purpose</th></tr></thead>
             <tbody>
-              <tr><td>Review</td><td>19</td><td>Code review, security, performance, governance, migrations</td></tr>
+              <tr><td>Review</td><td>21</td><td>Code review, security, performance, governance, migrations</td></tr>
               <tr><td>Research</td><td>6</td><td>Docs, best practices, git history, learnings, issue analysis</td></tr>
               <tr><td>Design</td><td>3</td><td>Figma sync, iteration, implementation review</td></tr>
-              <tr><td>Workflow</td><td>3</td><td>Bug validation, PR comment resolution, spec flow analysis</td></tr>
+              <tr><td>Workflow</td><td>4</td><td>Bug validation, PR comment resolution, execution, and spec flow analysis</td></tr>
             </tbody>
           </table>
         </section>
@@ -125,10 +125,10 @@ claude agent security-sentinel "Audit the auth flow"</code></pre></div>
           <div class="card-code-block"><pre><code>/workflows:constitution
 /workflows:brainstorm
 /workflows:plan
-/workflows:review
+/workflows:debug
 /workflows:work
 /workflows:compound</code></pre></div>
-          <p>Utility commands include <code>/lrj</code>, <code>/slrj</code>, <code>/triage</code>, <code>/test-browser</code>, <code>/report-bug</code>, and more.</p>
+          <p>Utility commands include <code>/lrj</code>, <code>/slrj</code>, <code>/brownfield-maintenance</code>, <code>/reproduce-bug</code>, <code>/test-browser</code>, and more.</p>
         </section>
 
         <section id="skills">

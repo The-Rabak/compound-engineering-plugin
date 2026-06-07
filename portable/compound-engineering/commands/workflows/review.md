@@ -125,7 +125,7 @@ If a `tickets_ref` or matching `docs/tickets/*/index.md` artifact exists, read t
 
 ALWAYS READ THE ARCHITECTURE ARTIFACT (or explicit handoff contract) AND README FILES FOR CONTEXT — they often contain critical information about architectural intent, constraints, and domain knowledge that is not in the plan.
 
-If a STATE.md execution session exists, also read its WHY Context and Architecture Handoff sections.
+If a STATE.md execution session exists, also read its WHY Linkage and Architecture Handoff sections.
 
 If `docs/constitution.md` exists, read it too and extract:
 - core principles
@@ -140,13 +140,13 @@ If `docs/constitution.md` exists, read it too and extract:
 - Check PR description if available
 - **Ask the user**: "I couldn't find a plan file for this branch. In one sentence, what problem does this code solve and for whom?" — this grounds the entire review.
 
-**Step 3: Summarize the WHY + constitution context** that will be passed to every agent:
+**Step 3: Summarize the WHY linkage + constitution context** that will be passed to every agent:
 
 ```
 WHY CONTEXT FOR REVIEWERS:
-- Problem: [problem narrative]
-- User Story: [user story]  
-- Success Criteria: [list]
+- Canonical WHY Source: [brainstorm_ref path when available, otherwise plan path]
+- Parent Plan: [plan path or none]
+- Review Focus: [one-line outcome and success-criteria labels this review protects]
 - Architectural Intent: [arch context summary]
 - Architecture Artifact: [docs/architecture/... path or none]
 - Ticket Set: [docs/tickets/.../index.md or none]
@@ -211,15 +211,15 @@ Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/refere
 Task {agent-name}(branch diff content + review context from settings body + WHY context block)
 ```
 
-**Every agent prompt MUST include the WHY context block and architecture handoff block** from the step above. This ensures agents evaluate fitness-for-purpose, not just technical quality. After loading the template, dispatch each reviewer with a prompt like:
+**Every agent prompt MUST include the WHY linkage block and architecture handoff block** from the step above. This ensures agents evaluate fitness-for-purpose, not just technical quality. After loading the template, dispatch each reviewer with a prompt like:
 
 ```
 Review this branch diff for security issues.
 
 WHY CONTEXT FOR REVIEWERS:
-- Problem: [problem narrative]
-- User Story: [user story]
-- Success Criteria: [criteria list]
+- Canonical WHY Source: [brainstorm_ref path when available, otherwise plan path]
+- Parent Plan: [plan path or "none"]
+- Review Focus: [one-line outcome and success-criteria labels]
 - Architectural Intent: [arch context]
 - Architecture Artifact: [artifact path or "plan-derived handoff"]
 - Ticket Set: [ticket index path or "none"]

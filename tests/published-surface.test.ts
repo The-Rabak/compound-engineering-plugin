@@ -14,6 +14,15 @@ async function readRepoJson<T>(...segments: string[]): Promise<T> {
   return JSON.parse(await readRepoFile(...segments)) as T
 }
 
+async function pathExists(...segments: string[]): Promise<boolean> {
+  try {
+    await fs.access(path.join(repoRoot, ...segments))
+    return true
+  } catch {
+    return false
+  }
+}
+
 describe("published support surface", () => {
   test("generated metadata and plugin docs match the portable counts and description", async () => {
     const plugin = await loadPortablePlugin(portableRoot)
@@ -51,5 +60,18 @@ describe("published support surface", () => {
     expect(pluginChangelog).toContain("`/workflows:architecture`")
     expect(pluginChangelog).toContain("**Ralph/TDD evidence contract**")
     expect(pluginChangelog).toContain("unit + e2e evidence")
+  })
+
+  test("published surfaces retire ideate as a standalone workflow and skill", async () => {
+    const plugin = await loadPortablePlugin(portableRoot)
+    const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
+
+    expect(plugin.commands.some((command) => command.name === "workflows:ideate")).toBeFalse()
+    expect(plugin.skills.some((skill) => skill.name === "ideate")).toBeFalse()
+    expect(pluginReadme).not.toContain("`/workflows:ideate`")
+    expect(pluginReadme).not.toContain("| `ideate` |")
+    expect(await pathExists("plugins", "compound-engineering", "commands", "workflows", "ideate.md")).toBeFalse()
+    expect(await pathExists(".github", "skills", "workflows-ideate", "SKILL.md")).toBeFalse()
+    expect(await pathExists("plugins", "compound-engineering", "skills", "ideate", "SKILL.md")).toBeFalse()
   })
 })

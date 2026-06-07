@@ -22,9 +22,9 @@ Without a clear WHY, plans decompose into disconnected tasks, execution agents l
 
 <feature_description> #$ARGUMENTS </feature_description>
 
-**If the feature description above is empty, ask the user:** "What would you like to explore? Please describe the feature, problem, or improvement you're thinking about."
+**If the feature description above is empty, ask the user:** "Do you want to pick a feature idea first, or should I generate and shortlist grounded candidates before we brainstorm one?"
 
-Do not proceed until you have a feature description from the user.
+Proceed only after the user either provides a feature description or asks for idea shortlisting.
 
 ## Execution Flow
 
@@ -53,7 +53,21 @@ Before spawning `repo-research-analyst`, use the platform's file-search tool aga
 
 Focus on: similar features, established patterns, CLAUDE.md guidance, project constitution rules (if present), **and system boundaries this feature would interact with**.
 
-#### 1.2 Collaborative Dialogue -- The WHY Layer
+#### 1.2 Optional Idea Shortlisting (only when no feature is chosen)
+
+If the user has not chosen a concrete feature yet, run a lightweight ideation pass **inside this workflow**:
+
+1. Reuse the repository research from Phase 1.1. **Do not run a second repo scan**.
+2. Generate 8-12 grounded candidate ideas that fit the stated focus/constraints.
+3. Apply adversarial culling:
+   - reject vague, duplicate, low-leverage, or constitution-conflicting ideas
+   - keep 3-5 strongest survivors with one-line rejection reasons for discarded ideas
+4. Present only the survivors and ask the user to select one direction.
+5. Once selected, treat it as `<feature_description>` and continue.
+
+Do not run `/workflows-ideate`, do not create a parallel ideation workflow track, and do not write a default `docs/ideation/` artifact in this path.
+
+#### 1.3 Collaborative Dialogue -- The WHY Layer
 
 Use the **AskUserQuestion tool** to ask questions **one at a time**.
 
@@ -75,7 +89,7 @@ This phase has two goals: understand the **problem space** (why this matters) an
 
 **Exit condition:** Continue until you can articulate the problem, the people, and the desired outcome clearly -- OR user says "proceed."
 
-#### 1.3 Synthesize Problem & User Story
+#### 1.4 Synthesize Problem & User Story
 
 **This is the orchestrator's job -- do not delegate this to a subagent.**
 
@@ -163,12 +177,12 @@ handoff:
 
 ## Problem Narrative
 
-[The synthesized problem statement from Phase 1.3. WHY we're building this.
+[The synthesized problem statement from Phase 1.4. WHY we're building this.
 2-4 sentences: who has the problem, what triggers it, what the impact is.]
 
 ## User Story
 
-[The structured user story from Phase 1.3. The north star for all downstream work.]
+[The structured user story from Phase 1.4. The north star for all downstream work.]
 
 As a [persona],
 I need to [action]
@@ -252,11 +266,11 @@ Use **AskUserQuestion tool** to present next steps:
 3. **Ask more questions** - I have more questions to clarify before moving on
 4. **Done for now** - Return later
 
-**If user selects "Ask more questions":** Return to Phase 1.2 (Collaborative Dialogue) and continue probing deeper -- edge cases, constraints, preferences, or areas not yet explored. After new information emerges, re-synthesize the Problem Narrative and User Story (Phase 1.3) if they need updating. Continue until the user is satisfied, then return to Phase 4.
+**If user selects "Ask more questions":** Return to Phase 1.3 (Collaborative Dialogue) and continue probing deeper -- edge cases, constraints, preferences, or areas not yet explored. After new information emerges, re-synthesize the Problem Narrative and User Story (Phase 1.4) if they need updating. Continue until the user is satisfied, then return to Phase 4.
 
 **If user selects "Review and refine":**
 
-Load the `document-review` skill and apply it to the brainstorm document.
+Load the `document-review` skill in **brainstorm** mode and apply it to the brainstorm document. Let the review focus on WHY fidelity, ambiguity, stakeholder clarity, and readiness for planning. When invoked from automation, run it headlessly and keep the output concise and action-oriented.
 
 When document-review returns "Review complete", present next steps:
 

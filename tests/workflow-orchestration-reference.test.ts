@@ -234,4 +234,40 @@ describe("workflow orchestration references", () => {
     expect(workPrompt).toContain("execution_shape")
     expect(workPrompt).toContain("execution units")
   })
+
+  test("deepen-plan keeps deepening scoped and makes exhaustive breadth explicit opt-in", async () => {
+    const deepenPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "deepen-plan.md",
+    )
+
+    expect(deepenPrompt).toContain("Default mode: targeted deepening")
+    expect(deepenPrompt).toContain("Only launch research/review agents for unresolved questions")
+    expect(deepenPrompt).toContain("Exhaustive fan-out is opt-in")
+    expect(deepenPrompt).not.toContain("Do NOT filter agents by \"relevance\" - run them ALL")
+    expect(deepenPrompt).not.toContain("### WHY Integrity Check")
+    expect(deepenPrompt).not.toContain("### Key Improvements")
+    expect(deepenPrompt).not.toContain("### New Considerations Discovered")
+  })
+
+  test("plan prompt uses one adaptive template instead of detail-level menus", async () => {
+    const planPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "plan.md",
+    )
+
+    expect(planPrompt).toContain("### 4. Build One Adaptive Plan Template")
+    expect(planPrompt).toContain("Optional sections catalog (include only when decision-bearing)")
+    expect(planPrompt).toContain("Representative routine plan (compact and scannable)")
+    expect(planPrompt).toContain("Include only when this section changes a decision")
+    expect(planPrompt).not.toContain("### 4. Choose Implementation Detail Level")
+    expect(planPrompt).not.toContain("#### 📄 MINIMAL (Quick Issue)")
+    expect(planPrompt).not.toContain("#### 📋 MORE (Standard Issue)")
+    expect(planPrompt).not.toContain("#### 📚 A LOT (Comprehensive Issue)")
+  })
 })
