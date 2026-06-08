@@ -185,21 +185,54 @@ function collectCommandSidecarDirs(command: ClaudeCommand): CodexSidecarDir[] {
 
 function collectReferencedSidecarDirs(agent: ClaudeAgent): CodexSidecarDir[] {
   const sourceDir = path.dirname(agent.sourcePath)
+  const sidecars = new Map<string, CodexSidecarDir>()
   let entries: Dirent[]
 
   try {
     entries = fs.readdirSync(sourceDir, { withFileTypes: true })
   } catch {
-    return []
+    entries = []
   }
 
-  return entries
+  for (const sidecar of entries
     .filter((entry) => entry.isDirectory())
     .filter((entry) => agent.body.includes(`${entry.name}/`) || agent.body.includes(`\`${entry.name}\``))
     .map((entry) => ({
       sourceDir: path.join(sourceDir, entry.name),
       targetName: entry.name,
-    }))
+    }))) {
+    sidecars.set(`${sidecar.targetName}\0${sidecar.sourceDir}`, sidecar)
+  }
+
+  for (const sidecar of collectCommandReferenceSidecars(agent)) {
+    sidecars.set(`${sidecar.targetName}\0${sidecar.sourceDir}`, sidecar)
+  }
+
+  return [...sidecars.values()]
+}
+
+function collectCommandReferenceSidecars(agent: ClaudeAgent): CodexSidecarDir[] {
+  const pluginRoot = getPluginRootForAgent(agent.sourcePath)
+  if (!pluginRoot) return []
+
+  const sidecars = new Map<string, CodexSidecarDir>()
+  const referencePattern = /commands\/([a-z0-9/_:-]+)\/references\/[a-z0-9-]+\.md/gi
+  for (const match of agent.body.matchAll(referencePattern)) {
+    const commandPath = match[1]
+    if (!commandPath) continue
+    const sourceDir = path.join(pluginRoot, "commands", ...commandPath.split("/"), "references")
+    if (!directoryExists(sourceDir)) continue
+    sidecars.set(sourceDir, { sourceDir, targetName: "references" })
+  }
+
+  return [...sidecars.values()]
+}
+
+function getPluginRootForAgent(sourcePath: string): string | null {
+  const parts = sourcePath.split(path.sep)
+  const agentsIndex = parts.lastIndexOf("agents")
+  if (agentsIndex <= 0) return null
+  return parts.slice(0, agentsIndex).join(path.sep) || path.sep
 }
 
 function getAgentCategory(agent: ClaudeAgent): string | null {

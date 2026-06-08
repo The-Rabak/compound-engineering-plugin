@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import path from "path"
 import { convertClaudeToCodex } from "../src/converters/claude-to-codex"
 import { parseFrontmatter } from "../src/utils/frontmatter"
 import type { ClaudePlugin } from "../src/types/claude"
@@ -279,6 +280,40 @@ Don't confuse with file paths like /tmp/output.md or /dev/null.`,
     expect(agent?.instructions).toContain("~/.codex/agents/security-sentinel.md")
     expect(agent?.instructions).toContain(".codex/plugins/converted-hooks.ts")
     expect(agent?.instructions).not.toContain(".claude/")
+  })
+
+  test("copies command reference artifacts needed by custom agents", () => {
+    const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+    const plugin: ClaudePlugin = {
+      ...fixturePlugin,
+      root: fixtureRoot,
+      commands: [],
+      skills: [],
+      agents: [
+        {
+          name: "execution-agent",
+          description: "Executes a scoped unit",
+          body: "Use `commands/workflows/references/ignored.md` as the shared contract.",
+          sourcePath: path.join(fixtureRoot, "agents", "workflow", "execution-agent.md"),
+        },
+      ],
+    }
+
+    const bundle = convertClaudeToCodex(plugin, {
+      agentMode: "subagent",
+      inferTemperature: false,
+      permissions: "none",
+    })
+
+    const agent = bundle.agents?.find((item) => item.name === "execution-agent")
+    expect(agent).toBeDefined()
+    expect(agent?.instructions).toContain("Use `references/ignored.md`")
+    expect(agent?.sidecarDirs).toEqual([
+      {
+        sourceDir: path.join(fixtureRoot, "commands", "workflows", "references"),
+        targetName: "references",
+      },
+    ])
   })
 
   test("truncates custom agent descriptions to Codex limits and single line", () => {

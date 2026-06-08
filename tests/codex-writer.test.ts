@@ -37,6 +37,19 @@ describe("writeCodexBundle", () => {
           description: "Review code",
           model: "gpt-5.5",
           instructions: "Review carefully.",
+          sidecarDirs: [
+            {
+              sourceDir: path.join(
+                import.meta.dir,
+                "fixtures",
+                "sample-portable-plugin",
+                "commands",
+                "workflows",
+                "references",
+              ),
+              targetName: "references",
+            },
+          ],
         },
       ],
       mcpServers: {
@@ -64,6 +77,7 @@ describe("writeCodexBundle", () => {
     const agentToml = await fs.readFile(path.join(tempRoot, ".codex", "agents", "reviewer.toml"), "utf8")
     expect(agentToml).toContain('name = "reviewer"')
     expect(agentToml).toContain('model = "gpt-5.5"')
+    expect(await exists(path.join(tempRoot, ".codex", "agents", "reviewer", "references", "ignored.md"))).toBe(true)
 
     const marketplace = await fs.readFile(path.join(tempRoot, ".agents", "plugins", "marketplace.json"), "utf8")
     expect(marketplace).toContain('"path": "./.codex/plugins/compound-engineering"')
