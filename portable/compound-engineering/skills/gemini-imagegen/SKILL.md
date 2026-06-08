@@ -8,10 +8,13 @@ description: >-
   composition from multiple reference images.
 model: claude-sonnet-4-6
 platforms:
+  codex:
+    model: gpt-5.5
   copilot:
     model: gpt-5.3-codex
   opencode:
     model: openrouter/moonshotai/kimi-k2.6
+
 ---
 
 # Gemini Image Generation (Nano Banana Pro)

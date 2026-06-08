@@ -5,10 +5,13 @@ description: >-
   and understand why code patterns exist. Use when you need historical context for code changes.
 model: claude-sonnet-4-6
 platforms:
+  codex:
+    model: gpt-5.5
   copilot:
     model: gpt-5.3-codex
   opencode:
     model: openrouter/moonshotai/kimi-k2.6
+
 ---
 
 ## Mission

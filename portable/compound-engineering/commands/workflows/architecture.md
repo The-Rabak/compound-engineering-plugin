@@ -3,6 +3,10 @@ name: workflows:architecture
 description: >-
   Produce an implementation-guiding architecture handoff between planning and deepening, with optional deep review for risky changes
 argument-hint: '[path to plan file]'
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 # Create an architecture improvement artifact

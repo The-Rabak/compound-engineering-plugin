@@ -3,8 +3,11 @@ name: lrj
 description: Full autonomous engineering workflow
 argument-hint: '[feature description]'
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     disable-model-invocation: true
+
 ---
 
 Run these slash commands in order. Do not do anything else.

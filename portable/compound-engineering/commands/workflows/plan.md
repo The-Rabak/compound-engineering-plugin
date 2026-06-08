@@ -3,6 +3,10 @@ name: workflows:plan
 description: >-
   Transform feature descriptions into structured project plans anchored to user story, architectural context, and success criteria from brainstorm (or constructed fresh when no brainstorm exists)
 argument-hint: '[feature description, bug report, or improvement idea]'
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 # Create a plan for a new feature or bug fix

@@ -5,7 +5,7 @@ import { loadPluginForTargetConversion } from "../parsers/conversion-source"
 import {
   convertInstallTargetHelp,
   extraCompatibilityTargetHelp,
-  getDeEmphasizedTargetNamesForSurface,
+  getTargetNamesForSurface,
   getSurfaceTargetNotice,
   resolveTargetHandler,
 } from "../targets"
@@ -120,7 +120,7 @@ export default defineCommand({
 function parseExtraTargets(value: unknown, primaryTarget?: string): string[] {
   if (!value) return []
 
-  const allowedTargets = new Set(getDeEmphasizedTargetNamesForSurface("convert"))
+  const allowedTargets = new Set(getTargetNamesForSurface("convert").filter((targetName) => targetName !== "opencode"))
   const parsedTargets: string[] = []
 
   for (const entry of String(value)
@@ -133,7 +133,7 @@ function parseExtraTargets(value: unknown, primaryTarget?: string): string[] {
 
     if (!allowedTargets.has(entry)) {
       console.warn(
-        `Skipping ${entry}: --also only supports de-emphasized compatibility targets (${[...allowedTargets].join(", ")}).`,
+        `Skipping ${entry}: --also only supports additional targets (${[...allowedTargets].join(", ")}).`,
       )
       continue
     }

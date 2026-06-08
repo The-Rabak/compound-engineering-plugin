@@ -2,6 +2,10 @@
 name: test-browser
 description: Run browser tests on pages affected by current PR or branch
 argument-hint: '[branch name or ''current'' for current branch]'
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 # Browser Test Command

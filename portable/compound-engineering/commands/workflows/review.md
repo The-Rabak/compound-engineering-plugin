@@ -4,6 +4,10 @@ description: >-
   Perform exhaustive code reviews grounded in the user story. Filters technical
   findings through WHY context to protect purpose while improving quality.
 argument-hint: '[branch name, file path, or empty for current branch]'
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 # Review Command

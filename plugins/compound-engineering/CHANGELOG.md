@@ -5,6 +5,18 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.16.0] - 2026-06-08
+
+### Added
+
+- **Codex full export** -- Added a full Codex export path that writes command-derived skills, portable skills, custom agent TOML files, MCP config, hooks, plugin metadata, and marketplace metadata from the portable source.
+- **Codex model metadata** -- Added `platforms.codex.model` across agents, commands, skills, and reusable skill templates, using `gpt-5.5` for demanding work and `gpt-5.4-mini` for lightweight scan/research surfaces.
+
+### Changed
+
+- **Support-surface cleanup** -- OpenCode first-class, GitHub Copilot and Codex second, Claude Code third; Droid, Pi, Gemini, and Kiro remain de-emphasized compatibility exporters.
+- **Codex command compatibility** -- Codex export now treats slash-command entrypoints as skills instead of deprecated custom prompts and rewrites Claude-specific paths into Codex `.agents` / `.codex` locations.
+
 ## [4.15.0] - 2026-06-01
 
 ### Added

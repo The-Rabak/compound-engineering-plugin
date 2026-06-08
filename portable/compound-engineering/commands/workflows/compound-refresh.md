@@ -3,9 +3,12 @@ name: workflows:compound-refresh
 description: Refresh stale learnings and pattern docs in docs/solutions/ against the current codebase
 argument-hint: '[mode:autonomous] [optional: scope hint]'
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     allowed-tools: Skill(compound-refresh)
     disable-model-invocation: true
+
 ---
 
 # Refresh Compounded Learnings

@@ -201,12 +201,18 @@ describe("TDD contract surfaces", () => {
     expect(slfg).toContain("default Ralph-driven execution path")
   })
 
-  test("local config documents the visible TDD defaults and precedence", async () => {
-    const localConfig = await readRepoFile("compound-engineering.local.md")
+  test("setup skill documents the visible local TDD defaults and precedence", async () => {
+    const localConfig = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "setup",
+      "SKILL.md",
+    )
 
-    expect(localConfig).toContain("tdd_enabled: true")
-    expect(localConfig).toContain("mode: ralph")
-    expect(localConfig).toContain("loop: red-green-refactor")
+    expect(localConfig).toContain("tdd_enabled: {true|false}")
+    expect(localConfig).toContain("mode: {ralph|standard}")
+    expect(localConfig).toContain("loop: {red-green-refactor|implementation-first}")
     expect(localConfig).toContain("precedence: plan_overrides_local")
     expect(localConfig).toContain("Plan-level `tdd` values override this file")
   })

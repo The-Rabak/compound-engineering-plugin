@@ -5,10 +5,13 @@ description: >-
   Use after implementing frontend features or modifying Vue/Nuxt components.
 model: claude-sonnet-4-6
 platforms:
+  codex:
+    model: gpt-5.5
   copilot:
     model: gpt-5.3-codex
   opencode:
     model: openrouter/moonshotai/kimi-k2.6
+
 ---
 
 ## Mission

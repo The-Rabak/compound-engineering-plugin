@@ -3,8 +3,11 @@ name: slrj
 description: Full autonomous engineering workflow using swarm mode for parallel execution
 argument-hint: '[feature description]'
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     disable-model-invocation: true
+
 ---
 
 Swarm-enabled LRJ. Run these steps in order, parallelizing where indicated.

@@ -1,7 +1,14 @@
+import fs, { type Dirent } from "fs"
+import path from "path"
 import { formatFrontmatter } from "../utils/frontmatter"
 import type { ClaudeAgent, ClaudeCommand, ClaudePlugin } from "../types/claude"
-import type { CodexBundle, CodexGeneratedSkill } from "../types/codex"
+import type { CodexAgent, CodexBundle, CodexGeneratedSkill, CodexSidecarDir } from "../types/codex"
 import type { ClaudeToOpenCodeOptions } from "./claude-to-opencode"
+import {
+  normalizeCodexName,
+  transformContentForCodex,
+  type CodexInvocationTargets,
+} from "../utils/codex-content"
 
 export type ClaudeToCodexOptions = ClaudeToOpenCodeOptions
 
@@ -11,61 +18,98 @@ export function convertClaudeToCodex(
   plugin: ClaudePlugin,
   _options: ClaudeToCodexOptions,
 ): CodexBundle {
-  const promptNames = new Set<string>()
   const skillDirs = plugin.skills.map((skill) => ({
     name: skill.name,
+    description: skill.description,
+    model: skill.codexModel,
+    disableModelInvocation: skill.disableModelInvocation,
     sourceDir: skill.sourceDir,
+    skillPath: skill.skillPath,
   }))
 
-  const usedSkillNames = new Set<string>(skillDirs.map((skill) => normalizeName(skill.name)))
-  const commandSkills: CodexGeneratedSkill[] = []
-  const prompts = plugin.commands.map((command) => {
-    const promptName = uniqueName(normalizeName(command.name), promptNames)
-    const commandSkill = convertCommandSkill(command, usedSkillNames)
-    commandSkills.push(commandSkill)
-    const content = renderPrompt(command, commandSkill.name)
-    return { name: promptName, content }
-  })
-
-  const agentSkills = plugin.agents.map((agent) => convertAgent(agent, usedSkillNames))
-  const generatedSkills = [...commandSkills, ...agentSkills]
+  const usedSkillNames = new Set<string>(skillDirs.map((skill) => normalizeCodexName(skill.name)))
+  const rawAgents = convertAgents(plugin.agents)
+  const invocationTargets: CodexInvocationTargets = {
+    skillTargets: buildSkillTargets(plugin, skillDirs.map((skill) => skill.name)),
+    agentTargets: buildAgentTargets(plugin.agents, rawAgents),
+  }
+  const agents = rawAgents.map((agent) => ({
+    ...agent,
+    instructions: transformContentForCodex(agent.instructions, invocationTargets, {
+      unknownSlashBehavior: "preserve",
+    }),
+  }))
+  const generatedSkills = plugin.commands.map((command) =>
+    convertCommandSkill(command, usedSkillNames, invocationTargets),
+  )
 
   return {
-    prompts,
+    pluginName: plugin.manifest.name,
+    pluginVersion: plugin.manifest.version,
+    pluginDescription: plugin.manifest.description,
+    prompts: [],
     skillDirs,
     generatedSkills,
+    agents,
+    invocationTargets,
     mcpServers: plugin.mcpServers,
+    hooks: plugin.hooks,
   }
 }
 
-function convertAgent(agent: ClaudeAgent, usedNames: Set<string>): CodexGeneratedSkill {
-  const name = uniqueName(normalizeName(agent.name), usedNames)
+function convertAgents(agents: ClaudeAgent[]): CodexAgent[] {
+  const usedNames = new Set<string>()
+  return agents.map((agent) => convertAgent(agent, usedNames))
+}
+
+function convertAgent(agent: ClaudeAgent, usedNames: Set<string>): CodexAgent {
+  const name = uniqueName(normalizeCodexName(agent.name), usedNames)
   const description = sanitizeDescription(
     agent.description ?? `Converted from Claude agent ${agent.name}`,
   )
-  const frontmatter: Record<string, unknown> = { name, description }
 
-  let body = transformContentForCodex(agent.body.trim())
+  let instructions = agent.body.trim()
   if (agent.capabilities && agent.capabilities.length > 0) {
     const capabilities = agent.capabilities.map((capability) => `- ${capability}`).join("\n")
-    body = `## Capabilities\n${capabilities}\n\n${body}`.trim()
+    instructions = `## Capabilities\n${capabilities}\n\n${instructions}`.trim()
   }
-  if (body.length === 0) {
-    body = `Instructions converted from the ${agent.name} agent.`
+  if (instructions.length === 0) {
+    instructions = `Instructions converted from the ${agent.name} agent.`
   }
 
-  const content = formatFrontmatter(frontmatter, body)
-  return { name, content }
+  const model = agent.codexModel && agent.codexModel !== "inherit" ? agent.codexModel : undefined
+  return {
+    name,
+    description,
+    instructions,
+    model,
+    sourcePath: agent.sourcePath,
+    sidecarDirs: collectReferencedSidecarDirs(agent),
+  }
 }
 
-function convertCommandSkill(command: ClaudeCommand, usedNames: Set<string>): CodexGeneratedSkill {
-  const name = uniqueName(normalizeName(command.name), usedNames)
+function convertCommandSkill(
+  command: ClaudeCommand,
+  usedNames: Set<string>,
+  invocationTargets: CodexInvocationTargets,
+): CodexGeneratedSkill {
+  const name = uniqueName(normalizeCodexName(command.name), usedNames)
   const frontmatter: Record<string, unknown> = {
     name,
     description: sanitizeDescription(
       command.description ?? `Converted from Claude command ${command.name}`,
     ),
   }
+  if (command.argumentHint) {
+    frontmatter["argument-hint"] = command.argumentHint
+  }
+  if (command.codexModel && command.codexModel !== "inherit") {
+    frontmatter.model = command.codexModel
+  }
+  if (command.disableModelInvocation) {
+    frontmatter["disable-model-invocation"] = true
+  }
+
   const sections: string[] = []
   if (command.argumentHint) {
     sections.push(`## Arguments\n${command.argumentHint}`)
@@ -73,95 +117,43 @@ function convertCommandSkill(command: ClaudeCommand, usedNames: Set<string>): Co
   if (command.allowedTools && command.allowedTools.length > 0) {
     sections.push(`## Allowed tools\n${command.allowedTools.map((tool) => `- ${tool}`).join("\n")}`)
   }
-  // Transform Task agent calls to Codex skill references
-  const transformedBody = transformTaskCalls(command.body.trim())
+  const transformedBody = transformContentForCodex(command.body.trim(), invocationTargets, {
+    unknownSlashBehavior: "preserve",
+  })
   sections.push(transformedBody)
   const body = sections.filter(Boolean).join("\n\n").trim()
   const content = formatFrontmatter(frontmatter, body.length > 0 ? body : command.body)
-  return { name, content }
-}
-
-/**
- * Transform Claude Code content to Codex-compatible content.
- *
- * Handles multiple syntax differences:
- * 1. Task agent calls: Task agent-name(args) → Use the $agent-name skill to: args
- * 2. Slash commands: /command-name → /prompts:command-name
- * 3. Agent references: @agent-name → $agent-name skill
- *
- * This bridges the gap since Claude Code and Codex have different syntax
- * for invoking commands, agents, and skills.
- */
-function transformContentForCodex(body: string): string {
-  let result = body
-
-  // 1. Transform Task agent calls
-  // Match: Task repo-research-analyst(feature_description)
-  // Match: - Task learnings-researcher(args)
-  const taskPattern = /^(\s*-?\s*)Task\s+([a-z][a-z0-9-]*)\(([^)]+)\)/gm
-  result = result.replace(taskPattern, (_match, prefix: string, agentName: string, args: string) => {
-    const skillName = normalizeName(agentName)
-    const trimmedArgs = args.trim()
-    return `${prefix}Use the $${skillName} skill to: ${trimmedArgs}`
-  })
-
-  // 2. Transform slash command references
-  // Match: /command-name or /workflows:command but NOT /path/to/file or URLs
-  // Look for slash commands in contexts like "Run /command", "use /command", etc.
-  // Avoid matching file paths (contain multiple slashes) or URLs (contain ://)
-  const slashCommandPattern = /(?<![:\w])\/([a-z][a-z0-9_:-]*?)(?=[\s,."')\]}`]|$)/gi
-  result = result.replace(slashCommandPattern, (match, commandName: string) => {
-    // Skip if it looks like a file path (contains /)
-    if (commandName.includes('/')) return match
-    // Skip common non-command patterns
-    if (['dev', 'tmp', 'etc', 'usr', 'var', 'bin', 'home'].includes(commandName)) return match
-    // Transform to Codex prompt syntax
-    const normalizedName = normalizeName(commandName)
-    return `/prompts:${normalizedName}`
-  })
-
-  // 3. Rewrite .claude/ paths to .codex/
-  result = result
-    .replace(/~\/\.claude\//g, "~/.codex/")
-    .replace(/\.claude\//g, ".codex/")
-
-  // 4. Transform @agent-name references
-  // Match: @agent-name in text (not emails)
-  const agentRefPattern = /@([a-z][a-z0-9-]*-(?:agent|reviewer|researcher|analyst|specialist|oracle|sentinel|guardian|strategist))/gi
-  result = result.replace(agentRefPattern, (_match, agentName: string) => {
-    const skillName = normalizeName(agentName)
-    return `$${skillName} skill`
-  })
-
-  return result
-}
-
-// Alias for backward compatibility
-const transformTaskCalls = transformContentForCodex
-
-function renderPrompt(command: ClaudeCommand, skillName: string): string {
-  const frontmatter: Record<string, unknown> = {
-    description: command.description,
-    "argument-hint": command.argumentHint,
+  return {
+    name,
+    content,
+    sourcePath: command.sourcePath,
+    sidecarDirs: collectCommandSidecarDirs(command),
   }
-  const instructions = `Use the $${skillName} skill for this command and follow its instructions.`
-  // Transform Task calls in prompt body too (not just skill body)
-  const transformedBody = transformTaskCalls(command.body)
-  const body = [instructions, "", transformedBody].join("\n").trim()
-  return formatFrontmatter(frontmatter, body)
 }
 
-function normalizeName(value: string): string {
-  const trimmed = value.trim()
-  if (!trimmed) return "item"
-  const normalized = trimmed
-    .toLowerCase()
-    .replace(/[\\/]+/g, "-")
-    .replace(/[:\s]+/g, "-")
-    .replace(/[^a-z0-9_-]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "")
-  return normalized || "item"
+function buildSkillTargets(plugin: ClaudePlugin, skillNames: string[]): Record<string, string> {
+  const targets: Record<string, string> = {}
+  for (const skillName of skillNames) {
+    targets[normalizeCodexName(skillName)] = normalizeCodexName(skillName)
+  }
+  for (const command of plugin.commands) {
+    targets[normalizeCodexName(command.name)] = normalizeCodexName(command.name)
+  }
+  return targets
+}
+
+function buildAgentTargets(sourceAgents: ClaudeAgent[], agents: CodexAgent[]): Record<string, string> {
+  const targets: Record<string, string> = {}
+  sourceAgents.forEach((agent, index) => {
+    const target = agents[index]?.name
+    if (!target) return
+    targets[normalizeCodexName(agent.name)] = target
+    const category = getAgentCategory(agent)
+    if (category) {
+      targets[normalizeCodexName(`${category}:${agent.name}`)] = target
+    }
+  })
+  return targets
 }
 
 function sanitizeDescription(value: string, maxLength = CODEX_DESCRIPTION_MAX_LENGTH): string {
@@ -183,4 +175,46 @@ function uniqueName(base: string, used: Set<string>): string {
   const name = `${base}-${index}`
   used.add(name)
   return name
+}
+
+function collectCommandSidecarDirs(command: ClaudeCommand): CodexSidecarDir[] {
+  const referencesDir = path.join(path.dirname(command.sourcePath), "references")
+  if (!directoryExists(referencesDir)) return []
+  return [{ sourceDir: referencesDir, targetName: "references" }]
+}
+
+function collectReferencedSidecarDirs(agent: ClaudeAgent): CodexSidecarDir[] {
+  const sourceDir = path.dirname(agent.sourcePath)
+  let entries: Dirent[]
+
+  try {
+    entries = fs.readdirSync(sourceDir, { withFileTypes: true })
+  } catch {
+    return []
+  }
+
+  return entries
+    .filter((entry) => entry.isDirectory())
+    .filter((entry) => agent.body.includes(`${entry.name}/`) || agent.body.includes(`\`${entry.name}\``))
+    .map((entry) => ({
+      sourceDir: path.join(sourceDir, entry.name),
+      targetName: entry.name,
+    }))
+}
+
+function getAgentCategory(agent: ClaudeAgent): string | null {
+  const parts = agent.sourcePath.split(path.sep)
+  const agentsIndex = parts.lastIndexOf("agents")
+  if (agentsIndex === -1) return null
+  const next = parts[agentsIndex + 1]
+  if (!next || next.endsWith(".md")) return null
+  return next
+}
+
+function directoryExists(dirPath: string): boolean {
+  try {
+    return fs.statSync(dirPath).isDirectory()
+  } catch {
+    return false
+  }
 }

@@ -5,10 +5,13 @@ description: >-
   discrepancies. Use after writing or modifying HTML/CSS/React components to verify design fidelity.
 model: claude-sonnet-4-6
 platforms:
+  codex:
+    model: gpt-5.5
   copilot:
     model: gpt-5.3-codex
   opencode:
     model: openrouter/moonshotai/kimi-k2.6
+
 ---
 
 ## Mission

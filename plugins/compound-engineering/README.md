@@ -2,13 +2,14 @@
 
 AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 34 specialized agents, 28 commands, and 26 skills.
 
-This repository also ships generated Copilot assets under the repo root `.github/`, built from the canonical portable source in `portable/compound-engineering/`.
+This repository also ships generated Copilot assets under `.github/` and Codex plugin metadata under `.codex-plugin/` plus `.agents/plugins/`, built from the canonical portable source in `portable/compound-engineering/`.
 
 ## Support policy
 
-- OpenCode first-class, GitHub Copilot second, Claude Code third.
-- **Keep:** OpenCode-first portable source, generated Copilot output, and this generated Claude Code plugin.
-- **De-emphasize:** compatibility exporters for Codex, Droid, Pi, Gemini, and Kiro, plus legacy Claude-home sync mirrors.
+- OpenCode first-class, GitHub Copilot and Codex second, Claude Code third.
+- **Keep:** OpenCode-first portable source, generated Copilot output, generated Codex output, and this generated Claude Code plugin.
+- **Codex:** full local export plus repo marketplace packaging through `.codex-plugin/plugin.json`, `codex-skills/`, and `.agents/plugins/marketplace.json`.
+- **De-emphasize:** compatibility exporters for Droid, Pi, Gemini, and Kiro, plus legacy Claude-home sync mirrors.
 - **Removed legacy surfaces:** `.github_gpt/` and dormant Cursor-specific export/sync code that no longer fit the supported target matrix.
 
 ## Workflow contract highlights
@@ -45,8 +46,8 @@ Use this sequence when you want the full compound workflow instead of an ad hoc 
 ## Migration notes
 
 - `/technical_review` is no longer part of the supported workflow. Use `/workflows:architecture` between planning and `/deepen-plan`, then continue through `/workflows:work` and `/workflows:review`.
-- OpenCode remains the canonical first-class surface for the source repo. This generated Claude output is the third-class compatibility surface, while Copilot is the supported second-class generated output.
-- `.github_gpt/` and dormant Cursor-specific export/sync code have been removed from the supported workflow. Codex, Droid, Pi, Gemini, and Kiro remain de-emphasized compatibility exporters.
+- OpenCode remains the canonical first-class surface for the source repo. This generated Claude output is the third-class compatibility surface, while Copilot and Codex are supported second-class generated outputs.
+- `.github_gpt/` and dormant Cursor-specific export/sync code have been removed from the supported workflow. Droid, Pi, Gemini, and Kiro remain de-emphasized compatibility exporters.
 - Ralph evidence is now part of the normal work/review contract: red, green, and post-refactor green proof are expected unless a plan records an explicit exception.
 
 ### Verification guidance
@@ -259,9 +260,21 @@ The `agent-browser` skill provides comprehensive documentation on usage.
 
 ## Installation
 
+Claude Code:
+
 ```bash
 claude /plugin install compound-engineering
 ```
+
+Codex full local export:
+
+```bash
+bun run cli:install ./portable/compound-engineering --to codex
+```
+
+Codex repo marketplace output is generated at `.agents/plugins/marketplace.json` and points at this plugin folder's `.codex-plugin/plugin.json`.
+
+Codex plugin package caveat: native Codex plugins package installable **skills**. The complete compound-engineering Codex environment also needs custom agents in `.codex/agents`, MCP config in `.codex/config.toml`, hooks in `.codex/hooks.json`, and local marketplace metadata in `.agents/plugins/marketplace.json`. Use the direct Codex installer command above for the complete setup; `bun run build:platforms` generates the repo marketplace and skill package.
 
 ## Known Issues
 

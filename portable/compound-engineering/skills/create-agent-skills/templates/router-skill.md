@@ -1,6 +1,10 @@
 ---
 name: {{SKILL_NAME}}
 description: {{What it does}} Use when {{trigger conditions}}.
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 <essential_principles>

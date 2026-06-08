@@ -26,7 +26,7 @@ export type CleanupRubric = "keep" | "de-emphasize" | "remove"
 export type TargetSurface = "build" | "convert" | "install" | "sync"
 
 export const supportTierPositioning =
-  "OpenCode is first-class, Copilot is second-class, and Claude Code remains a third-class generated compatibility surface."
+  "OpenCode is first-class, Copilot and Codex are second-class generated surfaces, and Claude Code remains a third-class generated compatibility surface."
 
 export const cleanupRubric = {
   keep: "Actively maintain the surface because it directly serves the supported workflow order.",
@@ -66,10 +66,10 @@ export const targetPolicies = {
   },
   codex: {
     name: "codex",
-    tier: "non-core",
-    cleanup: "de-emphasize",
-    rationale: "Compatibility exporter retained for existing users, not for primary workflow investment.",
-    surfaces: ["convert", "install", "sync"],
+    tier: "second-class",
+    cleanup: "keep",
+    rationale: "Supported generated output for OpenAI Codex workflows, including full local export and repo marketplace packaging.",
+    surfaces: ["build", "convert", "install", "sync"],
   },
   droid: {
     name: "droid",
@@ -169,6 +169,9 @@ const convertInstallCoreTargets = getTargetPoliciesForSurface("convert")
   .map((policy) => policy.name)
 
 const convertInstallCompatibilityTargets = getDeEmphasizedTargetNamesForSurface("convert")
+const convertInstallExtraTargets = getTargetPoliciesForSurface("convert")
+  .filter((policy) => policy.name !== "opencode")
+  .map((policy) => policy.name)
 const syncCoreTargets = getTargetPoliciesForSurface("sync")
   .filter((policy) => policy.cleanup === "keep")
   .map((policy) => policy.name)
@@ -178,7 +181,7 @@ export const convertInstallTargetHelp =
   `Target format. Core: ${formatTierTargets(convertInstallCoreTargets)}. Compatibility: ${convertInstallCompatibilityTargets.join(" | ")} (de-emphasized).`
 
 export const extraCompatibilityTargetHelp =
-  `Comma-separated extra de-emphasized compatibility targets (supported: ${convertInstallCompatibilityTargets.join(", ")})`
+  `Comma-separated extra targets to write alongside the primary target (supported: ${convertInstallExtraTargets.join(", ")})`
 
 export const syncTargetHelp =
   `Target. Preferred: ${formatTierTargets(syncCoreTargets)}. Legacy mirrors: ${syncLegacyTargets.join(" | ")} (de-emphasized).`

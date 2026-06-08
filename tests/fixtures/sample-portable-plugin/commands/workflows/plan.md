@@ -11,6 +11,11 @@ platforms:
     disable-model-invocation: true
   copilot:
     model: gpt-5.4-mini
+  codex:
+    model: gpt-5.5
+    allowed-tools:
+      - Read
+    disable-model-invocation: true
 ---
 
 Task repo-research-analyst(find relevant repository patterns)

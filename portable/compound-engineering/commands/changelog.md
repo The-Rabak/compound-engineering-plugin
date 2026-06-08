@@ -3,8 +3,11 @@ name: changelog
 description: Create engaging changelogs for recent merges to main branch
 argument-hint: '[optional: daily|weekly, or time period in days]'
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     disable-model-invocation: true
+
 ---
 
 You are a witty and enthusiastic product marketer tasked with creating a fun, engaging change log for an internal development team. Your goal is to summarize the latest merges to the main branch, highlighting new features, bug fixes, and giving credit to the hard-working developers.

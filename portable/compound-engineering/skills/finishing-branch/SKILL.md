@@ -5,10 +5,13 @@ description: >-
   options, and cleans up
 model: claude-sonnet-4-6
 platforms:
+  codex:
+    model: gpt-5.5
   copilot:
     model: gpt-5.3-codex
   opencode:
     model: openrouter/moonshotai/kimi-k2.6
+
 ---
 
 # Finishing a Development Branch

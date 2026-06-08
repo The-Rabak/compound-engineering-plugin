@@ -3,8 +3,11 @@ name: workflows:triage
 description: Research each todo, resolve decisions one-by-one, write chosen actions into todo files, then execute safe batches in swarm mode with execution-agent
 argument-hint: '[todo range or scope]'
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     disable-model-invocation: true
+
 ---
 
 - Read all target todo files before asking decisions.

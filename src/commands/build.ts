@@ -1,18 +1,22 @@
 import { defineCommand } from "citty"
 import { promises as fs } from "fs"
 import path from "path"
+import { convertClaudeToCodex } from "../converters/claude-to-codex"
 import { convertClaudeToCopilot } from "../converters/claude-to-copilot"
 import { loadPortablePlugin } from "../parsers/portable"
 import { writeClaudeBundle } from "../targets/claude"
 import { writeCopilotBundle } from "../targets/copilot"
-import { writeJson } from "../utils/files"
+import type { CodexBundle } from "../types/codex"
+import { copyDir, readText, writeJson, writeText } from "../utils/files"
+import { formatFrontmatter, parseFrontmatter } from "../utils/frontmatter"
+import { normalizeCodexName, transformContentForCodex } from "../utils/codex-content"
 
-const validTargets = ["claude", "copilot"] as const
+const validTargets = ["claude", "copilot", "codex"] as const
 
 export default defineCommand({
   meta: {
     name: "build",
-    description: "Build Claude and Copilot outputs from portable plugin source",
+    description: "Build Claude, Copilot, and Codex outputs from portable plugin source",
   },
   args: {
     source: {
@@ -28,8 +32,8 @@ export default defineCommand({
     },
     targets: {
       type: "string",
-      default: "claude,copilot",
-      description: "Comma-separated targets to build: claude,copilot",
+      default: "claude,copilot,codex",
+      description: "Comma-separated targets to build: claude,copilot,codex",
     },
   },
   async run({ args }) {
@@ -57,6 +61,18 @@ export default defineCommand({
       await writeCopilotBundle(copilotRoot, copilotBundle)
       await fs.rm(path.join(copilotRoot, ".compound-engineering-copilot-state.json"), { force: true })
       console.log(`Built Copilot output at ${copilotRoot}`)
+    }
+
+    if (targets.includes("codex")) {
+      const codexBundle = convertClaudeToCodex(plugin, {
+        agentMode: "subagent",
+        inferTemperature: true,
+        permissions: "none",
+      })
+      const codexPluginRoot = path.join(outputRoot, "plugins", plugin.manifest.name)
+      await removeGeneratedCodexOutput(outputRoot, codexPluginRoot)
+      await writeCodexPluginOutput(outputRoot, codexPluginRoot, codexBundle)
+      console.log(`Built Codex output at ${codexPluginRoot}`)
     }
   },
 })
@@ -113,4 +129,80 @@ async function removeGeneratedClaudeOutput(claudeRoot: string): Promise<void> {
   await fs.rm(path.join(claudeRoot, "hooks"), { recursive: true, force: true })
   await fs.rm(path.join(claudeRoot, ".claude-plugin", "plugin.json"), { force: true })
   await fs.rm(path.join(claudeRoot, ".compound-engineering-claude-state.json"), { force: true })
+}
+
+async function removeGeneratedCodexOutput(outputRoot: string, pluginRoot: string): Promise<void> {
+  await fs.rm(path.join(pluginRoot, ".codex-plugin", "plugin.json"), { force: true })
+  await fs.rm(path.join(pluginRoot, "codex-skills"), { recursive: true, force: true })
+  await fs.rm(path.join(outputRoot, ".agents", "plugins", "marketplace.json"), { force: true })
+}
+
+async function writeCodexPluginOutput(
+  outputRoot: string,
+  pluginRoot: string,
+  bundle: CodexBundle,
+): Promise<void> {
+  await writeJson(path.join(pluginRoot, ".codex-plugin", "plugin.json"), {
+    name: bundle.pluginName,
+    version: bundle.pluginVersion,
+    description: bundle.pluginDescription,
+    skills: "./codex-skills/",
+    interface: {
+      displayName: "Compound Engineering",
+      shortDescription: "Workflow, review, research, and engineering automation skills for Codex.",
+      category: "Coding",
+      capabilities: ["Read", "Write", "Interactive"],
+    },
+  })
+
+  const codexSkillsRoot = path.join(pluginRoot, "codex-skills")
+  for (const skill of bundle.skillDirs) {
+    const targetDir = path.join(codexSkillsRoot, normalizeCodexName(skill.name))
+    await copyDir(skill.sourceDir, targetDir)
+    const raw = await readText(skill.skillPath ?? path.join(skill.sourceDir, "SKILL.md"))
+    const parsed = parseFrontmatter(raw)
+    const frontmatter: Record<string, unknown> = {
+      name: normalizeCodexName(skill.name),
+      description: skill.description ?? parsed.data.description,
+    }
+    if (skill.model) {
+      frontmatter.model = skill.model
+    }
+    if (skill.disableModelInvocation) {
+      frontmatter["disable-model-invocation"] = true
+    }
+    const body = transformContentForCodex(parsed.body.trim(), bundle.invocationTargets, {
+      unknownSlashBehavior: "preserve",
+    })
+    await writeText(path.join(targetDir, "SKILL.md"), formatFrontmatter(frontmatter, body) + "\n")
+  }
+
+  for (const skill of bundle.generatedSkills) {
+    const targetDir = path.join(codexSkillsRoot, normalizeCodexName(skill.name))
+    await writeText(path.join(targetDir, "SKILL.md"), skill.content + "\n")
+    for (const sidecar of skill.sidecarDirs ?? []) {
+      await copyDir(sidecar.sourceDir, path.join(targetDir, sidecar.targetName))
+    }
+  }
+
+  await writeJson(path.join(outputRoot, ".agents", "plugins", "marketplace.json"), {
+    name: `${bundle.pluginName}-marketplace`,
+    interface: {
+      displayName: "Compound Engineering",
+    },
+    plugins: [
+      {
+        name: bundle.pluginName,
+        source: {
+          source: "local",
+          path: `./plugins/${bundle.pluginName}`,
+        },
+        policy: {
+          installation: "AVAILABLE",
+          authentication: "ON_INSTALL",
+        },
+        category: "Coding",
+      },
+    ],
+  })
 }

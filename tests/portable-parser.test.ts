@@ -14,12 +14,15 @@ describe("loadPortablePlugin", () => {
     )
     expect(plugin.portableManifest.marketplace?.name).toBe("compound-engineering-marketplace")
     expect(plugin.agents[0]?.model).toBe("haiku")
+    expect(plugin.agents[0]?.codexModel).toBe("gpt-5.4-mini")
     expect(plugin.commands[0]?.model).toBe("haiku")
     expect(plugin.commands[0]?.copilotModel).toBe("gpt-5.4-mini")
-    expect(plugin.commands[0]?.allowedTools).toEqual(["Read", "Write"])
+    expect(plugin.commands[0]?.codexModel).toBe("gpt-5.5")
+    expect(plugin.commands[0]?.allowedTools).toEqual(["Read"])
     expect(plugin.commands[0]?.disableModelInvocation).toBe(true)
     expect(plugin.skills[0]?.model).toBe("haiku")
     expect(plugin.skills[0]?.copilotModel).toBe("gpt-5.4-mini")
+    expect(plugin.skills[0]?.codexModel).toBe("gpt-5.5")
     expect(plugin.skills[0]?.disableModelInvocation).toBe(true)
     expect(plugin.hooks?.hooks.Stop?.[0]?.hooks[0]).toEqual({
       type: "command",

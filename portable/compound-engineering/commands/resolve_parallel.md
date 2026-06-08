@@ -3,8 +3,11 @@ name: resolve_parallel
 description: Resolve all TODO comments using parallel processing
 argument-hint: '[optional: specific TODO pattern or file]'
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     disable-model-invocation: true
+
 ---
 
 Resolve all TODO comments using parallel processing.

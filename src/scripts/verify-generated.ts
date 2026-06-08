@@ -4,6 +4,7 @@ import path from "path"
 
 const GENERATED_TARGETS = [
   ".github",
+  path.join(".agents", "plugins", "marketplace.json"),
   path.join("plugins", "compound-engineering"),
   path.join(".claude-plugin", "marketplace.json"),
 ]

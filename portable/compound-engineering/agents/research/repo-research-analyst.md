@@ -5,10 +5,13 @@ description: >-
   patterns. Use when onboarding to a new codebase or understanding project conventions.
 model: claude-haiku-4-5-20251001
 platforms:
+  codex:
+    model: gpt-5.4-mini
   copilot:
     model: gpt-5.4-mini
   opencode:
     model: openrouter/minimax/minimax-m2.7
+
 ---
 
 ## Mission

@@ -4,6 +4,10 @@ description: >-
   Execute work plans while maintaining WHY tracing from problem narrative
   through user story to implementation. Grounds every subagent in purpose.
 argument-hint: '[plan file, ticket index, ticket file, specification, or todo file path] [--review-mode bulk|inline|both]'
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 # Work Plan Execution Command
