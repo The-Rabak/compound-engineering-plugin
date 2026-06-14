@@ -1,7 +1,8 @@
 ---
 name: workflows:triage
 description: Research each todo, resolve decisions one-by-one, write chosen actions into todo files, then execute safe batches in swarm mode with execution-agent
-argument-hint: '[todo range or scope]'
+argument-hint: '[todo range or scope] [--auto-recommended] [--execute]'
+model: opus-4.8
 platforms:
   codex:
     model: gpt-5.5
@@ -13,6 +14,7 @@ platforms:
 - Read all target todo files before asking decisions.
 - Keep main context as orchestration, research, decision, and validation space; execution agents do implementation.
 - Do not start execution until all targeted todos are fully triaged and updated in place.
+- If invoked with `--auto-recommended`, select the researched recommended action for every open decision without asking the user.
 
 Use this command when you need to process review todos end-to-end:
 
@@ -101,6 +103,14 @@ Execution Risks:
 ### Step 3: Resolve Open Decisions One Question at a Time
 
 Ask only one question at a time. Do not batch decisions.
+
+Automation mode:
+
+- If the scope includes `--auto-recommended`, do not ask decision questions.
+- For every open decision, choose the researched Recommended Action.
+- Record the decision as `@lrj-auto` in the todo work log with the evidence-backed reason.
+- Continue directly into execution after all targeted todos are updated.
+- If no Recommended Action can be defended from the research, mark that todo `blocked` with the missing evidence instead of guessing.
 
 Decision prompt format:
 
@@ -328,7 +338,7 @@ Final report format:
 - Research before presenting options.
 - Ask one decision question at a time.
 - Write answers into the todo immediately.
-- Never "assume defaults" if user decision is explicitly required.
+- Never "assume defaults" if user decision is explicitly required, except when `--auto-recommended` explicitly authorizes the researched recommended action.
 
 ### Swarm Planning Quality Bar
 

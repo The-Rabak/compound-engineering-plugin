@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Command Reference - Compounding Engineering</title>
-  <meta content="Complete reference for all 29 slash commands in the Compounding Engineering plugin." name="description" />
+  <meta content="Complete reference for all 27 slash commands in the Compounding Engineering plugin." name="description" />
   <meta content="width=device-width, initial-scale=1" name="viewport" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="../css/style.css" rel="stylesheet" type="text/css" />
@@ -68,7 +68,7 @@
 
         <h1><i class="fa-solid fa-terminal color-accent"></i> Command Reference</h1>
         <p class="lead">
-          The plugin currently ships 29 slash commands: 12 workflow commands under the <code>/workflows:</code> namespace and 17 utility commands. This page is an inventory-first refresh, optimized for accurate names and counts.
+          The plugin currently ships 27 slash commands: 11 workflow commands under the <code>/workflows:</code> namespace and 16 utility commands. This page is an inventory-first refresh, optimized for accurate names and counts.
         </p>
 
         <div class="usage-box">
@@ -77,12 +77,12 @@
             <pre><code>/workflows:plan Add SSO login
 /workflows:review latest
 /workflows:work docs/plans/sso-plan.md
-/lrj Ship a small authenticated feature</code></pre>
+/lrj docs/plans/sso-plan.md</code></pre>
           </div>
         </div>
 
         <section id="workflow-commands">
-          <h2><i class="fa-solid fa-arrows-spin"></i> Workflow Commands (12)</h2>
+          <h2><i class="fa-solid fa-arrows-spin"></i> Workflow Commands (11)</h2>
           <p>These are the canonical workflow entrypoints shipped by the plugin.</p>
           <table class="docs-table">
             <thead>
@@ -109,7 +109,7 @@
         </section>
 
         <section id="utility-commands">
-          <h2><i class="fa-solid fa-wrench"></i> Utility Commands (17)</h2>
+          <h2><i class="fa-solid fa-wrench"></i> Utility Commands (16)</h2>
           <p>Focused helpers for changelogs, triage, browser checks, bug handling, and autonomous execution.</p>
           <table class="docs-table">
             <thead>
@@ -119,8 +119,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr><td><code>/lrj</code></td><td>Full autonomous engineering workflow</td></tr>
-              <tr><td><code>/slrj</code></td><td>Full autonomous workflow with swarm mode for parallel execution</td></tr>
+              <tr><td><code>/lrj</code></td><td>Ralph-style coordinator from an existing plan through ticket audit, two-batch work/review/triage loops, and validation</td></tr>
               <tr><td><code>/deepen-plan</code></td><td>Enhance plans with parallel research agents for each section</td></tr>
               <tr><td><code>/changelog</code></td><td>Create engaging changelogs for recent merges</td></tr>
               <tr><td><code>/create-agent-skill</code></td><td>Create or edit Claude Code skills</td></tr>

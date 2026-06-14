@@ -25,7 +25,7 @@ A structured skill for completing work on a feature branch. Ensures all quality 
 - All implementation tasks are complete
 - You are ready to ship or merge a feature branch
 - Referenced at the end of `workflows:work` Phase 4
-- Referenced by `/lfg` pipeline
+- Referenced by the `/lrj` pipeline
 
 ## When NOT to Use
 

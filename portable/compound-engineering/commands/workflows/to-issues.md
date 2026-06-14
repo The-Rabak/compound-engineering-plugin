@@ -2,6 +2,7 @@
 name: workflows:to-issues
 description: Convert a plan into local vertical-slice ticket artifacts with scoped execution context
 argument-hint: '[path to plan file] [optional: architecture artifact path]'
+model: opus-4.8
 platforms:
   codex:
     model: gpt-5.5

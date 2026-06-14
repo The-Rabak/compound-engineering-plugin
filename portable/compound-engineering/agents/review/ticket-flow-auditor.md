@@ -4,7 +4,7 @@ description: >-
   Audit plan-to-ticket and ticket-to-implementation alignment. Use after `/workflows:to-issues` or
   during `/workflows:review` when you need to verify ticket quality, dependency ordering, scope
   fences, feature-home ownership, and execution drift.
-model: claude-sonnet-4-6
+model: opus-4.8
 platforms:
   codex:
     model: gpt-5.5

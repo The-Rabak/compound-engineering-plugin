@@ -48,7 +48,6 @@ const PRIMARY_MODEL_PATTERNS = [
   /claude-sonnet\b/g,
   /claude-opus\b/g,
   /gpt-5\.3-codex/g,
-  /gpt-5\.5/g,
 ]
 
 type SanitizeOptions = {
@@ -96,8 +95,7 @@ export function sanitizeMarkdownForTarget(
   delete frontmatter.platforms
 
   if (hasHarnessMetadata) {
-    const tier = modelTier(selectedModel)
-    frontmatter.model = modelForTargetTier(target, tier)
+    frontmatter.model = normalizeFrontmatterModel(selectedModel, target)
   }
 
   const body = options.transformBody ? options.transformBody(parsed.body.trim()) : parsed.body.trim()
@@ -214,6 +212,33 @@ function modelTier(model: string | undefined): ModelTier {
   })
     ? "small"
     : "primary"
+}
+
+function normalizeFrontmatterModel(model: string | undefined, target: TargetContentSurface): string {
+  if (!model) return modelForTargetTier(target, "primary")
+  const normalized = model.trim().toLowerCase()
+  if (normalized === "inherit") return modelForTargetTier(target, "primary")
+  if (normalized === "haiku" || normalized.endsWith("/haiku") || normalized.includes("haiku")) {
+    return modelForTargetTier(target, "small")
+  }
+  if (isKnownPrimaryModel(model) || isKnownSmallModel(model)) {
+    return modelForTargetTier(target, modelTier(model))
+  }
+  return model
+}
+
+function isKnownSmallModel(model: string): boolean {
+  return SMALL_MODEL_PATTERNS.some((pattern) => {
+    pattern.lastIndex = 0
+    return pattern.test(model)
+  })
+}
+
+function isKnownPrimaryModel(model: string): boolean {
+  return PRIMARY_MODEL_PATTERNS.some((pattern) => {
+    pattern.lastIndex = 0
+    return pattern.test(model)
+  })
 }
 
 function sanitizeHarnessLanguage(content: string, target: TargetContentSurface): string {

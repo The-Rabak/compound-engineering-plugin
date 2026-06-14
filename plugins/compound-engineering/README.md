@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 34 specialized agents, 28 commands, and 26 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 34 specialized agents, 27 commands, and 26 skills.
 
 This Claude plugin install surface contains only Claude-relevant files. Codex plugin metadata and Copilot assets are generated only on explicit target builds/installs from the canonical portable source in `portable/compound-engineering/`.
 
@@ -16,6 +16,7 @@ This Claude plugin install surface contains only Claude-relevant files. Codex pl
 
 - `/workflows:architecture` is the architecture-improvement handoff between planning and `/deepen-plan`.
 - `/workflows:to-issues` turns plans into local ticket artifacts with compact execution context, a dependency graph, and conservative execution batches before implementation, using `focused-ticket-priming` and `ticket-flow-auditor`.
+- `/lrj` is a Ralph-style coordinator for existing plans: ticketize, audit/repair the ticket set, then work/review/triage/validate two ticket batches at a time until the ticket index is complete.
 - `/workflows:plan`, `/deepen-plan`, and `/workflows:work` now default to issue-shaped execution slices, with the first slice acting as the tracer bullet, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake.
 - `/workflows:work` can execute the next safe batch directly from a ticket index while preserving parent plan and architecture refs.
 - Vertical slices now carry a feature-home module contract: feature business logic stays co-located, while truly shared utilities and adapters stay global.
@@ -63,7 +64,7 @@ bun test
 | Component | Count |
 |-----------|-------|
 | Agents | 34 |
-| Commands | 28 |
+| Commands | 27 |
 | Skills | 26 |
 | Hooks | 0 |
 | MCP Servers | 1 |
@@ -150,8 +151,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 
 | Command | Description |
 |---------|-------------|
-| `/lrj` | Full autonomous engineering workflow |
-| `/slrj` | Full autonomous workflow with swarm mode for parallel execution |
+| `/lrj` | Ralph-style coordinator from an existing plan through ticket audit, two-batch work/review/triage loops, and validation |
 | `/deepen-plan` | Enhance plans and harden execution slices with parallel research |
 | `/changelog` | Create engaging changelogs for recent merges |
 | `/create-agent-skill` | Create or edit Claude Code skills |
