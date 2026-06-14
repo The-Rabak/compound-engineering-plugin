@@ -62,7 +62,7 @@ describe("TDD contract surfaces", () => {
     )
 
     expect(deepenPrompt).toContain("resolve the effective TDD contract")
-    expect(deepenPrompt).toContain("Do not silently weaken the TDD contract")
+    expect(deepenPrompt).toContain("Do not silently weaken the TDD or e2e contract")
     expect(deepenPrompt).toContain("unit + e2e evidence required")
     expect(deepenPrompt).toContain("justified exception")
   })

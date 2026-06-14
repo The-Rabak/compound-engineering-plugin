@@ -89,3 +89,13 @@ Use `commands/workflows/references/tdd-evidence-contract.md` as the shared sourc
 - `Red` and `Green` prove behavior coverage.
 - `Post-Refactor Green` proves cleanup safety.
 - If no cleanup was needed, still rerun and say so.
+
+### E2E Contract
+
+Use `commands/workflows/references/e2e-testing-contract.md` as the source of truth for what real e2e is.
+
+{{E2E_CONTRACT}}
+
+- When e2e evidence is required, it must be **real** e2e: drive the running app over its real transport against real infra (per the runtime stack), no fakes, poll real conditions instead of sleeping, and every assertion derives from a live value.
+- If the app does not yet satisfy the assertions, let the test fail RED and report it honestly. Never weaken an assertion, lower a threshold, mock the missing piece, or hardcode a pass to make e2e green.
+- If the unit genuinely has no runtime surface, report the justified N/A exception instead of fabricating e2e.

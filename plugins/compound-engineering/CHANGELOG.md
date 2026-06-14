@@ -5,6 +5,19 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.17.0] - 2026-06-14
+
+### Added
+
+- **First-class E2E testing** -- New `e2e-test-strategist` agent and shared `e2e-testing-contract.md` reference make end-to-end testing a mercilessly-enforced concern across plan, deepen, work, and review. The contract's load-bearing principle: e2e means real infra, real APIs, real app logic paths, no fakes — and a test the app cannot yet satisfy must fail spectacularly, never be massaged into green.
+- **Runtime stack declaration** -- `/workflows:plan` now requires a `## Runtime Stack & Environments` section (local / QA / prod) plus a `## Suggested E2E Suite`, so e2e is structured around the actually-running app infra in each environment.
+- **Phase-aware e2e strategist** -- the agent runs in DESIGN mode (plan), HARDEN mode (deepen-plan), ADVISE mode (work/execution), and a mandatory always-on AUDIT mode in `/workflows:review` that hunts for fakes, hardcoded passes, sleep-instead-of-poll, and tests softened to green.
+
+### Changed
+
+- **Review gate** -- `/workflows:review` adds `e2e-test-strategist` as a mandatory reviewer and extends the TDD Evidence Gate with merge-blocking e2e classifications (Fake-in-e2e, Mock-transport, Empty/hardcoded pass, Sleep-instead-of-poll, Test-softened-to-pass, Missing failure-mode coverage, Unjustified missing e2e).
+- **Execution discipline** -- `/workflows:work`, `execution-agent`, and the execution prompt scaffold now inject the e2e contract so executing agents write real e2e; absence of e2e is only acceptable as a justified no-runtime-surface N/A exception, never a silent skip.
+
 ## [4.16.1] - 2026-06-14
 
 ### Changed

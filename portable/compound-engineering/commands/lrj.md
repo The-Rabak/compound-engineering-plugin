@@ -176,7 +176,7 @@ Required validation:
 
 1. Inspect project scripts and test configuration.
 2. Run the full test suite.
-3. Run e2e tests when the project defines an e2e script, browser-test script, Playwright/Cypress config, or equivalent e2e command.
+3. Run e2e tests when the project defines an e2e script, browser-test script, Playwright/Cypress config, or equivalent e2e command. E2E must be real e2e per `commands/workflows/references/e2e-testing-contract.md` (drive the real app, no fakes, no hardcoded/softened passes); a failing e2e means the app is broken — fix the app, never the assertion. The mandatory `e2e-test-strategist` AUDIT reviewer runs automatically inside `/workflows:review`.
 4. Run generated-output verification when the repo defines it.
 
 For this plugin repo, the baseline validation commands are:
