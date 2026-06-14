@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Codex full export** -- Added a full Codex export path that writes command-derived skills, portable skills, custom agent TOML files, MCP config, hooks, plugin metadata, and marketplace metadata from the portable source.
-- **Codex model metadata** -- Added `platforms.codex.model` across agents, commands, skills, and reusable skill templates, using `gpt-5.5` for demanding work and `gpt-5.4-mini` for lightweight scan/research surfaces.
+- **Target model metadata** -- Added target-specific model routing across agents, commands, skills, and reusable skill templates, preserving a heavier-work tier and a lightweight scan/research tier without leaking unrelated harness model IDs into generated install surfaces.
 
 ### Changed
 

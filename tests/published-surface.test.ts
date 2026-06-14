@@ -27,25 +27,11 @@ describe("published support surface", () => {
   test("generated metadata and plugin docs match the portable counts and description", async () => {
     const plugin = await loadPortablePlugin(portableRoot)
     const pluginManifest = await readRepoJson<{ description: string }>("plugins", "compound-engineering", ".claude-plugin", "plugin.json")
-    const codexManifest = await readRepoJson<{ description: string; skills: string }>(
-      "plugins",
-      "compound-engineering",
-      ".codex-plugin",
-      "plugin.json",
-    )
     const marketplace = await readRepoJson<{ plugins: Array<{ description: string }> }>(".claude-plugin", "marketplace.json")
-    const codexMarketplace = await readRepoJson<{ plugins: Array<{ source: { path: string } }> }>(
-      ".agents",
-      "plugins",
-      "marketplace.json",
-    )
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
 
     expect(pluginManifest.description).toBe(plugin.manifest.description)
-    expect(codexManifest.description).toBe(plugin.manifest.description)
-    expect(codexManifest.skills).toBe("./codex-skills/")
     expect(marketplace.plugins[0]?.description).toBe(plugin.manifest.description)
-    expect(codexMarketplace.plugins[0]?.source.path).toBe("./plugins/compound-engineering")
     expect(pluginReadme).toContain(
       `Includes ${plugin.agents.length} specialized agents, ${plugin.commands.length} commands, and ${plugin.skills.length} skills.`,
     )
@@ -58,7 +44,7 @@ describe("published support surface", () => {
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
 
     expect(pluginReadme).toContain("OpenCode first-class, GitHub Copilot and Codex second, Claude Code third")
-    expect(pluginReadme).toContain("**Codex:** full local export plus repo marketplace packaging")
+    expect(pluginReadme).toContain("**Codex:** explicit full local export plus repo marketplace packaging")
     expect(pluginReadme).toContain("**De-emphasize:** compatibility exporters for Droid, Pi, Gemini, and Kiro")
     expect(pluginReadme).toContain("**Removed legacy surfaces:** `.github_gpt/` and dormant Cursor-specific export/sync code")
     expect(pluginReadme).toContain("`/workflows:architecture` is the architecture-improvement handoff")

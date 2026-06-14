@@ -9,6 +9,7 @@ import {
   removeLegacyBackupArtifacts,
   writeManagedOutputState,
 } from "../utils/managed-output"
+import { sanitizeMarkdownForTarget } from "../utils/target-content"
 
 const STATE_FILE_NAME = ".compound-engineering-copilot-state.json"
 
@@ -23,7 +24,7 @@ export async function writeCopilotBundle(outputRoot: string, bundle: CopilotBund
     const agentsDir = path.join(paths.githubDir, "agents")
     for (const agent of bundle.agents) {
       assertSafeOutputName(agent.name, "agent")
-      await writeText(path.join(agentsDir, `${agent.name}.agent.md`), agent.content + "\n")
+      await writeText(path.join(agentsDir, `${agent.name}.agent.md`), sanitizeMarkdownForTarget(agent.content, "copilot") + "\n")
     }
   }
 
@@ -32,7 +33,7 @@ export async function writeCopilotBundle(outputRoot: string, bundle: CopilotBund
     for (const skill of bundle.generatedSkills) {
       assertSafeOutputName(skill.name, "skill")
       const targetDir = path.join(skillsDir, skill.name)
-      await writeText(path.join(targetDir, "SKILL.md"), skill.content + "\n")
+      await writeText(path.join(targetDir, "SKILL.md"), sanitizeMarkdownForTarget(skill.content, "copilot") + "\n")
       if (skill.sourcePath) {
         await copyCommandReferenceDocs(skill.sourcePath, targetDir)
       }
@@ -57,7 +58,7 @@ export async function writeCopilotBundle(outputRoot: string, bundle: CopilotBund
         },
         transformContentForCopilot(parsed.body.trim()),
       )
-      await writeText(path.join(targetDir, "SKILL.md"), content + "\n")
+      await writeText(path.join(targetDir, "SKILL.md"), sanitizeMarkdownForTarget(content, "copilot") + "\n")
     }
   }
 
@@ -86,7 +87,9 @@ async function transformCopiedMarkdownForCopilot(targetDir: string): Promise<voi
     if (path.basename(filePath) === "SKILL.md") continue
 
     const original = await readText(filePath)
-    const transformed = transformContentForCopilot(original.trim())
+    const transformed = sanitizeMarkdownForTarget(original, "copilot", {
+      transformBody: transformContentForCopilot,
+    })
     if (transformed === original.trim()) continue
     await writeText(filePath, transformed + "\n")
   }

@@ -2,6 +2,13 @@
 *.log
 node_modules/
 .codex/
+.agents/
+.github/agents/
+.github/skills/
+.github/copilot-mcp-config.json
+.github/.compound-engineering-copilot-state.json
+plugins/compound-engineering/.codex-plugin/
+plugins/compound-engineering/codex-skills/
 .worktrees/
 compound-engineering.local.md
 .copilot-instructions.md

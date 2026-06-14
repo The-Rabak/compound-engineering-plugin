@@ -1,6 +1,6 @@
 # Compound Engineering Plugin
 
-This repository distributes the `compound-engineering` plugin from a portable source of truth, then generates platform-specific outputs for Claude Code and Copilot.
+This repository distributes the `compound-engineering` plugin from a portable source of truth, then generates Claude Code output by default. Copilot and Codex outputs are explicit-only exports.
 
 ## Repository Structure
 
@@ -11,9 +11,7 @@ compound-engineering-plugin/
 ├── .claude-plugin/
 │   └── marketplace.json          # Generated Claude marketplace catalog
 ├── .github/
-│   ├── agents/                   # Generated Copilot agents
-│   ├── skills/                   # Generated Copilot skills
-│   └── copilot-mcp-config.json   # Generated Copilot MCP config
+│   └── workflows/                # Repository CI/deploy workflows
 ├── docs/                         # Documentation site (GitHub Pages)
 │   ├── index.html                # Landing page
 │   ├── css/                      # Stylesheets
@@ -233,7 +231,7 @@ The counts appear in multiple places (plugin.json, marketplace.json, README.md) 
 
 ### Edit portable source first
 
-`portable/compound-engineering/` is now the canonical source. `plugins/compound-engineering/` and `.github/` are generated outputs and should be rebuilt with `bun run build:platforms` after portable changes.
+`portable/compound-engineering/` is now the canonical source. `plugins/compound-engineering/` and `.claude-plugin/marketplace.json` should be rebuilt with `bun run build:platforms` after portable changes. Copilot and Codex assets are explicit-only via `bun run build:copilot` / `bun run build:codex` and must not be treated as part of the Claude plugin install surface.
 
 ### Stick to the official Claude Code plugin spec
 

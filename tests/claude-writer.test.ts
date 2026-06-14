@@ -46,7 +46,7 @@ describe("writeClaudeBundle", () => {
     expect(commandContent).toContain("disable-model-invocation: true")
 
     const skillContent = await fs.readFile(skillPath, "utf8")
-    expect(skillContent).toContain("model: haiku")
+    expect(skillContent).toContain("model: claude-haiku-4-5-20251001")
     expect(skillContent).toContain("disable-model-invocation: true")
     expect(skillContent).toContain("Use this skill when the user needs a shared portable workflow.")
   })

@@ -1,6 +1,6 @@
 # Agent Instructions
 
-This repository distributes the `compound-engineering` plugin from a portable source of truth, then generates platform-specific outputs for Claude Code and Copilot.
+This repository distributes the `compound-engineering` plugin from a portable source of truth, then generates Claude Code output by default. Copilot and Codex outputs are explicit-only exports.
 
 ## Working Agreement
 
@@ -14,7 +14,7 @@ This repository distributes the `compound-engineering` plugin from a portable so
 compound-engineering-plugin/
 ├── portable/compound-engineering/    # Canonical portable source
 ├── .claude-plugin/marketplace.json   # Generated Claude marketplace catalog
-├── .github/                          # Generated Copilot assets
+├── .github/workflows/                # Repository CI/deploy workflows only
 ├── plugins/compound-engineering/     # Generated Claude plugin
 │   ├── .claude-plugin/plugin.json
 │   ├── agents/                       # Specialized AI agents
@@ -46,7 +46,14 @@ bun run build:platforms
 This regenerates:
 
 - `plugins/compound-engineering/` for Claude Code
-- `.github/` for Copilot
+- `.claude-plugin/marketplace.json`
+
+Copilot and Codex assets are ignored and generated only by explicit target commands:
+
+```bash
+bun run build:copilot
+bun run build:codex
+```
 
 ## Docs Directory Convention
 

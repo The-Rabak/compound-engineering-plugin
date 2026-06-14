@@ -2,13 +2,13 @@
 
 AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 34 specialized agents, 28 commands, and 26 skills.
 
-This repository also ships generated Copilot assets under `.github/` and Codex plugin metadata under `.codex-plugin/` plus `.agents/plugins/`, built from the canonical portable source in `portable/compound-engineering/`.
+This Claude plugin install surface contains only Claude-relevant files. Codex plugin metadata and Copilot assets are generated only on explicit target builds/installs from the canonical portable source in `portable/compound-engineering/`.
 
 ## Support policy
 
 - OpenCode first-class, GitHub Copilot and Codex second, Claude Code third.
-- **Keep:** OpenCode-first portable source, generated Copilot output, generated Codex output, and this generated Claude Code plugin.
-- **Codex:** full local export plus repo marketplace packaging through `.codex-plugin/plugin.json`, `codex-skills/`, and `.agents/plugins/marketplace.json`.
+- **Keep:** OpenCode-first portable source, this generated Claude Code plugin, and explicit Copilot/Codex exports.
+- **Codex:** explicit full local export plus repo marketplace packaging through `.codex-plugin/plugin.json`, `codex-skills/`, and `.agents/plugins/marketplace.json`.
 - **De-emphasize:** compatibility exporters for Droid, Pi, Gemini, and Kiro, plus legacy Claude-home sync mirrors.
 - **Removed legacy surfaces:** `.github_gpt/` and dormant Cursor-specific export/sync code that no longer fit the supported target matrix.
 
@@ -272,9 +272,9 @@ Codex full local export:
 bun run cli:install ./portable/compound-engineering --to codex
 ```
 
-Codex repo marketplace output is generated at `.agents/plugins/marketplace.json` and points at this plugin folder's `.codex-plugin/plugin.json`.
+Codex repo marketplace output is generated explicitly with `bun run build:codex` at `.agents/plugins/marketplace.json` and points at this plugin folder's `.codex-plugin/plugin.json`.
 
-Codex plugin package caveat: native Codex plugins package installable **skills**. The complete compound-engineering Codex environment also needs custom agents in `.codex/agents`, MCP config in `.codex/config.toml`, hooks in `.codex/hooks.json`, and local marketplace metadata in `.agents/plugins/marketplace.json`. Use the direct Codex installer command above for the complete setup; `bun run build:platforms` generates the repo marketplace and skill package.
+Codex plugin package caveat: native Codex plugins package installable **skills**. The complete compound-engineering Codex environment also needs custom agents in `.codex/agents`, MCP config in `.codex/config.toml`, hooks in `.codex/hooks.json`, and local marketplace metadata in `.agents/plugins/marketplace.json`. Use the direct Codex installer command above for the complete setup; `bun run build:codex` generates the ignored repo-local marketplace and skill package explicitly.
 
 ## Known Issues
 

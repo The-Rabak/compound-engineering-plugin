@@ -64,6 +64,6 @@ docs/execution-sessions/
 
 ## Repository Notes
 
-- This repo intentionally commits generated outputs under `.github/`, `plugins/compound-engineering/`, and `.claude-plugin/marketplace.json`.
+- This repo intentionally commits generated Claude outputs under `plugins/compound-engineering/` and `.claude-plugin/marketplace.json`. Generated Copilot and Codex export assets are explicit-only and ignored.
 - This repo should not commit workflow scratch output such as `docs/execution-sessions/`.
 - `portable/compound-engineering/` remains the only hand-edited source of truth for plugin content.

@@ -1,9 +1,9 @@
 ---
 status: pending
 priority: p2
-issue_id: "XXX"
-tags: []
-dependencies: []
+issue_id: XXX
+tags:
+dependencies:
 ---
 
 # Brief Task Title

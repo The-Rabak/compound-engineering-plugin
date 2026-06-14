@@ -377,7 +377,52 @@ describe("CLI", () => {
     expect(skillContent).toContain("model: gpt-5.4-mini")
   })
 
-  test("build writes Claude, Copilot, and Codex outputs from portable source", async () => {
+  test("build writes only Claude output by default from portable source", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-build-default-"))
+    const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+
+    const proc = Bun.spawn([
+      "bun",
+      "run",
+      "src/index.ts",
+      "build",
+      fixtureRoot,
+      "--output",
+      tempRoot,
+    ], {
+      cwd: path.join(import.meta.dir, ".."),
+      stdout: "pipe",
+      stderr: "pipe",
+    })
+
+    const exitCode = await proc.exited
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+
+    if (exitCode !== 0) {
+      throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
+    }
+
+    const claudePluginRoot = path.join(tempRoot, "plugins", "compound-engineering")
+    expect(stdout).toContain("Built Claude output")
+    expect(stdout).not.toContain("Built Copilot output")
+    expect(stdout).not.toContain("Built Codex output")
+    expect(await exists(path.join(claudePluginRoot, ".claude-plugin", "plugin.json"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".claude-plugin", "marketplace.json"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".github", "agents"))).toBe(false)
+    expect(await exists(path.join(tempRoot, ".github", "skills"))).toBe(false)
+    expect(await exists(path.join(tempRoot, ".agents", "plugins", "marketplace.json"))).toBe(false)
+    expect(await exists(path.join(claudePluginRoot, ".codex-plugin", "plugin.json"))).toBe(false)
+    expect(await exists(path.join(claudePluginRoot, "codex-skills"))).toBe(false)
+
+    const claudeSkillContent = await fs.readFile(path.join(claudePluginRoot, "skills", "skill-one", "SKILL.md"), "utf8")
+    expect(claudeSkillContent).toContain("model: claude-haiku-4-5-20251001")
+    expect(claudeSkillContent).not.toContain("gpt-5.3-codex")
+    expect(claudeSkillContent).not.toContain("gpt-5.5")
+    expect(claudeSkillContent).not.toContain("platforms:")
+  })
+
+  test("build writes Copilot and Codex outputs only when explicitly targeted", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-build-"))
     const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
 
@@ -389,6 +434,8 @@ describe("CLI", () => {
       fixtureRoot,
       "--output",
       tempRoot,
+      "--targets",
+      "claude,copilot,codex",
     ], {
       cwd: path.join(import.meta.dir, ".."),
       stdout: "pipe",
@@ -420,7 +467,7 @@ describe("CLI", () => {
     expect(await exists(codexGeneratedSkillPath)).toBe(true)
 
     const claudeSkillContent = await fs.readFile(path.join(claudePluginRoot, "skills", "skill-one", "SKILL.md"), "utf8")
-    expect(claudeSkillContent).toContain("model: haiku")
+    expect(claudeSkillContent).toContain("model: claude-haiku-4-5-20251001")
 
     const generatedSkillContent = await fs.readFile(generatedSkillPath, "utf8")
     expect(generatedSkillContent).toContain("model: gpt-5.4-mini")

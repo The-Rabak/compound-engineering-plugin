@@ -1,16 +1,27 @@
 ---
-module: [Module name or "System" for system-wide]
-date: [YYYY-MM-DD]
-problem_type: [build_error|test_failure|runtime_error|performance_issue|database_issue|security_issue|ui_bug|integration_issue|logic_error]
-component: [laravel_model|laravel_controller|vue_component|service_object|background_job|database|vue_frontend|nuxt_frontend|email_processing|brief_system|assistant|authentication|payments]
+module:
+  - "Module name or \"System\" for system-wide"
+date:
+  - YYYY-MM-DD
+problem_type:
+  - build_error|test_failure|runtime_error|performance_issue|database_issue|security_issue|ui_bug|integration_issue|logic_error
+component:
+  - laravel_model|laravel_controller|vue_component|service_object|background_job|database|vue_frontend|nuxt_frontend|email_processing|brief_system|assistant|authentication|payments
 symptoms:
-  - [Observable symptom 1 - specific error message or behavior]
-  - [Observable symptom 2 - what user actually saw/experienced]
-root_cause: [missing_association|missing_include|missing_index|wrong_api|scope_issue|thread_violation|async_timing|memory_leak|config_error|logic_error|test_isolation|missing_validation|missing_permission]
-laravel_version: [12 - optional]
-resolution_type: [code_fix|migration|config_change|test_fix|dependency_update|environment_setup]
-severity: [critical|high|medium|low]
-tags: [keyword1, keyword2, keyword3]
+  - Observable symptom 1 - specific error message or behavior
+  - Observable symptom 2 - what user actually saw/experienced
+root_cause:
+  - missing_association|missing_include|missing_index|wrong_api|scope_issue|thread_violation|async_timing|memory_leak|config_error|logic_error|test_isolation|missing_validation|missing_permission
+laravel_version:
+  - 12 - optional
+resolution_type:
+  - code_fix|migration|config_change|test_fix|dependency_update|environment_setup
+severity:
+  - critical|high|medium|low
+tags:
+  - keyword1
+  - keyword2
+  - keyword3
 ---
 
 # Troubleshooting: [Clear Problem Title]

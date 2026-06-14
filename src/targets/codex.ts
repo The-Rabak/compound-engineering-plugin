@@ -10,6 +10,7 @@ import {
   writeManagedOutputState,
 } from "../utils/managed-output"
 import { normalizeCodexName, transformContentForCodex } from "../utils/codex-content"
+import { sanitizeMarkdownForTarget, sanitizeMarkdownTreeForTarget } from "../utils/target-content"
 
 const STATE_FILE_NAME = ".compound-engineering-codex-state.json"
 const CONFIG_BLOCK_START = "# BEGIN compound-plugin Codex MCP"
@@ -34,6 +35,12 @@ export async function writeCodexBundle(outputRoot: string, bundle: CodexBundle):
   for (const skill of bundle.skillDirs) {
     const targetDir = path.join(paths.skillsRoot, safePathName(skill.name))
     await copyDir(skill.sourceDir, targetDir)
+    await sanitizeMarkdownTreeForTarget(targetDir, "codex", {
+      transformBody: (body) =>
+        transformContentForCodex(body, bundle.invocationTargets, {
+          unknownSlashBehavior: "preserve",
+        }),
+    })
 
     const raw = await readText(skill.skillPath ?? path.join(skill.sourceDir, "SKILL.md"))
     const parsed = parseFrontmatter(raw)
@@ -50,14 +57,22 @@ export async function writeCodexBundle(outputRoot: string, bundle: CodexBundle):
     const body = transformContentForCodex(parsed.body.trim(), bundle.invocationTargets, {
       unknownSlashBehavior: "preserve",
     })
-    await writeText(path.join(targetDir, "SKILL.md"), formatFrontmatter(frontmatter, body) + "\n")
+    const content = sanitizeMarkdownForTarget(formatFrontmatter(frontmatter, body), "codex")
+    await writeText(path.join(targetDir, "SKILL.md"), content + "\n")
   }
 
   for (const skill of bundle.generatedSkills) {
     const skillDir = path.join(paths.skillsRoot, safePathName(skill.name))
-    await writeText(path.join(skillDir, "SKILL.md"), skill.content + "\n")
+    await writeText(path.join(skillDir, "SKILL.md"), sanitizeMarkdownForTarget(skill.content, "codex") + "\n")
     for (const sidecar of skill.sidecarDirs ?? []) {
-      await copyDir(sidecar.sourceDir, path.join(skillDir, sidecar.targetName))
+      const sidecarTarget = path.join(skillDir, sidecar.targetName)
+      await copyDir(sidecar.sourceDir, sidecarTarget)
+      await sanitizeMarkdownTreeForTarget(sidecarTarget, "codex", {
+        transformBody: (body) =>
+          transformContentForCodex(body, bundle.invocationTargets, {
+            unknownSlashBehavior: "preserve",
+          }),
+      })
     }
   }
 
@@ -65,7 +80,14 @@ export async function writeCodexBundle(outputRoot: string, bundle: CodexBundle):
     const agentName = safePathName(agent.name)
     await writeText(path.join(paths.agentsRoot, `${agentName}.toml`), renderCodexAgentToml(agent) + "\n")
     for (const sidecar of agent.sidecarDirs ?? []) {
-      await copyDir(sidecar.sourceDir, path.join(paths.agentsRoot, agentName, sidecar.targetName))
+      const sidecarTarget = path.join(paths.agentsRoot, agentName, sidecar.targetName)
+      await copyDir(sidecar.sourceDir, sidecarTarget)
+      await sanitizeMarkdownTreeForTarget(sidecarTarget, "codex", {
+        transformBody: (body) =>
+          transformContentForCodex(body, bundle.invocationTargets, {
+            unknownSlashBehavior: "preserve",
+          }),
+      })
     }
   }
 
