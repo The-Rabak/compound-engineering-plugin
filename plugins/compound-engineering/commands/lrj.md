@@ -44,6 +44,7 @@ Run exactly this flow:
    - `/workflows:review <tickets_index_file> <work_execution_session> --batches <start>-<end>`
    - `/workflows:triage <review_todo_range> --auto-recommended --execute` when review creates todos
    - run all project tests and e2e tests for the window, then fix failures immediately
+   - create one detailed git commit for all changes made during that two-batch window
 5. Repeat until every ticket batch is complete and validated.
 
 Do not run the old plan, deepen, legacy todo resolver, browser-test, or feature-video LRJ phases.
@@ -97,8 +98,9 @@ While `current_batch <= total_batches`:
 
 1. Set `batch_start = current_batch`.
 2. Set `batch_end = min(current_batch + batch_window - 1, total_batches)`.
-3. Run one complete work/review/triage/validation cycle for `batch_start-batch_end`.
-4. Advance `current_batch = batch_end + 1` only after the full cycle passes validation.
+3. Record the pre-window git status and changed-file baseline.
+4. Run one complete work/review/triage/validation/commit cycle for `batch_start-batch_end`.
+5. Advance `current_batch = batch_end + 1` only after the full cycle passes validation and its detailed commit exists.
 
 Persist the cursor in the LRJ completion notes after every cycle so the loop can be resumed if interrupted:
 
@@ -107,6 +109,7 @@ LRJ cursor:
 - tickets_index_file: <tickets_index_file>
 - total_batches: <total_batches>
 - last_validated_batch: <batch_end>
+- last_commit: <commit_sha>
 - next_batch: <batch_end + 1>
 ```
 
@@ -183,6 +186,49 @@ If validation fails, fix the failure immediately in the smallest safe scope, rer
 
 Do not advance the cursor while tests, e2e checks, generated-output verification, review, or triage are failing for the selected batch window.
 
+### 8. Batch Commit
+
+After batch validation passes, create exactly one detailed git commit for all changes made during the selected two-batch window.
+
+Before staging:
+
+1. Compare the current worktree against the pre-window git status baseline.
+2. Identify the files changed by the selected batch window, including implementation files, tests, ticket/index status updates, execution-session artifacts, and review/triage todo updates.
+3. Do not stage unrelated pre-existing user changes that were present before the batch window.
+4. If unrelated pre-existing changes make the batch diff impossible to isolate, stop and report the blocker instead of committing mixed work.
+
+Commit requirements:
+
+- Stage all and only changes made by the selected batch window.
+- Use a detailed multi-line commit message.
+- Include the batch range, ticket ids or ticket files, work session path, review todo range, validation commands/results, and a concise implementation summary.
+- If review or triage produced fixes in the same window, include those fixes in the same window commit.
+- If validation repairs were needed, include them in the same window commit and mention the rerun evidence.
+- After committing, record `commit_sha` in the LRJ cursor.
+
+Commit message shape:
+
+```text
+<type>: complete ticket batches <batch_start>-<batch_end>
+
+Tickets:
+- <ticket id or file>
+- <ticket id or file>
+
+Work session: <work_execution_session>
+Review todos: <review_todo_range>
+
+Changes:
+- <implementation summary>
+- <test/review/triage repair summary>
+
+Validation:
+- <command>: <result>
+- <command>: <result>
+```
+
+Do not advance the cursor if the commit fails, if there are uncommitted selected-window changes after committing, or if the commit accidentally includes unrelated pre-window changes.
+
 ## Completion Report
 
 End with:
@@ -198,6 +244,8 @@ Work sessions:
 - <batch_start>-<batch_end>: <work_execution_session>
 Review todos:
 - <batch_start>-<batch_end>: <review_todo_range>
+Commits:
+- <batch_start>-<batch_end>: <commit_sha>
 
 Validation:
 - <command>: <pass/fail>

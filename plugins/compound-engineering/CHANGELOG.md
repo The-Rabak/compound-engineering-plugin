@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **`/lrj` command** -- Replaced the old plan/deepen/work/review/resolve flow with a plan-file-only coordinator that runs `/workflows:to-issues`, gates generated tickets through `ticket-flow-auditor`, repairs blocking ticket issues before implementation, then loops through `/workflows:work`, `/workflows:review`, `/workflows:triage --auto-recommended --execute`, and validation two ticket batches at a time.
+- **`/lrj` command** -- Replaced the old plan/deepen/work/review/resolve flow with a plan-file-only coordinator that runs `/workflows:to-issues`, gates generated tickets through `ticket-flow-auditor`, repairs blocking ticket issues before implementation, then loops through `/workflows:work`, `/workflows:review`, `/workflows:triage --auto-recommended --execute`, validation, and a detailed commit two ticket batches at a time.
 - **Ticket-window execution** -- `/workflows:work` and `/workflows:review` now accept `--batches N-M` so LRJ can keep each feedback cycle scoped to the current ticket window instead of reviewing the whole ticket set every time.
 - **Workflow model routing** -- `/lrj`, `/workflows:to-issues`, `/workflows:work`, `/workflows:review`, and `/workflows:triage` now declare `opus-4.8` for Claude/non-Codex surfaces while preserving `gpt-5.5` for Codex exports.
 
