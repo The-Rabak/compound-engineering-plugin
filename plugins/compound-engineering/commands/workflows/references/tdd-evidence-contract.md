@@ -1,7 +1,3 @@
----
-{}
----
-
 # Shared TDD and Evidence Contract
 
 This reference is the single source of truth for TDD contract resolution, plan output shape, Ralph evidence semantics, and review-gate classifications across the workflow chain.

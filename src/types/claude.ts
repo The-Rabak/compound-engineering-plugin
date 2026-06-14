@@ -33,6 +33,7 @@ export type ClaudeAgent = {
   capabilities?: string[]
   model?: string
   copilotModel?: string
+  codexModel?: string
   opencodeModel?: string
   body: string
   sourcePath: string
@@ -44,6 +45,7 @@ export type ClaudeCommand = {
   argumentHint?: string
   model?: string
   copilotModel?: string
+  codexModel?: string
   opencodeModel?: string
   allowedTools?: string[]
   disableModelInvocation?: boolean
@@ -56,6 +58,7 @@ export type ClaudeSkill = {
   description?: string
   model?: string
   copilotModel?: string
+  codexModel?: string
   opencodeModel?: string
   disableModelInvocation?: boolean
   body?: string

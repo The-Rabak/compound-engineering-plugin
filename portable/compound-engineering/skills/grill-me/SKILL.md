@@ -1,6 +1,10 @@
 ---
 name: grill-with-docs
 description: Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, brainstorm docs, plan docs, ADRs) inline as decisions crystallise. Use when user wants to stress-test a plan against their project's language and documented decisions.
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 <what-to-do>

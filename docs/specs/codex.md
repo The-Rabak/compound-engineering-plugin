@@ -1,59 +1,138 @@
-# Codex Spec (Config, Prompts, Skills, MCP)
+# Codex Spec
 
-Last verified: 2026-01-21
+Last verified: 2026-06-08
 
-## Primary sources
+## Primary Sources
 
+- https://developers.openai.com/codex/config-basic
+- https://developers.openai.com/codex/config-reference
+- https://developers.openai.com/codex/skills
+- https://developers.openai.com/codex/plugins/build
+- https://developers.openai.com/codex/subagents
+- https://developers.openai.com/codex/hooks
+- https://developers.openai.com/codex/mcp
+- https://developers.openai.com/codex/custom-prompts
+- https://developers.openai.com/codex/migrate
+
+## Current Contract
+
+Codex should not be exported as a prompts-only surface. Current Codex treats skills as the reusable workflow format, plugins as the installable distribution unit for skills, and custom agents as TOML files.
+
+This repo exports Codex in two complementary ways:
+
+- `bun run build:platforms` generates repo marketplace packaging:
+  - `plugins/compound-engineering/.codex-plugin/plugin.json`
+  - `plugins/compound-engineering/codex-skills/`
+  - `.agents/plugins/marketplace.json`
+- `bun run cli:install ./portable/compound-engineering --to codex` writes a full local Codex install:
+  - `~/.agents/skills/<skill>/SKILL.md`
+  - `~/.codex/agents/<agent>.toml`
+  - `~/.codex/config.toml`
+  - `~/.codex/hooks.json`
+  - `~/.codex/plugins/<plugin>/`
+  - `~/.agents/plugins/marketplace.json`
+
+## Skills
+
+Codex reads skills from `.agents/skills` in the current project path up to the repository root, plus `$HOME/.agents/skills`.
+
+Each skill is a directory with `SKILL.md` and optional `scripts/`, `references/`, `assets/`, or other support files. `SKILL.md` requires YAML frontmatter with `name` and `description`; optional fields such as `model` can pin model choice for that skill.
+
+For this repo:
+
+- Existing portable skills are copied as Codex skills.
+- Claude slash-command entrypoints are converted into Codex skills.
+- Command sidecar references are copied into the generated skill directory.
+- Claude path references are rewritten to `.agents` / `.codex` equivalents.
+
+## Plugins and Marketplace
+
+Codex plugin packages require `.codex-plugin/plugin.json`. For a skills plugin, the manifest points at a skills directory, for example:
+
+```json
+{
+  "name": "compound-engineering",
+  "version": "4.16.0",
+  "description": "Compounding Engineering workflow system",
+  "skills": "./codex-skills/"
+}
 ```
-https://developers.openai.com/codex/config-basic
-https://developers.openai.com/codex/config-advanced
-https://developers.openai.com/codex/custom-prompts
-https://developers.openai.com/codex/skills
-https://developers.openai.com/codex/skills/create-skill
-https://developers.openai.com/codex/guides/agents-md
-https://developers.openai.com/codex/mcp
+
+Repo marketplaces live at `$REPO_ROOT/.agents/plugins/marketplace.json`; personal marketplaces live at `$HOME/.agents/plugins/marketplace.json`. `source.path` must be `./`-prefixed and relative to the marketplace root, not relative to `.agents/plugins/`.
+
+Repo marketplace example:
+
+```json
+{
+  "name": "compound-engineering-marketplace",
+  "plugins": [
+    {
+      "name": "compound-engineering",
+      "source": {
+        "source": "local",
+        "path": "./plugins/compound-engineering"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding"
+    }
+  ]
+}
 ```
 
-## Config location and precedence
+## Custom Agents
 
-- Codex reads local settings from `~/.codex/config.toml`, shared by the CLI and IDE extension. citeturn2view0
-- Configuration precedence is: CLI flags → profile values → root-level values in `config.toml` → built-in defaults. citeturn2view0
-- Codex stores local state under `CODEX_HOME` (defaults to `~/.codex`) and includes `config.toml` there. citeturn4view0
+Codex custom agents are standalone TOML files under `~/.codex/agents/` for personal agents or `.codex/agents/` for project-scoped agents.
 
-## Profiles and providers
+Required fields:
 
-- Profiles are defined under `[profiles.<name>]` and selected with `codex --profile <name>`. citeturn4view0
-- A top-level `profile = "<name>"` sets the default profile; CLI flags can override it. citeturn4view0
-- Profiles are experimental and not supported in the IDE extension. citeturn4view0
-- Custom model providers can be defined with base URL, wire API, and optional headers, then referenced via `model_provider`. citeturn4view0
+- `name`
+- `description`
+- `developer_instructions`
 
-## Custom prompts (slash commands)
+Optional fields include `model`, `model_reasoning_effort`, sandbox settings, MCP settings, and skill config. This repo exports portable agents as Codex custom agents and uses `platforms.codex.model` when present.
 
-- Custom prompts are Markdown files stored under `~/.codex/prompts/`. citeturn3view0
-- Custom prompts require explicit invocation and aren’t shared through the repository; use skills to share or auto-invoke. citeturn3view0
-- Prompts are invoked as `/prompts:<name>` in the slash command UI. citeturn3view0
-- Prompt front matter supports `description:` and `argument-hint:`. citeturn3view0turn2view3
-- Prompt arguments support `$1`–`$9`, `$ARGUMENTS`, and named placeholders like `$FILE` provided as `KEY=value`. citeturn2view3
-- Codex ignores non-Markdown files in the prompts directory. citeturn2view3
+## Models
 
-## AGENTS.md instructions
+Use current Codex model IDs, not deprecated Codex-era aliases.
 
-- Codex reads `AGENTS.md` files before doing any work and builds a combined instruction chain. citeturn3view1
-- Discovery order: global (`~/.codex`, using `AGENTS.override.md` then `AGENTS.md`) then project directory traversal from repo root to CWD, with override > AGENTS > fallback names. citeturn3view1
-- Codex concatenates files from root down; files closer to the working directory appear later and override earlier guidance. citeturn3view1
+- `gpt-5.5` is the default for demanding planning, implementation, review, and multi-step tool work.
+- `gpt-5.4-mini` is the default for lightweight research, scanning, and parallel read-heavy workers.
+- `gpt-5.3-codex` is deprecated for Codex sign-in workflows and should not be emitted as a Codex model override.
 
-## Skills (Agent Skills)
+Portable frontmatter should express Codex intent explicitly:
 
-- A skill is a folder containing `SKILL.md` plus optional `scripts/`, `references/`, and `assets/`. citeturn3view3turn3view4
-- `SKILL.md` uses YAML front matter and requires `name` and `description`. citeturn3view3turn3view4
-- Required fields are single-line with length limits (name ≤ 100 chars, description ≤ 500 chars). citeturn3view4
-- At startup, Codex loads only each skill’s name/description; full content is injected when invoked. citeturn3view3turn3view4
-- Skills can be repo-scoped in `.codex/skills/` or user-scoped in `~/.codex/skills/`. citeturn3view4
-- Skills can be invoked explicitly using `/skills` or `$skill-name`. citeturn3view3
+```yaml
+platforms:
+  codex:
+    model: gpt-5.5
+```
 
-## MCP (Model Context Protocol)
+## MCP
 
-- MCP configuration lives in `~/.codex/config.toml` and is shared by the CLI and IDE extension. citeturn3view2turn3view5
-- Each server is configured under `[mcp_servers.<server-name>]`. citeturn3view5
-- STDIO servers support `command` (required), `args`, `env`, `env_vars`, and `cwd`. citeturn3view5
-- Streamable HTTP servers support `url` (required), `bearer_token_env_var`, `http_headers`, and `env_http_headers`. citeturn3view5
+Codex MCP configuration lives in `~/.codex/config.toml` under `[mcp_servers.<name>]`. STDIO servers use `command`, `args`, `env`, and `cwd`; streamable HTTP servers use `url` plus headers or bearer-token environment variables.
+
+This repo merges generated MCP config into a managed block in `config.toml` instead of replacing user config.
+
+## Hooks
+
+Codex hooks are enabled by default and can be configured with `hooks.json` or inline config. This repo writes generated hooks to `~/.codex/hooks.json` and tracks ownership with a `_managed` index so later exports can update only this plugin's entries.
+
+## Custom Prompts
+
+Custom prompts are deprecated. They live under `~/.codex/prompts/`, require explicit slash-command invocation, and are not the right primary export for shared command workflows.
+
+This repo keeps writer support for legacy prompt entries but the Codex converter exports commands as skills by default.
+
+## Migration Mapping
+
+| Claude surface | Codex surface |
+|---|---|
+| Agents | `.codex/agents/*.toml` custom agents |
+| Commands | `.agents/skills/<command>/SKILL.md` command-derived skills |
+| Skills | `.agents/skills/<skill>/SKILL.md` |
+| MCP servers | `.codex/config.toml` managed MCP block |
+| Hooks | `.codex/hooks.json` managed hook entries |
+| Plugin metadata | `.codex-plugin/plugin.json` plus `.agents/plugins/marketplace.json` |

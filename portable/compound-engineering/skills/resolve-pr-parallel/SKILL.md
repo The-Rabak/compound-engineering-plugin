@@ -5,6 +5,8 @@ description: >-
   resolving review threads, or batch-fixing PR comments.
 model: claude-sonnet-4-6
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     allowed-tools: Bash(git *), Read
     disable-model-invocation: true
@@ -12,6 +14,7 @@ platforms:
     model: gpt-5.3-codex
   opencode:
     model: openrouter/moonshotai/kimi-k2.6
+
 ---
 
 # Resolve PR Comments in Parallel

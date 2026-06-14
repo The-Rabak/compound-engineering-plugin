@@ -18,14 +18,27 @@ describe("writeCodexBundle", () => {
   test("writes prompts, skills, and config", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "codex-test-"))
     const bundle: CodexBundle = {
+      pluginName: "compound-engineering",
+      pluginVersion: "4.1.0",
+      pluginDescription: "Compound Engineering",
       prompts: [{ name: "command-one", content: "Prompt content" }],
       skillDirs: [
         {
           name: "skill-one",
+          description: "Skill one",
+          model: "gpt-5.4-mini",
           sourceDir: path.join(import.meta.dir, "fixtures", "sample-plugin", "skills", "skill-one"),
         },
       ],
       generatedSkills: [{ name: "agent-skill", content: "Skill content" }],
+      agents: [
+        {
+          name: "reviewer",
+          description: "Review code",
+          model: "gpt-5.5",
+          instructions: "Review carefully.",
+        },
+      ],
       mcpServers: {
         local: { command: "echo", args: ["hello"], env: { KEY: "VALUE" } },
         remote: {
@@ -38,12 +51,28 @@ describe("writeCodexBundle", () => {
     await writeCodexBundle(tempRoot, bundle)
 
     expect(await exists(path.join(tempRoot, ".codex", "prompts", "command-one.md"))).toBe(true)
-    expect(await exists(path.join(tempRoot, ".codex", "skills", "skill-one", "SKILL.md"))).toBe(true)
-    expect(await exists(path.join(tempRoot, ".codex", "skills", "agent-skill", "SKILL.md"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".agents", "skills", "skill-one", "SKILL.md"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".agents", "skills", "agent-skill", "SKILL.md"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".codex", "agents", "reviewer.toml"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".codex", "plugins", "compound-engineering", ".codex-plugin", "plugin.json"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".agents", "plugins", "marketplace.json"))).toBe(true)
+
+    const copiedSkill = await fs.readFile(path.join(tempRoot, ".agents", "skills", "skill-one", "SKILL.md"), "utf8")
+    expect(copiedSkill).toContain("model: gpt-5.4-mini")
+    expect(copiedSkill).not.toContain("~/.claude/")
+
+    const agentToml = await fs.readFile(path.join(tempRoot, ".codex", "agents", "reviewer.toml"), "utf8")
+    expect(agentToml).toContain('name = "reviewer"')
+    expect(agentToml).toContain('model = "gpt-5.5"')
+
+    const marketplace = await fs.readFile(path.join(tempRoot, ".agents", "plugins", "marketplace.json"), "utf8")
+    expect(marketplace).toContain('"path": "./.codex/plugins/compound-engineering"')
+
     const configPath = path.join(tempRoot, ".codex", "config.toml")
     expect(await exists(configPath)).toBe(true)
 
     const config = await fs.readFile(configPath, "utf8")
+    expect(config).toContain("# BEGIN compound-plugin Codex MCP")
     expect(config).toContain("[mcp_servers.local]")
     expect(config).toContain("command = \"echo\"")
     expect(config).toContain("args = [\"hello\"]")
@@ -71,10 +100,10 @@ describe("writeCodexBundle", () => {
     await writeCodexBundle(codexRoot, bundle)
 
     expect(await exists(path.join(codexRoot, "prompts", "command-one.md"))).toBe(true)
-    expect(await exists(path.join(codexRoot, "skills", "skill-one", "SKILL.md"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".agents", "skills", "skill-one", "SKILL.md"))).toBe(true)
   })
 
-  test("overwrites existing config.toml without backup artifacts", async () => {
+  test("merges existing config.toml without backup artifacts", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "codex-backup-"))
     const codexRoot = path.join(tempRoot, ".codex")
     const configPath = path.join(codexRoot, "config.toml")
@@ -93,9 +122,11 @@ describe("writeCodexBundle", () => {
 
     await writeCodexBundle(codexRoot, bundle)
 
-    // New config should be written
     const newConfig = await fs.readFile(configPath, "utf8")
+    expect(newConfig).toContain("[custom]")
+    expect(newConfig).toContain('key = "value"')
     expect(newConfig).toContain("[mcp_servers.test]")
+    expect(newConfig).toContain("# BEGIN compound-plugin Codex MCP")
 
     // Backup should not be created
     const files = await fs.readdir(codexRoot)
@@ -127,8 +158,8 @@ describe("writeCodexBundle", () => {
     await writeCodexBundle(codexRoot, secondBundle)
 
     expect(await exists(path.join(codexRoot, "prompts", "old-command.md"))).toBe(false)
-    expect(await exists(path.join(codexRoot, "skills", "old-generated", "SKILL.md"))).toBe(false)
-    expect(await exists(path.join(codexRoot, "skills", "skill-one"))).toBe(false)
+    expect(await exists(path.join(tempRoot, ".agents", "skills", "old-generated", "SKILL.md"))).toBe(false)
+    expect(await exists(path.join(tempRoot, ".agents", "skills", "skill-one"))).toBe(false)
     expect(await exists(path.join(codexRoot, "prompts", "new-command.md"))).toBe(true)
   })
 })

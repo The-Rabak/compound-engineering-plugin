@@ -3,6 +3,8 @@ name: compound-docs
 description: Capture solved problems as categorized documentation with YAML frontmatter for fast lookup
 model: claude-sonnet-4-6
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     allowed-tools:
       - Read
@@ -14,6 +16,7 @@ platforms:
     model: gpt-5.3-codex
   opencode:
     model: openrouter/moonshotai/kimi-k2.6
+
 ---
 
 # compound-docs Skill

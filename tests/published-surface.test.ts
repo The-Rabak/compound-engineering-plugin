@@ -43,8 +43,9 @@ describe("published support surface", () => {
   test("plugin README presents the reduced support surface as a tiered support ladder", async () => {
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
 
-    expect(pluginReadme).toContain("OpenCode first-class, GitHub Copilot second, Claude Code third")
-    expect(pluginReadme).toContain("**De-emphasize:** compatibility exporters for Codex, Droid, Pi, Gemini, and Kiro")
+    expect(pluginReadme).toContain("OpenCode first-class, GitHub Copilot and Codex second, Claude Code third")
+    expect(pluginReadme).toContain("**Codex:** explicit full local export plus repo marketplace packaging")
+    expect(pluginReadme).toContain("**De-emphasize:** compatibility exporters for Droid, Pi, Gemini, and Kiro")
     expect(pluginReadme).toContain("**Removed legacy surfaces:** `.github_gpt/` and dormant Cursor-specific export/sync code")
     expect(pluginReadme).toContain("`/workflows:architecture` is the architecture-improvement handoff")
     expect(pluginReadme).toContain("Plans default to unit + e2e evidence")
@@ -55,7 +56,8 @@ describe("published support surface", () => {
     const pluginChangelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
 
     expect(pluginChangelog).toContain("**Support-surface cleanup**")
-    expect(pluginChangelog).toContain("OpenCode first-class, GitHub Copilot second, Claude Code third")
+    expect(pluginChangelog).toContain("OpenCode first-class, GitHub Copilot and Codex second, Claude Code third")
+    expect(pluginChangelog).toContain("**Codex full export**")
     expect(pluginChangelog).toContain("**Architecture handoff workflow**")
     expect(pluginChangelog).toContain("`/workflows:architecture`")
     expect(pluginChangelog).toContain("**Ralph/TDD evidence contract**")

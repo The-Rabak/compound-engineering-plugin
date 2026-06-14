@@ -377,8 +377,8 @@ describe("CLI", () => {
     expect(skillContent).toContain("model: gpt-5.4-mini")
   })
 
-  test("build writes Claude and Copilot outputs from portable source", async () => {
-    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-build-"))
+  test("build writes only Claude output by default from portable source", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-build-default-"))
     const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
 
     const proc = Bun.spawn([
@@ -403,18 +403,71 @@ describe("CLI", () => {
       throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
     }
 
-    expect(stdout).toContain("Built Claude output")
-    expect(stdout).toContain("Built Copilot output")
     const claudePluginRoot = path.join(tempRoot, "plugins", "compound-engineering")
-    const copilotSkillsRoot = path.join(tempRoot, ".github", "skills")
+    expect(stdout).toContain("Built Claude output")
+    expect(stdout).not.toContain("Built Copilot output")
+    expect(stdout).not.toContain("Built Codex output")
     expect(await exists(path.join(claudePluginRoot, ".claude-plugin", "plugin.json"))).toBe(true)
     expect(await exists(path.join(tempRoot, ".claude-plugin", "marketplace.json"))).toBe(true)
-    expect(await exists(path.join(tempRoot, ".github", "agents", "repo-research-analyst.agent.md"))).toBe(true)
-    const generatedSkillPath = path.join(copilotSkillsRoot, "workflows-plan", "SKILL.md")
-    expect(await exists(generatedSkillPath)).toBe(true)
+    expect(await exists(path.join(tempRoot, ".github", "agents"))).toBe(false)
+    expect(await exists(path.join(tempRoot, ".github", "skills"))).toBe(false)
+    expect(await exists(path.join(tempRoot, ".agents", "plugins", "marketplace.json"))).toBe(false)
+    expect(await exists(path.join(claudePluginRoot, ".codex-plugin", "plugin.json"))).toBe(false)
+    expect(await exists(path.join(claudePluginRoot, "codex-skills"))).toBe(false)
 
     const claudeSkillContent = await fs.readFile(path.join(claudePluginRoot, "skills", "skill-one", "SKILL.md"), "utf8")
-    expect(claudeSkillContent).toContain("model: haiku")
+    expect(claudeSkillContent).toContain("model: claude-haiku-4-5-20251001")
+    expect(claudeSkillContent).not.toContain("gpt-5.3-codex")
+    expect(claudeSkillContent).not.toContain("gpt-5.5")
+    expect(claudeSkillContent).not.toContain("platforms:")
+  })
+
+  test("build writes Copilot and Codex outputs only when explicitly targeted", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cli-build-"))
+    const fixtureRoot = path.join(import.meta.dir, "fixtures", "sample-portable-plugin")
+
+    const proc = Bun.spawn([
+      "bun",
+      "run",
+      "src/index.ts",
+      "build",
+      fixtureRoot,
+      "--output",
+      tempRoot,
+      "--targets",
+      "claude,copilot,codex",
+    ], {
+      cwd: path.join(import.meta.dir, ".."),
+      stdout: "pipe",
+      stderr: "pipe",
+    })
+
+    const exitCode = await proc.exited
+    const stdout = await new Response(proc.stdout).text()
+    const stderr = await new Response(proc.stderr).text()
+
+    if (exitCode !== 0) {
+      throw new Error(`CLI failed (exit ${exitCode}).\nstdout: ${stdout}\nstderr: ${stderr}`)
+    }
+
+    expect(stdout).toContain("Built Claude output")
+    expect(stdout).toContain("Built Copilot output")
+    expect(stdout).toContain("Built Codex output")
+    const claudePluginRoot = path.join(tempRoot, "plugins", "compound-engineering")
+    const copilotSkillsRoot = path.join(tempRoot, ".github", "skills")
+    const codexSkillsRoot = path.join(claudePluginRoot, "codex-skills")
+    expect(await exists(path.join(claudePluginRoot, ".claude-plugin", "plugin.json"))).toBe(true)
+    expect(await exists(path.join(claudePluginRoot, ".codex-plugin", "plugin.json"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".claude-plugin", "marketplace.json"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".agents", "plugins", "marketplace.json"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".github", "agents", "repo-research-analyst.agent.md"))).toBe(true)
+    const generatedSkillPath = path.join(copilotSkillsRoot, "workflows-plan", "SKILL.md")
+    const codexGeneratedSkillPath = path.join(codexSkillsRoot, "workflows-plan", "SKILL.md")
+    expect(await exists(generatedSkillPath)).toBe(true)
+    expect(await exists(codexGeneratedSkillPath)).toBe(true)
+
+    const claudeSkillContent = await fs.readFile(path.join(claudePluginRoot, "skills", "skill-one", "SKILL.md"), "utf8")
+    expect(claudeSkillContent).toContain("model: claude-haiku-4-5-20251001")
 
     const generatedSkillContent = await fs.readFile(generatedSkillPath, "utf8")
     expect(generatedSkillContent).toContain("model: gpt-5.4-mini")
@@ -425,6 +478,23 @@ describe("CLI", () => {
     expect(copiedSkillContent).toContain("model: gpt-5.4-mini")
     expect(copiedSkillContent).toContain("/workflows-plan")
     expect(copiedSkillContent).toContain("~/.copilot/skills/skill-one/notes.md")
+
+    const codexGeneratedSkillContent = await fs.readFile(codexGeneratedSkillPath, "utf8")
+    expect(codexGeneratedSkillContent).toContain("model: gpt-5.5")
+    expect(codexGeneratedSkillContent).toContain("disable-model-invocation: true")
+    expect(codexGeneratedSkillContent).toContain("Spawn the custom agent `repo-research-analyst`")
+
+    const codexCopiedSkillPath = path.join(codexSkillsRoot, "skill-one", "SKILL.md")
+    expect(await exists(codexCopiedSkillPath)).toBe(true)
+    const codexCopiedSkillContent = await fs.readFile(codexCopiedSkillPath, "utf8")
+    expect(codexCopiedSkillContent).toContain("model: gpt-5.5")
+    expect(codexCopiedSkillContent).toContain("disable-model-invocation: true")
+    expect(codexCopiedSkillContent).toContain("$workflows-plan skill")
+    expect(codexCopiedSkillContent).toContain("~/.agents/skills/skill-one/notes.md")
+    expect(codexCopiedSkillContent).not.toContain("~/.claude/")
+
+    const codexMarketplace = await fs.readFile(path.join(tempRoot, ".agents", "plugins", "marketplace.json"), "utf8")
+    expect(codexMarketplace).toContain('"path": "./plugins/compound-engineering"')
     expect(
       await exists(path.join(claudePluginRoot, "commands", "workflows", "references", "ignored.md")),
     ).toBe(true)
@@ -748,8 +818,8 @@ describe("CLI", () => {
 
     expect(stdout).toContain("Converted compound-engineering")
     expect(stdout).toContain(codexRoot)
-    expect(await exists(path.join(codexRoot, "prompts", "workflows-review.md"))).toBe(true)
-    expect(await exists(path.join(codexRoot, "skills", "workflows-review", "SKILL.md"))).toBe(true)
+    expect(await exists(path.join(codexRoot, "prompts", "workflows-review.md"))).toBe(false)
+    expect(await exists(path.join(tempRoot, ".agents", "skills", "workflows-review", "SKILL.md"))).toBe(true)
     expect(await exists(path.join(codexRoot, "AGENTS.md"))).toBe(true)
   })
 
@@ -788,9 +858,9 @@ describe("CLI", () => {
 
     expect(stdout).toContain("Installed compound-engineering")
     expect(stdout).toContain(codexRoot)
-    expect(await exists(path.join(codexRoot, "prompts", "workflows-review.md"))).toBe(true)
-    expect(await exists(path.join(codexRoot, "skills", "workflows-review", "SKILL.md"))).toBe(true)
-    expect(await exists(path.join(codexRoot, "skills", "skill-one", "SKILL.md"))).toBe(true)
+    expect(await exists(path.join(codexRoot, "prompts", "workflows-review.md"))).toBe(false)
+    expect(await exists(path.join(tempRoot, ".agents", "skills", "workflows-review", "SKILL.md"))).toBe(true)
+    expect(await exists(path.join(tempRoot, ".agents", "skills", "skill-one", "SKILL.md"))).toBe(true)
     expect(await exists(path.join(codexRoot, "AGENTS.md"))).toBe(true)
   })
 

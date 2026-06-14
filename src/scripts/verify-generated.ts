@@ -3,10 +3,14 @@ import { promises as fs } from "fs"
 import path from "path"
 
 const GENERATED_TARGETS = [
-  ".github",
   path.join("plugins", "compound-engineering"),
   path.join(".claude-plugin", "marketplace.json"),
 ]
+
+const EXPLICIT_EXPORT_PATHS = new Set([
+  path.join("plugins", "compound-engineering", ".codex-plugin"),
+  path.join("plugins", "compound-engineering", "codex-skills"),
+])
 
 await main()
 
@@ -57,6 +61,10 @@ async function snapshotTargets(root: string, targets: string[]): Promise<Map<str
 }
 
 async function collectSnapshot(absolutePath: string, relativePath: string, snapshot: Map<string, string>): Promise<void> {
+  if (EXPLICIT_EXPORT_PATHS.has(relativePath)) {
+    return
+  }
+
   let stat
   try {
     stat = await fs.stat(absolutePath)

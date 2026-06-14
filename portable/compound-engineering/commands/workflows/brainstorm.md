@@ -2,6 +2,10 @@
 name: workflows:brainstorm
 description: Explore the WHY and WHAT of a feature through collaborative dialogue, producing a user story, architectural context, and design decisions that anchor all downstream phases
 argument-hint: '[feature idea or problem to explore]'
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 # Brainstorm a Feature or Improvement

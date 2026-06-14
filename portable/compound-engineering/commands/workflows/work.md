@@ -3,7 +3,12 @@ name: workflows:work
 description: >-
   Execute work plans while maintaining WHY tracing from problem narrative
   through user story to implementation. Grounds every subagent in purpose.
-argument-hint: '[plan file, ticket index, ticket file, specification, or todo file path] [--review-mode bulk|inline|both]'
+argument-hint: '[plan file, ticket index, ticket file, specification, or todo file path] [--batches N-M] [--review-mode bulk|inline|both]'
+model: opus-4.8
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 # Work Plan Execution Command
@@ -32,6 +37,17 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
 
 **Hard rule:** Named review agents belong to `/workflows:review`. `/workflows:work` may coordinate inline template-based checks, but it must never bypass `/workflows:review` by dispatching named reviewers directly.
 
+### Ticket Batch Selection
+
+When the input is a ticket index, this command supports `--batches N-M`.
+
+- If `--batches N-M` is present, execute exactly those ticket-index batches and no others.
+- If only one batch is needed, `--batches N-N` is valid.
+- Verify every selected batch exists, all prerequisite batches are complete, and the index records enough file-overlap safety notes for any parallel work inside those batches.
+- If a selected batch is already complete, report it as already complete and do not re-execute it unless the user explicitly asks for a retry.
+- If `--batches` is absent, use the ticket index's next unfinished batch as before.
+- Never advance the ticket index cursor beyond the selected range.
+
 ## Input Document
 
 <input_document> #$ARGUMENTS </input_document>
@@ -47,9 +63,9 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
     - If the input is a ticket index, extract:
       - `plan_ref`, `architecture_ref`, `execution_shape`, `ticket_set_status`, `last_completed_batch`, and `total_batches`
       - the dependency graph and execution-batch table
-      - the next unfinished batch and the ticket files it names
+      - the selected `--batches N-M` range when present, otherwise the next unfinished batch and the ticket files it names
       - the file-overlap safety notes proving whether the batch is truly parallel-safe
-    - If the input is a ticket index, use the index as the source of truth for ordering and batch selection. Load only the ticket files named in the next batch before continuing.
+    - If the input is a ticket index, use the index as the source of truth for ordering and batch selection. Load only the ticket files named in the selected batch range before continuing.
     - If the input is a ticket file, extract:
       - `plan_ref`, `tickets_ref`, `architecture_ref`, and `source_packet_ref`
       - `feature_home`, `depends_on`, `dependency_type`, `files`, `test_command`, and `status`
@@ -125,7 +141,7 @@ If no `--review-mode` is specified, check `compound-engineering.local.md` for a 
 
 3. **Preview Unit Breakdown**
    - Mentally identify the major execution units from the source document
-   - If the input is a ticket index, preview the next batch from the index and whether it is sequential or parallel-safe
+   - If the input is a ticket index, preview the selected `--batches` range when present; otherwise preview the next batch from the index and whether it is sequential or parallel-safe
    - If the input is a ticket file, preview exactly one execution unit unless the user explicitly asks to re-split it
    - Note any questions about dependencies or scope
    - The formal unit decomposition happens in Phase 2 Step 4 (STATE.md), which is the persistent record of progress

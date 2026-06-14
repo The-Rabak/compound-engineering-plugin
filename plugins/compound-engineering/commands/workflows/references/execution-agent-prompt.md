@@ -1,10 +1,5 @@
 ---
-model: claude-sonnet-4.6
-platforms:
-  copilot:
-    model: gpt-5.3-codex
-  opencode:
-    model: openrouter/moonshotai/kimi-k2.6
+model: claude-sonnet-4-6
 ---
 
 # Execution Agent Prompt Template

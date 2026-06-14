@@ -1,7 +1,3 @@
----
-{}
----
-
 # Code Quality Review Prompt Template
 
 This template is used by the `workflows:work` orchestrator to dispatch a code quality reviewer subagent when `--review-mode inline` or `--review-mode both` is active. This reviewer is dispatched ONLY AFTER spec compliance has passed.

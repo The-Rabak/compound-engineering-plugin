@@ -6,6 +6,7 @@ The project packages a constitution-first, spec-driven workflow system for AI-as
 
 - **OpenCode** -- first-class authoring and daily-driver surface
 - **GitHub Copilot** -- second-class generated output
+- **OpenAI Codex** -- second-class generated output with full local export and repo marketplace packaging
 - **Claude Code** -- third-class generated compatibility output
 
 ## What makes this repo different
@@ -63,9 +64,10 @@ Everything starts in `portable/compound-engineering/`.
 
 From there the repo generates:
 
-- `.github/` for GitHub Copilot
 - `plugins/compound-engineering/` for Claude Code
 - `.claude-plugin/marketplace.json` for Claude marketplace metadata
+
+GitHub Copilot and Codex outputs are generated only on explicit request into ignored target-specific paths. `.github/workflows` remains normal repository CI/deploy configuration.
 
 That gives you one canonical source with multiple supported outputs instead of platform-specific drift.
 
@@ -153,9 +155,10 @@ Use the full chain when you want the plugin to take a feature from vague intent 
 | Surface | Status | Notes |
 |---|---|---|
 | Portable source + OpenCode install/convert + `bun run sync:ov` | **First-class** | primary authoring and day-to-day workflow |
-| Generated Copilot output in `.github/` | **Second-class** | supported GitHub-native output |
+| Explicit Copilot output in ignored `.github/agents`, `.github/skills`, and `.github/copilot-mcp-config.json` | **Second-class** | supported GitHub-native output, generated only when requested |
+| Codex local export and generated repo marketplace | **Second-class** | writes `.agents/skills`, `.codex/agents`, MCP/hooks config, and installable plugin metadata |
 | Generated Claude Code plugin + marketplace metadata | **Third-class** | supported compatibility output |
-| Codex, Droid, Pi, Gemini, Kiro exporters | **De-emphasized** | kept as compatibility bridges, not co-equal surfaces |
+| Droid, Pi, Gemini, Kiro exporters | **De-emphasized** | kept as compatibility bridges, not co-equal surfaces |
 | `.github_gpt/` and dormant Cursor-specific export/sync code | **Removed** | removed to stop unsupported workflow drift |
 
 ## Quick start
@@ -176,9 +179,35 @@ bun run build:platforms
 
 This regenerates:
 
-- `.github/`
 - `plugins/compound-engineering/`
 - `.claude-plugin/marketplace.json`
+
+To generate other harness assets explicitly:
+
+```bash
+bun run build:copilot
+bun run build:codex
+```
+
+### Export directly into Codex
+
+```bash
+bun run cli:install ./portable/compound-engineering --to codex
+```
+
+That writes Codex-discoverable skills to `~/.agents/skills`, custom agents to `~/.codex/agents`, MCP config to `~/.codex/config.toml`, hooks to `~/.codex/hooks.json`, and a personal marketplace entry under `~/.agents/plugins/marketplace.json`.
+
+#### Codex plugin package caveat
+
+Codex native plugins package installable **skills**. This repo also ships Codex custom agents, MCP config, hooks, and local marketplace metadata, which live outside the native skills package:
+
+- custom agents: `~/.codex/agents/*.toml`
+- direct skill export: `~/.agents/skills/*/SKILL.md`
+- MCP config: `~/.codex/config.toml`
+- hooks: `~/.codex/hooks.json`
+- personal marketplace: `~/.agents/plugins/marketplace.json`
+
+Use `bun run cli:install ./portable/compound-engineering --to codex` when you want the complete working Codex environment, including custom agents used by command-derived skills. `bun run build:codex` generates the ignored repo-local Codex package/export surface explicitly.
 
 ### Sync portable assets into OpenViking globals
 
@@ -203,7 +232,7 @@ compound-engineering-plugin/
 ├── portable/compound-engineering/    # Canonical source
 ├── plugins/compound-engineering/     # Generated Claude Code plugin
 ├── .claude-plugin/marketplace.json   # Generated Claude marketplace entry
-├── .github/                          # Generated Copilot assets
+├── .github/workflows/                # Repository CI/deploy workflows
 ├── docs/                             # Workflow outputs and institutional knowledge
 ├── src/                              # Converter, writer, and sync tooling
 └── tests/                            # Converter, generator, and contract coverage
@@ -251,4 +280,11 @@ bun run verify:generated
 bun test
 cat .claude-plugin/marketplace.json | jq .
 cat plugins/compound-engineering/.claude-plugin/plugin.json | jq .
+```
+
+Validate explicit Codex exports only after running `bun run build:codex`:
+
+```bash
+cat .agents/plugins/marketplace.json | jq .
+cat plugins/compound-engineering/.codex-plugin/plugin.json | jq .
 ```

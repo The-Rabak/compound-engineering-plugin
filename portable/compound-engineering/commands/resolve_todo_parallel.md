@@ -2,6 +2,10 @@
 name: resolve_todo_parallel
 description: Resolve all pending CLI todos using parallel processing
 argument-hint: '[optional: specific todo ID or pattern]'
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 Resolve all TODO comments using parallel processing.

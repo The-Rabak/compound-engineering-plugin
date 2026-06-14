@@ -3,6 +3,10 @@ name: deepen-plan
 description: >-
   Enhance a plan with parallel research agents grounded in user story, architectural context, and success criteria to add depth without losing purpose
 argument-hint: '[path to plan file]'
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 # Deepen Plan - Power Enhancement Mode

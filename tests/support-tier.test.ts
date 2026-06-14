@@ -14,13 +14,15 @@ import {
 } from "../src/targets"
 
 describe("support-tier policy", () => {
-  test("orders OpenCode first, Copilot second, and Claude third", () => {
+  test("orders OpenCode first, Copilot and Codex second, and Claude third", () => {
     expect(targetPolicies.opencode.tier).toBe("first-class")
     expect(targetPolicies.opencode.cleanup).toBe("keep")
     expect(targetPolicies.copilot.tier).toBe("second-class")
+    expect(targetPolicies.codex.tier).toBe("second-class")
+    expect(targetPolicies.codex.cleanup).toBe("keep")
     expect(targetPolicies.claude.tier).toBe("third-class")
     expect(supportTierPositioning).toContain("OpenCode is first-class")
-    expect(supportTierPositioning).toContain("Copilot is second-class")
+    expect(supportTierPositioning).toContain("Copilot and Codex are second-class")
     expect(supportTierPositioning).toContain("Claude Code remains a third-class")
   })
 
@@ -29,7 +31,6 @@ describe("support-tier policy", () => {
     expect(cleanupRubric["de-emphasize"]).toContain("compatibility bridge")
     expect(cleanupRubric.remove).toContain("migration path")
 
-    expect(targetPolicies.codex.cleanup).toBe("de-emphasize")
     expect(targetPolicies.droid.cleanup).toBe("de-emphasize")
     expect(targetPolicies.pi.cleanup).toBe("de-emphasize")
     expect(targetPolicies.gemini.cleanup).toBe("de-emphasize")
@@ -45,17 +46,19 @@ describe("support-tier policy", () => {
     expect(String(convert.meta.description)).toContain("OpenCode-first")
     expect(String(convert.args.to.description)).toContain("opencode (first-class)")
     expect(String(convert.args.to.description)).toContain("copilot (second-class)")
+    expect(String(convert.args.to.description)).toContain("codex (second-class)")
     expect(String(convert.args.to.description)).toContain("de-emphasized")
 
     expect(String(install.meta.description)).toContain("OpenCode-first")
     expect(String(install.args.to.description)).toContain("opencode (first-class)")
-    expect(String(install.args.also.description)).toContain("de-emphasized compatibility")
+    expect(String(install.args.also.description)).toContain("extra targets")
 
     expect(String(sync.meta.description)).toContain("OpenCode-first")
     expect(String(sync.args.target.description)).toContain("Legacy mirrors")
   })
 
   test("surface registries only expose targets allowed by the support matrix", () => {
+    expect(getTargetNamesForSurface("build")).toEqual(["copilot", "claude", "codex"])
     expect(getTargetNamesForSurface("convert")).toEqual(["opencode", "copilot", "codex", "droid", "pi", "gemini", "kiro"])
     expect(getTargetNamesForSurface("install")).toEqual(["opencode", "copilot", "codex", "droid", "pi", "gemini", "kiro"])
     expect(getTargetNamesForSurface("sync")).toEqual(["opencode", "copilot", "codex", "droid", "pi"])

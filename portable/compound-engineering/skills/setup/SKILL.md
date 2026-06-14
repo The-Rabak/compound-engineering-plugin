@@ -5,12 +5,15 @@ description: >-
   compound-engineering.local.md.
 model: claude-sonnet-4-6
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     disable-model-invocation: true
   copilot:
     model: gpt-5.3-codex
   opencode:
     model: openrouter/moonshotai/kimi-k2.6
+
 ---
 
 # Compound Engineering Setup

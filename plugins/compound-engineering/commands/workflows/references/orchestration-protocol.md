@@ -1,7 +1,3 @@
----
-{}
----
-
 # Shared Orchestration Protocol
 
 This reference is consumed by the core workflow prompts so template loading, named-agent dispatch, and downstream handoff rules stay aligned instead of drifting across commands.

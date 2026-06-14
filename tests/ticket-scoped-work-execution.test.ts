@@ -34,6 +34,9 @@ describe("ticket-scoped work execution", () => {
     )
 
     expect(workPrompt).toContain("[plan file, ticket index, ticket file, specification, or todo file path]")
+    expect(workPrompt).toContain("[--batches N-M]")
+    expect(workPrompt).toContain("execute exactly those ticket-index batches and no others")
+    expect(workPrompt).toContain("Never advance the ticket index cursor beyond the selected range")
     expect(workPrompt).toContain("ticket-execution-contract.md")
     expect(workPrompt).toContain("When the input is a ticket index, that index becomes the authoritative execution queue")
     expect(workPrompt).toContain("that ticket becomes the primary execution packet")

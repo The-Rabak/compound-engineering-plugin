@@ -8,6 +8,15 @@ async function readRepoFile(...segments: string[]): Promise<string> {
   return fs.readFile(path.join(repoRoot, ...segments), "utf8")
 }
 
+async function pathExists(...segments: string[]): Promise<boolean> {
+  try {
+    await fs.access(path.join(repoRoot, ...segments))
+    return true
+  } catch {
+    return false
+  }
+}
+
 describe("TDD contract surfaces", () => {
   test("setup skill asks about the Ralph loop and writes visible config", async () => {
     const setupSkill = await readRepoFile(
@@ -166,7 +175,7 @@ describe("TDD contract surfaces", () => {
     expect(qualityPrompt).toContain("Keep the report terse")
   })
 
-  test("ralph helper commands and workflow shortcuts route through work instead of a detached side loop", async () => {
+  test("ralph helper commands and lrj route through ticketized work instead of detached side loops", async () => {
     const ralphLoop = await readRepoFile(
       "portable",
       "compound-engineering",
@@ -179,34 +188,45 @@ describe("TDD contract surfaces", () => {
       "commands",
       "cancel-ralph.md",
     )
-    const lfg = await readRepoFile(
+    const lrj = await readRepoFile(
       "portable",
       "compound-engineering",
       "commands",
-      "lfg.md",
-    )
-    const slfg = await readRepoFile(
-      "portable",
-      "compound-engineering",
-      "commands",
-      "slfg.md",
+      "lrj.md",
     )
 
     expect(ralphLoop).toContain("canonical red-green-refactor engine behind `/workflows:work`")
     expect(ralphLoop).toContain("Post-Refactor Green")
     expect(cancelRalph).toContain("default Ralph execution path")
-    expect(lfg).not.toContain("/compound-engineering:ralph-loop")
-    expect(lfg).toContain("default Ralph-driven execution path")
-    expect(slfg).not.toContain("/compound-engineering:ralph-loop")
-    expect(slfg).toContain("default Ralph-driven execution path")
+    expect(lrj).toContain("/workflows:to-issues <plan_file>")
+    expect(lrj).toContain("Run `ticket-flow-auditor` against the generated ticket set.")
+    expect(lrj).toContain("Initialize `current_batch = 1` and `batch_window = 2`.")
+    expect(lrj).toContain("/workflows:work <tickets_index_file> --batches <start>-<end>")
+    expect(lrj).toContain("/workflows:review <tickets_index_file> <work_execution_session> --batches <start>-<end>")
+    expect(lrj).toContain("/workflows:triage <review_todo_range> --auto-recommended --execute")
+    expect(lrj).toContain("create one detailed git commit for all changes made during that two-batch window")
+    expect(lrj).toContain("### 8. Batch Commit")
+    expect(lrj).toContain("commit_sha")
+    expect(lrj).toContain("Do not advance the cursor")
+    expect(lrj).not.toContain("/compound-engineering:ralph-loop")
+    expect(lrj).not.toContain("/resolve_todo_parallel")
+    expect(lrj).not.toContain("/deepen-plan")
+    expect(await pathExists("portable", "compound-engineering", "commands", "lfg.md")).toBe(false)
+    expect(await pathExists("portable", "compound-engineering", "commands", "slfg.md")).toBe(false)
   })
 
-  test("local config documents the visible TDD defaults and precedence", async () => {
-    const localConfig = await readRepoFile("compound-engineering.local.md")
+  test("setup skill documents the visible local TDD defaults and precedence", async () => {
+    const localConfig = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "setup",
+      "SKILL.md",
+    )
 
-    expect(localConfig).toContain("tdd_enabled: true")
-    expect(localConfig).toContain("mode: ralph")
-    expect(localConfig).toContain("loop: red-green-refactor")
+    expect(localConfig).toContain("tdd_enabled: {true|false}")
+    expect(localConfig).toContain("mode: {ralph|standard}")
+    expect(localConfig).toContain("loop: {red-green-refactor|implementation-first}")
     expect(localConfig).toContain("precedence: plan_overrides_local")
     expect(localConfig).toContain("Plan-level `tdd` values override this file")
   })

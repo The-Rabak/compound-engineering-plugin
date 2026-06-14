@@ -3,12 +3,15 @@ name: adversarial-plan-audit
 description: Run a deep adversarial review of plans and architecture before implementation. Use when validating strategy docs, contracts, roadmaps, and competitive positioning with scored findings and prioritized recommendations.
 model: claude-sonnet-4-6
 platforms:
+  codex:
+    model: gpt-5.5
   copilot:
     model: gpt-5.3-codex
   opencode:
     model: openrouter/moonshotai/kimi-k2.6
 argument-hint: "[optional: focus area, doc path, or principle]"
 disable-model-invocation: true
+
 ---
 
 # Adversarial Plan Audit

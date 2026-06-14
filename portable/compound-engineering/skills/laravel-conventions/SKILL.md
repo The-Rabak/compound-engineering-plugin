@@ -5,10 +5,13 @@ description: >-
   PHP/Laravel code to ensure convention compliance.
 model: claude-sonnet-4-6
 platforms:
+  codex:
+    model: gpt-5.5
   copilot:
     model: gpt-5.3-codex
   opencode:
     model: openrouter/moonshotai/kimi-k2.6
+
 ---
 
 # Laravel Coding Conventions (Laravel 11+ / PHP 8.3+)

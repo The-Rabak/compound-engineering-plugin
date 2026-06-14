@@ -1,7 +1,3 @@
----
-{}
----
-
 # Spec Compliance Review Prompt Template
 
 This template is used by the `workflows:work` orchestrator to dispatch a spec compliance reviewer subagent when `--review-mode inline` or `--review-mode both` is active. The orchestrator fills in context blocks before passing the result to a subagent.

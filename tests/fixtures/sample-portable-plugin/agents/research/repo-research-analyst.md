@@ -7,6 +7,8 @@ capabilities:
 platforms:
   claude:
     model: haiku
+  codex:
+    model: gpt-5.4-mini
 ---
 
 # Repo Research Analyst

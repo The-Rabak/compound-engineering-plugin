@@ -2,8 +2,11 @@
 name: cancel-ralph
 description: Cancel an active ralph loop
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     disable-model-invocation: true
+
 ---
 
 # Cancel Ralph Loop

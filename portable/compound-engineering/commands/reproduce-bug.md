@@ -3,8 +3,11 @@ name: reproduce-bug
 description: Reproduce a bug and collect structured evidence for diagnosis, fix planning, or escalation
 argument-hint: '[issue number, issue URL, failing command, or bug description]'
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     disable-model-invocation: true
+
 ---
 
 # Reproduce Bug Command

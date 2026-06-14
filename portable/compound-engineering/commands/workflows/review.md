@@ -3,7 +3,12 @@ name: workflows:review
 description: >-
   Perform exhaustive code reviews grounded in the user story. Filters technical
   findings through WHY context to protect purpose while improving quality.
-argument-hint: '[branch name, file path, or empty for current branch]'
+argument-hint: '[branch name, file path, ticket index + execution session, or empty for current branch] [--batches N-M]'
+model: opus-4.8
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 # Review Command
@@ -28,6 +33,16 @@ argument-hint: '[branch name, file path, or empty for current branch]'
 ### 1. Determine Review Target & Setup (ALWAYS FIRST)
 
 <review_target> #$ARGUMENTS </review_target>
+
+If the review target contains a ticket index path plus an execution session path and `--batches N-M`, this is a ticket-window review. Scope the review to:
+
+- the selected ticket index batch range,
+- ticket files referenced by those batches,
+- the provided work execution session,
+- code changes made for that batch window,
+- tests/evidence for that batch window.
+
+Do not review unrelated completed or future ticket batches except when necessary to verify dependency safety or regressions caused by the selected window.
 
 <thinking>
 First, I need to determine the review target type and set up the code for analysis.
@@ -122,6 +137,8 @@ If a `tickets_ref` or matching `docs/tickets/*/index.md` artifact exists, read t
 - feature homes and scope fences
 - acceptance criteria and evidence commands
 - any visible blocker notes or ticket-set review findings
+
+When `--batches N-M` is present, "relevant ticket files" means only tickets named by batches `N` through `M`, plus prerequisite tickets needed to understand dependency safety.
 
 ALWAYS READ THE ARCHITECTURE ARTIFACT (or explicit handoff contract) AND README FILES FOR CONTEXT — they often contain critical information about architectural intent, constraints, and domain knowledge that is not in the plan.
 

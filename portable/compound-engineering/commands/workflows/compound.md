@@ -2,6 +2,10 @@
 name: workflows:compound
 description: Document a recently solved problem to compound your team's knowledge
 argument-hint: '[optional: brief context about the fix]'
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 # /compound

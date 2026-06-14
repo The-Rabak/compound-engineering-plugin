@@ -3,8 +3,11 @@ name: ralph-loop
 description: Start a self-referential loop that continues until a completion promise is met
 argument-hint: '"<prompt>" --completion-promise "<text>" --max-iterations <n>'
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     disable-model-invocation: true
+
 ---
 
 # Ralph Loop

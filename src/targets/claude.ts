@@ -5,6 +5,7 @@ import { formatFrontmatter } from "../utils/frontmatter"
 import { parseFrontmatter } from "../utils/frontmatter"
 import type { ClaudeAgent, ClaudeCommand, ClaudeManifest, ClaudePlugin, ClaudeSkill } from "../types/claude"
 import { pruneManagedOutput, writeManagedOutputState } from "../utils/managed-output"
+import { sanitizeMarkdownForTarget, sanitizeMarkdownTreeForTarget } from "../utils/target-content"
 
 const STATE_FILE_NAME = ".compound-engineering-claude-state.json"
 
@@ -33,6 +34,7 @@ export async function writeClaudeBundle(outputRoot: string, plugin: ClaudePlugin
     await copyDir(skill.sourceDir, destination)
     const body = await readSkillBody(skill)
     await writeText(path.join(destination, "SKILL.md"), formatSkill(skill, body) + "\n")
+    await sanitizeMarkdownTreeForTarget(destination, "claude")
   }
 
   if (plugin.hooks) {
@@ -57,40 +59,49 @@ function buildClaudeManifest(manifest: ClaudeManifest): ClaudeManifest {
 }
 
 function formatAgent(agent: ClaudeAgent): string {
-  return formatFrontmatter(
-    {
-      name: agent.name,
-      description: agent.description,
-      capabilities: agent.capabilities,
-      model: agent.model,
-    },
-    agent.body,
+  return sanitizeMarkdownForTarget(
+    formatFrontmatter(
+      {
+        name: agent.name,
+        description: agent.description,
+        capabilities: agent.capabilities,
+        model: agent.model,
+      },
+      agent.body,
+    ),
+    "claude",
   )
 }
 
 function formatCommand(command: ClaudeCommand): string {
-  return formatFrontmatter(
-    {
-      name: command.name,
-      description: command.description,
-      "argument-hint": command.argumentHint,
-      model: command.model,
-      "allowed-tools": command.allowedTools,
-      "disable-model-invocation": command.disableModelInvocation,
-    },
-    command.body,
+  return sanitizeMarkdownForTarget(
+    formatFrontmatter(
+      {
+        name: command.name,
+        description: command.description,
+        "argument-hint": command.argumentHint,
+        model: command.model,
+        "allowed-tools": command.allowedTools,
+        "disable-model-invocation": command.disableModelInvocation,
+      },
+      command.body,
+    ),
+    "claude",
   )
 }
 
 function formatSkill(skill: ClaudeSkill, body: string): string {
-  return formatFrontmatter(
-    {
-      name: skill.name,
-      description: skill.description,
-      model: skill.model,
-      "disable-model-invocation": skill.disableModelInvocation,
-    },
-    body,
+  return sanitizeMarkdownForTarget(
+    formatFrontmatter(
+      {
+        name: skill.name,
+        description: skill.description,
+        model: skill.model,
+        "disable-model-invocation": skill.disableModelInvocation,
+      },
+      body,
+    ),
+    "claude",
   )
 }
 
@@ -121,7 +132,9 @@ function relativeComponentDir(root: string, componentDir: string, sourceDir: str
 async function copyCommandReferenceDocs(commandSourcePath: string, targetDir: string): Promise<void> {
   const sourceReferencesDir = path.join(path.dirname(commandSourcePath), "references")
   if (!(await pathExists(sourceReferencesDir))) return
-  await copyDir(sourceReferencesDir, path.join(targetDir, "references"))
+  const targetReferencesDir = path.join(targetDir, "references")
+  await copyDir(sourceReferencesDir, targetReferencesDir)
+  await sanitizeMarkdownTreeForTarget(targetReferencesDir, "claude")
 }
 
 async function collectManagedPaths(outputRoot: string, plugin: ClaudePlugin): Promise<string[]> {

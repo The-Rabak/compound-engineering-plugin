@@ -7,6 +7,9 @@ platforms:
     disable-model-invocation: true
   copilot:
     model: gpt-5.4-mini
+  codex:
+    model: gpt-5.5
+    disable-model-invocation: true
 ---
 
 # Skill One

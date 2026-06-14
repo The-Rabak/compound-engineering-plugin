@@ -4,6 +4,8 @@ description: Fix incorrect SKILL.md files when a skill has wrong instructions or
 argument-hint:
   - optional: specific issue to fix
 platforms:
+  codex:
+    model: gpt-5.5
   claude:
     allowed-tools:
       - Read
@@ -11,6 +13,7 @@ platforms:
       - Bash(ls:*)
       - Bash(git:*)
     disable-model-invocation: true
+
 ---
 
 <objective>

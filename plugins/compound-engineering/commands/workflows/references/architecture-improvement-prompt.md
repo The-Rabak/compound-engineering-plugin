@@ -1,7 +1,3 @@
----
-{}
----
-
 # Architecture Improvement Artifact Contract
 
 This template is consumed by the `workflows:architecture` phase. It is a **reference document**, not an invocable command.

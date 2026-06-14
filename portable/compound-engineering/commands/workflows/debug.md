@@ -2,6 +2,10 @@
 name: workflows:debug
 description: Diagnose bugs end-to-end using artifact-first recall, structured reproduction, causal debugging, and fix-or-handoff decision gates
 argument-hint: '[bug report, failing command, issue URL, or symptom description]'
+platforms:
+  codex:
+    model: gpt-5.5
+
 ---
 
 # Debug a Bug or Failure
