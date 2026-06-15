@@ -178,6 +178,15 @@ Classify gate failures explicitly:
 - **Missing behavior coverage** — treat as a spec blocker.
 - **Missing cleanup after refactor** — treat as a quality failure, escalating to blocker when behavior may have changed without a rerun.
 
+Also apply `commands/workflows/references/e2e-testing-contract.md` to the e2e evidence. Classify e2e gate failures using the contract's review-gate classifications, and treat these as **merge-blocking** (same bar as Missing behavior coverage — review requires proof, not claims):
+- **Fake-in-e2e** — a stub/mock/fake/synthetic-data/in-memory simulation in an e2e path without a justified, scoped exception.
+- **Mock transport / not-really-e2e** — drives an in-process router or test seam instead of the deployed app over real transport.
+- **Empty/hardcoded pass** — an assertion that does not derive from a live value, a `Passed` with no preceding check, or a scenario that asserts nothing.
+- **Sleep-instead-of-poll** — a fixed `sleep()` standing in for polling a real condition.
+- **Test-softened-to-pass** — an assertion weakened, a threshold lowered, a scenario narrowed, or a failure caught-and-passed to force green instead of fixing the app.
+- **Missing failure-mode coverage** — only the happy path is exercised; relevant failure modes are absent.
+- **Unjustified missing e2e** — e2e is absent with no justified N/A exception recorded. (A justified no-runtime-surface N/A is acceptable; silent omission is not.)
+
 Keep the gate output terse and evidence-based. If the gate fails, carry that failure into the final summary even if no reviewer agent finds anything else.
 
 #### Protected Artifacts
@@ -201,7 +210,7 @@ If no settings file exists, invoke the `setup` skill to create one. Then read th
 
 `review_agents` only decides **which** named review agents `/workflows:review` coordinates. It does **not** authorize direct reviewer dispatch from other workflows or ad hoc prompts. If any other workflow or skill needs named review-agent analysis, route that request through `/workflows:review` instead of spawning the reviewers directly, except for `/workflows:to-issues`, which may run `ticket-flow-auditor` as its explicit ticket-set completion gate before code exists.
 
-Regardless of `review_agents`, `/workflows:review` still adds the mandatory reviewers `agent-native-reviewer`, `learnings-researcher`, `uncle-bob`, and `ticket-flow-auditor`. `/workflows:architecture` likewise always runs `architecture-strategist` and `uncle-bob`.
+Regardless of `review_agents`, `/workflows:review` still adds the mandatory reviewers `agent-native-reviewer`, `learnings-researcher`, `uncle-bob`, `ticket-flow-auditor`, and `e2e-test-strategist`. `/workflows:architecture` likewise always runs `architecture-strategist` and `uncle-bob`.
 
 #### Parallel Agents to review the branch changes:
 
@@ -252,6 +261,7 @@ Additionally, always run these regardless of settings. These mandatory reviewers
 - Apply the protocol above to `learnings-researcher`, then dispatch it with branch diff content + WHY context - Search docs/solutions/ for past issues related to this PR's modules and patterns
 - Apply the protocol above to `uncle-bob`, then dispatch it with branch diff content + WHY context - Pressure-test naming, cohesion, feature-home boundaries, shared/global extractions, side effects, and long-term changeability
 - Apply the protocol above to `ticket-flow-auditor`, then dispatch it with branch diff content + WHY context + ticket artifacts - Verify plan/ticket/implementation alignment, scope fences, dependency honesty, and execution drift
+- Apply the protocol above to `e2e-test-strategist`, then dispatch it in **AUDIT mode** with branch diff content + WHY context + the plan's `runtime_stack` / `## Suggested E2E Suite` + the TDD/e2e contracts - Brutally verify e2e was actually implemented AND validated against `commands/workflows/references/e2e-testing-contract.md`: real app over real transport against real infra, no fakes, polled not slept, assertions from live values, failure modes covered. Hunt for tests softened to pass (mocked-in missing pieces, weakened assertions, lowered thresholds, hardcoded `Passed`) and flag them. Give a justified N/A verdict only when the plan declares no runtime surface
 
 </parallel_tasks>
 
@@ -565,6 +575,7 @@ After creating all todo files, present comprehensive summary:
 
 - **Behavior coverage:** PASS / FAIL — [unit/session refs with weak or missing `Red`/`Green` evidence]
 - **Cleanup after refactor:** PASS / FAIL — [unit/session refs with weak or missing `Post-Refactor Green` evidence]
+- **Real e2e:** PASS / FAIL / N/A — [any Fake-in-e2e, Mock-transport, Empty/hardcoded-pass, Sleep-instead-of-poll, Test-softened-to-pass, Missing-failure-mode, or Unjustified-missing-e2e findings; N/A only with a justified no-runtime-surface exception]
 
 [If PARTIALLY or NO:]
 **Gaps:**
@@ -610,6 +621,7 @@ After creating all todo files, present comprehensive summary:
 - performance-oracle
 - architecture-strategist
 - agent-native-reviewer
+- e2e-test-strategist
 - [other agents]
 
 ### Next Steps:
@@ -682,6 +694,8 @@ Any **🔴 P1 (CRITICAL)** findings must be addressed before merging. Additional
 Any **Missing behavior coverage** TDD gate failure should be treated as merge-blocking even if the implementation currently appears to work; review requires proof, not claims.
 
 Any **Missing cleanup after refactor** TDD gate failure should block merge when cleanup/refactor happened without a trustworthy post-refactor rerun. Otherwise keep it as an important quality finding until the rerun evidence is repaired.
+
+Any **e2e gate failure** (Fake-in-e2e, Mock-transport / not-really-e2e, Empty/hardcoded pass, Sleep-instead-of-poll, Test-softened-to-pass, Missing failure-mode coverage, or Unjustified missing e2e) should be treated as merge-blocking. E2E exists to tell the truth about whether the app works end to end; a green suite that fakes, mocks, sleeps, or softens its way to pass is worse than no suite. The only acceptable absence of e2e is a justified no-runtime-surface N/A exception.
 
 Any unwaived **🏛️ CONSTITUTION VIOLATION** findings should also block merge until the code is fixed, the waiver is explicitly approved, or the constitution is amended.
 

@@ -52,6 +52,7 @@ First, read and parse the plan to extract the WHY artifacts (problem narrative, 
 - [ ] Use `commands/workflows/references/tdd-evidence-contract.md` to resolve the effective TDD contract: plan values override local defaults, `inherit` falls back, and no-local-config falls back to Ralph-driven `red-green-refactor` with unit + e2e evidence required
 - [ ] If the plan weakens Ralph/unit+e2e without a justification, flag it and add a justified exception before continuing
 - [ ] If the plan is missing the `tdd` block or the `## TDD & Evidence Contract` section, add them using the resolved local/fallback defaults before deepening other sections
+- [ ] **`runtime_stack` frontmatter + `## Runtime Stack & Environments` + `## Suggested E2E Suite`** -- extract the local/QA/prod runtime stack and the existing e2e suite; these feed the e2e hardening pass (Step 5.5). If a runtime surface exists but these sections are missing, flag it and add them using `commands/workflows/references/e2e-testing-contract.md` defaults before deepening
 
 **Check for brainstorm reference:**
 
@@ -551,6 +552,24 @@ Focus on this unresolved area and return concrete recommendations that improve e
 - If and only if the user explicitly asks for exhaustive breadth, run a broad fan-out across all discovered review/research agents.
 - Label that run as `exhaustive` in your notes so downstream readers know breadth was intentionally expanded.
 
+### 5.5 Harden the E2E Suite (e2e-test-strategist HARDEN mode)
+
+<thinking>
+E2E reveals the cracks at the seams. Deepening is where the suggested e2e suite gets stress-tested for uncovered seams, missing failure modes, weak assertions, and fake risks -- before any code is written. This never weakens the e2e contract; it only sharpens it.
+</thinking>
+
+If the plan has a runtime surface (`runtime_stack.e2e_surface` is not `false`), dispatch `e2e-test-strategist` in **HARDEN mode**. Apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md` (bundled template first, OpenViking/global last-resort, quote the first non-empty line before dispatching).
+
+- Task e2e-test-strategist(mode=HARDEN, suggested_e2e_suite, runtime_stack, user_story, success_criteria, open_risks, e2e_contract=commands/workflows/references/e2e-testing-contract.md)
+
+The strategist should:
+- find uncovered seams and missing failure-mode scenarios (concurrency, crash-and-recover, drift, backlog, cold boot, cleanup),
+- flag weak/proxy assertions, sleep-based waits, and any fake risk,
+- confirm each scenario names its environment and drives the real app,
+- tighten harness design toward real-app drive, read-only observation, and multi-condition convergence.
+
+**Fold its output into the `## Suggested E2E Suite` section.** Like all deepening, this must not weaken the TDD/e2e contract -- if it surfaces a tension with a WHY section, record a `### WHY Reassessment` note instead of editing the original. If the plan declares no runtime surface, verify the justified N/A exception exists in `tdd.exceptions` rather than inventing a suite.
+
 ### 6. Synthesize Targeted Findings
 
 <thinking>
@@ -616,10 +635,11 @@ Merge research findings back into the plan, adding depth where useful and reduci
 
 If research suggests changes to these, add a `### WHY Reassessment` note at the end of the plan for the user to review manually. Do not edit the originals.
 
-**RULE: Do not silently weaken the TDD contract.**
+**RULE: Do not silently weaken the TDD or e2e contract.**
 - Preserve the plan's `tdd` frontmatter and `## TDD & Evidence Contract`
 - You may clarify commands, add missing precedence notes, or add missing justifications
 - Any relaxation from Ralph/unit+e2e must appear as an explicit justified exception with replacement evidence
+- Hardening the `## Suggested E2E Suite` may only add coverage and rigor (real-app drive, no fakes, poll-not-sleep, no hardcoded passes per `commands/workflows/references/e2e-testing-contract.md`); it must never remove scenarios or soften assertions to make execution easier
 
 **RULE: Simplicity over accretion.**
 - You may redact or simplify non-essential implementation detail that does not materially serve the user story or success criteria.
@@ -684,6 +704,7 @@ Before finalizing:
 - [ ] Scope-expanding recommendations are explicitly marked rather than silently added to packets
 - [ ] If WHY reassessment was needed, it's in a clearly marked section at the end (not inline edits)
 - [ ] `tdd` frontmatter and `## TDD & Evidence Contract` still agree on precedence, effective loop, evidence, and exceptions
+- [ ] `## Suggested E2E Suite` was hardened (or a justified no-surface N/A confirmed), still drives the real app with no fakes/hardcoded passes, and no scenario was removed or softened
 
 ## Post-Enhancement Options
 

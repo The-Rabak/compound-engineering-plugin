@@ -346,6 +346,7 @@ Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/refere
   - **{{PROJECT_CONVENTIONS}}** -- from CLAUDE.md plus relevant constitution baselines
 - **`## TDD Execution Contract`**
   - **{{TDD_CONTRACT}}** -- the resolved execution contract: effective mode, Ralph/default loop, required unit/e2e evidence, any explicit exceptions, and any fix/regression context that the retried unit must address
+  - **{{E2E_CONTRACT}}** -- inject the rules from `commands/workflows/references/e2e-testing-contract.md` so e2e evidence means **real** e2e: drive the running app over its real transport against real infra (per the plan's `## Runtime Stack & Environments`), no fakes, poll real conditions instead of sleeping, every assertion derives from a live value, and a test the unit cannot yet satisfy fails RED rather than being softened to green. If the plan declares no runtime surface, carry the justified N/A exception instead. For e2e-heavy units, optionally dispatch `e2e-test-strategist` in ADVISE mode (via the Named Agent Dispatch protocol) and fold its guidance into this section before spawning the worker.
 
 The loaded `execution-agent` template instructs each subagent to follow a 4-phase protocol:
 1. **Understand** -- review requirements, surface ambiguities, state assumptions before coding
@@ -439,7 +440,7 @@ JWT-based stateless auth. Tokens issued by UserAuthService, validated by middlew
 
 When the subagent returns, the orchestrator processes the results:
 
-**0. Validate the execution contract evidence** -- audit the report against `commands/workflows/references/tdd-evidence-contract.md`. If a Ralph-driven unit is missing stable `Red`, `Green`, and `Post-Refactor Green` evidence blocks, treat the report as incomplete and send it back for correction before marking the unit complete.
+**0. Validate the execution contract evidence** -- audit the report against `commands/workflows/references/tdd-evidence-contract.md`. If a Ralph-driven unit is missing stable `Red`, `Green`, and `Post-Refactor Green` evidence blocks, treat the report as incomplete and send it back for correction before marking the unit complete. When e2e evidence is required, also audit it against `commands/workflows/references/e2e-testing-contract.md`: if the e2e drove an in-process seam instead of the real app, used a fake without a justified exception, slept instead of polling, or shows a hardcoded/softened pass, treat the report as incomplete and send it back for correction.
 
 **1. Write session file** to `docs/execution-sessions/${SESSION_ID}/unit-{nn}-{slug}.md`:
 

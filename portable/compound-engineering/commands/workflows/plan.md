@@ -428,6 +428,7 @@ For `vertical-slices`, every packet must also name the feature home and stay hon
 **TDD & Evidence Contract (mandatory):**
 
 - [ ] Use `commands/workflows/references/tdd-evidence-contract.md` as the single source for contract resolution, the `## TDD & Evidence Contract` section shape, Ralph evidence semantics, and approved exceptions
+- [ ] Use `commands/workflows/references/e2e-testing-contract.md` as the single source for what real e2e is. The default unit + e2e evidence requirement means **real** e2e: drive the running app over real transport against real infra, no fakes, no hardcoded passes. Any absence of e2e must be a justified N/A exception, never a silent omission
 - [ ] Add a `tdd:` frontmatter block to every plan
 - [ ] Add a `## TDD & Evidence Contract` section that states the resolved loop and evidence in plain language
 - [ ] Default to Ralph-driven `red-green-refactor` with unit + e2e evidence
@@ -455,6 +456,22 @@ The SpecFlow Analyzer should evaluate:
 - [ ] Update acceptance criteria based on SpecFlow findings
 - [ ] **Flag any flows that don't trace back to the user story** -- these may be scope creep or may reveal a gap in the user story itself
 
+### 3.5. E2E Suite Design (grounded in runtime stack + user story)
+
+E2E reveals the cracks at the seams. Before writing the template, design the suggested e2e suite so the plan ships with a real, brutal e2e strategy rather than an afterthought.
+
+First, establish the **runtime stack** the suite will drive against. Capture how the app actually runs in **local**, **QA**, and **prod**: entry points, services/datastores, how to start it, and transport (HTTP/RPC/CLI/UI/event). This becomes the `## Runtime Stack & Environments` plan section and the substrate every e2e scenario targets. If the feature has genuinely no runtime surface to drive (pure library, config/asset repo), note that here -- it must become a justified N/A exception per the e2e contract, never a silent skip.
+
+Then dispatch `e2e-test-strategist` in **DESIGN mode**. Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`: bundled template lookup first, OpenViking/global context last-resort only, and do not dispatch unless you can quote the first non-empty line of the loaded template.
+
+- Task e2e-test-strategist(mode=DESIGN, user_story, success_criteria, runtime_stack, research_findings, e2e_contract=commands/workflows/references/e2e-testing-contract.md)
+
+The strategist should return concrete scenarios traced to each success criterion, the seams each exercises, the harness/real-infra each needs, the environment(s) each runs in, explicit failure-mode scenarios, and the honest RED condition for the tracer bullet. Insert its output as the `## Suggested E2E Suite` section.
+
+- [ ] Record the runtime stack for local / QA / prod (or a justified no-surface note)
+- [ ] Include the suggested e2e suite, with every scenario traced to a success criterion and tagged with its environment
+- [ ] Confirm the suite drives the **real** app (no fakes, no hardcoded passes) and fails RED until the app satisfies it
+
 ### 4. Build One Adaptive Plan Template
 
 **Important for `/workflows:work` compatibility:** Every plan shape must still declare `execution_shape` and include the matching packet section from `commands/workflows/references/execution-shape.md`.
@@ -465,12 +482,14 @@ Use one adaptive template. Start with the decision-bearing spine, then include o
 
 #### Decision-bearing spine (always emit)
 
-- Frontmatter with `handoff`, `tdd`, and `execution_shape`
+- Frontmatter with `handoff`, `tdd`, `execution_shape`, and `runtime_stack`
 - `## Problem Narrative`
 - `## User Story`
 - `## Architectural Context`
+- `## Runtime Stack & Environments`
 - `## Success Criteria`
 - `## TDD & Evidence Contract`
+- `## Suggested E2E Suite`
 - `## Execution Shape`
 - `## Constitution Alignment`
 - `## Implementation`
@@ -525,6 +544,11 @@ tdd:
 execution_shape:
   mode: vertical-slices # vertical-slices | infra-track | fix-batch
   rationale: ""
+runtime_stack:
+  local: "" # how the app runs locally: entry point, services/datastores, start command, transport
+  qa: "" # how the app runs in QA, or "inherit" / "none"
+  prod: "" # how the app runs in prod, or "inherit" / "none"
+  e2e_surface: true # false only for genuine no-runtime-surface repos (requires a justified tdd.exceptions N/A)
 ---
 
 # [Issue Title]
@@ -547,12 +571,24 @@ which causes [impact].
 - **Data:** [only when needed to make decisions]
 - **Dependencies:** [only when they affect order/scope]
 
+## Runtime Stack & Environments
+The real running app that e2e drives against. Fill each environment or mark "inherit"/"none".
+- **Local:** [entry point, services/datastores, start command, transport]
+- **QA:** [how the app runs in QA, or inherit/none]
+- **Prod:** [how the app runs in prod, or inherit/none]
+- **E2E surface:** [yes — drive the real app here | no — record a justified N/A in `tdd.exceptions`]
+
 ## Success Criteria
 - [ ] [Measurable user outcome tied to the story]
 - [ ] [Observable behavior proving the problem is solved]
 
 ## TDD & Evidence Contract
 Use the exact section shape from `commands/workflows/references/tdd-evidence-contract.md` with resolved values for this plan. Make every deviation explicit with `replacement_evidence`.
+
+## Suggested E2E Suite
+From `e2e-test-strategist` (DESIGN mode), enforcing `commands/workflows/references/e2e-testing-contract.md`. Real app, real infra, no fakes, no hardcoded passes; each scenario fails RED until the app satisfies it. If there is no runtime surface, replace this with the justified N/A note.
+- **Scenario:** [outcome it proves] — **Serves:** [success criterion] — **Env:** [local|qa|prod] — **Seams:** [...] — **Real infra/harness:** [...] — **RED condition:** [what fails before the app is built]
+- **Failure-mode scenarios:** [concurrency / crash-and-recover / drift / cold boot / cleanup as relevant]
 
 ## Execution Shape
 - **Mode:** vertical-slices
@@ -727,6 +763,9 @@ public function processUser(User $user): array
 - [ ] Dependencies are explicit wherever ordering matters
 - [ ] Architectural context is specific enough to fill `{{ARCHITECTURAL_CONTEXT}}` in execution agent prompts
 - [ ] The plan declares unit + e2e evidence by default, or records a justified exception with replacement evidence
+- [ ] `## Runtime Stack & Environments` is filled for local / QA / prod (or marked inherit/none with a justified no-surface note)
+- [ ] `## Suggested E2E Suite` is present, every scenario traces to a success criterion and names its environment, and the suite drives the real app (no fakes, no hardcoded passes) per `commands/workflows/references/e2e-testing-contract.md`
+- [ ] Any absence of e2e is a justified N/A exception in `tdd.exceptions`, never a silent omission
 - [ ] Validation/test commands collectively satisfy the resolved TDD contract
 
 ## Directory Setup & Gitignore
@@ -825,6 +864,7 @@ The plan document is a structured contract consumed by all downstream phases. He
 - Success criteria -- validates they are testable and complete
 - Architectural Context -- uses it to ground research in the right part of the system
 - `tdd` frontmatter and `## TDD & Evidence Contract` -- preserves the effective Ralph/default loop, evidence requirements, and any justified exceptions
+- `runtime_stack` frontmatter + `## Runtime Stack & Environments` + `## Suggested E2E Suite` -- feeds `e2e-test-strategist` HARDEN mode to find uncovered seams/failure modes and sharpen the suite without weakening the e2e contract
 - `architecture_ref` or the latest matching `docs/architecture/` artifact -- uses deepening candidates, feature homes, shared/global decisions, context tiers, deletion-test decisions, interface test surfaces, seams, adapters, and contracts to guide hardening
 - **Must preserve**: Problem Narrative, User Story, and handoff contract unchanged
 
@@ -850,6 +890,7 @@ The plan document is a structured contract consumed by all downstream phases. He
 - **Architectural Context** -- used to evaluate whether the implementation respects system boundaries and integration points
 - **`architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract** -- supplies the architecture intent, feature homes, shared/global boundary decisions, context tiers, deletion-test outcomes, interfaces, seams, adapters, and contracts that reviewers must verify or flag as drift
 - **`tdd` frontmatter + `## TDD & Evidence Contract`** -- review must verify the declared evidence exists and that any deviation from Ralph/unit+e2e is explicitly justified
+- **`runtime_stack` + `## Suggested E2E Suite`** -- the mandatory `e2e-test-strategist` AUDIT reviewer uses these to verify e2e drives the real app per `commands/workflows/references/e2e-testing-contract.md` and to flag fakes, hardcoded passes, or tests softened to green
 - **`execution_shape` + execution packets** -- review uses the chosen mode to judge whether the work was decomposed honestly and executed completely
 - **Constitution Alignment and waivers** -- used to distinguish approved exceptions from blocking constitution violations
 - **Stakeholder Impact** (when present) -- informs stakeholder-perspective review

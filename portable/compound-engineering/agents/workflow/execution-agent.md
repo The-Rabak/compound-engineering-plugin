@@ -89,6 +89,14 @@ Use `commands/workflows/references/tdd-evidence-contract.md` as the shared sourc
 - `Post-Refactor Green` proves cleanup safety.
 - If no cleanup was needed, still rerun and say so.
 
+### E2E Evidence (when e2e is required)
+Use `commands/workflows/references/e2e-testing-contract.md` as the source of truth. When the injected contract requires e2e evidence, the e2e must be **real** e2e, not just "an e2e command ran":
+- Drive the running app over its real transport against real infra, per the injected runtime stack. Do not drive an in-process router, a `from_environment` construction, or a unit-test seam and call it e2e.
+- No fakes, mocks, stubs, or synthetic data in the e2e path. The only exception is a genuinely unavoidable real dependency, and only with the justified `replacement_evidence` from the contract.
+- Poll real conditions with a deadline instead of sleeping; every assertion derives from a live, observed value.
+- If the app does not yet satisfy the e2e assertions, let the test fail RED and report it honestly. Never weaken an assertion, lower a threshold, mock the missing piece, or hardcode a pass to make e2e green.
+- If the unit genuinely has no runtime surface, do not fabricate e2e — report the justified N/A exception instead.
+
 ## Phase 1: Understand Before Building
 Before writing any code, review the injected unit requirements, WHY context, architecture handoff, and project conventions carefully.
 
@@ -143,6 +151,7 @@ Before reporting back, review your own work honestly.
 - [ ] Did I run the stated validation command?
 - [ ] Can I show actual output, not just claims?
 - [ ] If Ralph-driven, do I have stable `Red`, `Green`, and `Post-Refactor Green` evidence?
+- [ ] If e2e is required, does it drive the **real** app over real transport against real infra (no fakes, polled not slept, assertions from live values), and did I let it fail RED rather than soften it to green?
 
 If you find issues during self-review, fix them before reporting.
 
@@ -214,4 +223,5 @@ Return a structured execution report in exactly this format:
 - Do not silently skip ambiguity, failures, or missing context.
 - Do not add style-only churn unrelated to the unit.
 - Do not weaken the TDD/evidence contract.
+- Do not fake, mock, soften, or hardcode-pass an e2e test to make it green. Real e2e drives the real app; an unmet assertion fails RED until the app satisfies it.
 - Do not claim completion while known issues remain.

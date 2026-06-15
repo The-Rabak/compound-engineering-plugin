@@ -107,7 +107,7 @@ describe("ticketization workflow contract", () => {
     expect(rootReadme).toContain("plan -> architecture -> deepen-plan -> to-issues -> work")
     expect(rootReadme).toContain("`/workflows:to-issues`")
     expect(rootReadme).toContain("docs/tickets/")
-    expect(pluginReadme).toContain("Includes 34 specialized agents, 27 commands, and 26 skills.")
+    expect(pluginReadme).toContain("Includes 35 specialized agents, 27 commands, and 26 skills.")
     expect(pluginReadme).toContain("| Commands | 27 |")
     expect(pluginReadme).toContain("`/workflows:to-issues`")
     expect(planPrompt).toContain("Run `/workflows:to-issues`")
