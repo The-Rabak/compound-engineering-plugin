@@ -104,14 +104,28 @@ describe("ticketization workflow contract", () => {
     )
     const changelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
 
-    expect(rootReadme).toContain("plan -> architecture -> deepen-plan -> to-issues -> work")
+    expect(rootReadme).toContain(
+      "constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound",
+    )
     expect(rootReadme).toContain("`/workflows:to-issues`")
+    expect(rootReadme).toContain("`/workflows:review` -> `/workflows:triage` -> `/workflows:compound`")
+    expect(rootReadme).toContain("36 specialized agents, 28 commands, and 26 skills")
+    expect(rootReadme).toContain(
+      "`brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`",
+    )
     expect(rootReadme).toContain("docs/tickets/")
-    expect(pluginReadme).toContain("Includes 35 specialized agents, 27 commands, and 26 skills.")
-    expect(pluginReadme).toContain("| Commands | 27 |")
+    expect(pluginReadme).toContain("Includes 36 specialized agents, 28 commands, and 26 skills.")
+    expect(pluginReadme).toContain("| Commands | 28 |")
     expect(pluginReadme).toContain("`/workflows:to-issues`")
+    expect(pluginReadme).toContain(
+      "constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound",
+    )
+    expect(pluginReadme).toContain(
+      "`brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`",
+    )
     expect(planPrompt).toContain("Run `/workflows:to-issues`")
     expect(planPrompt).toContain("tickets_ref")
     expect(changelog).toContain("**`/workflows:to-issues` command**")
+    expect(changelog).toContain("**Right-sized planning and lite workflow mode**")
   })
 })

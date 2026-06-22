@@ -34,3 +34,28 @@ Lite or compact planning may reduce ceremony, but it must still preserve:
 - scope fences, including deferred / non-goal items when they matter
 
 Compact is acceptable. Ambiguous, untraceable, or scope-expanding is not.
+
+## Lite-mode inputs
+
+Treat lite mode as explicit user intent, not an inferred downgrade. It may be triggered by `--lite`, "lite", "small", "routine", or equivalent wording that clearly asks for a compact path.
+
+Lite mode should:
+
+- skip broad questionnaires unless the user mentions tickets, docs, Figma, spec files, or other source material
+- skip external research unless the topic is high-risk, unfamiliar, or lacks local patterns
+- use compact self-checks for low-risk SpecFlow/e2e design while still recording justified evidence expectations
+
+## Lite-mode outputs
+
+Lite-mode plans still emit the same core contract, but in compact form:
+
+- problem narrative or equivalent WHY statement
+- user story or concise user outcome
+- architectural context
+- success criteria
+- TDD/evidence contract and justified exceptions
+- execution shape
+- scope fences and deferred / non-goal items when relevant
+- one or a few execution packets
+
+For low-risk small changes, recommend direct `/workflows:work <plan>` after plan creation. Keep `/workflows:architecture`, `/deepen-plan`, and `/workflows:to-issues` available when risk, ambiguity, or coordination needs justify them.

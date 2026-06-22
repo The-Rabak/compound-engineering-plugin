@@ -1,7 +1,7 @@
 ---
 name: workflows:brainstorm
 description: Explore the WHY and WHAT of a feature through collaborative dialogue, producing a user story, architectural context, and design decisions that anchor all downstream phases
-argument-hint: '[feature idea or problem to explore]'
+argument-hint: '[--lite] [feature idea or problem to explore]'
 platforms:
   codex:
     model: gpt-5.5
@@ -44,6 +44,16 @@ Evaluate whether brainstorming is needed based on the feature description.
 
 **If requirements are already clear:**
 Use **AskUserQuestion tool** to suggest: "Your requirements seem detailed enough to proceed directly to planning. Should I run `/workflows:plan` instead, or would you like to explore the idea further?"
+
+#### Lite / Already-Clear Requirement Path
+
+When the user explicitly says `--lite`, "lite", "small", "routine", or otherwise asks for a compact path, treat that as a request for right-sized discovery.
+
+- Skip broad discovery and run the shortest decision-bearing dialogue that can validate the outcome and boundaries.
+- If the request is already clear, still produce or validate the problem narrative, user story, architectural context, and success criteria before handing off.
+- Ask only for missing decisions that affect scope, risk, evidence, or downstream execution.
+- Record explicit non-goals and deferred ideas when they prevent accidental scope growth.
+- Recommend `/workflows:plan --lite <feature>` when the brainstorm has enough context for planning.
 
 ### Phase 1: Understand the Problem and the People
 
@@ -278,8 +288,24 @@ Use **AskUserQuestion tool** to present next steps:
 **Options:**
 1. **Review and refine** - Improve the document through structured self-review
 2. **Proceed to planning** - Run `/workflows:plan` (will auto-detect this brainstorm, then route through `/workflows:architecture` before `/deepen-plan`)
-3. **Ask more questions** - I have more questions to clarify before moving on
-4. **Done for now** - Return later
+3. **Create local visual artifact from this brainstorm.** - Render a local visual sidecar from the finalized brainstorm
+4. **Ask more questions** - I have more questions to clarify before moving on
+5. **Done for now** - Return later
+
+Lite mode still presents this option after the canonical Markdown artifact is finalized.
+
+**If user selects "Create local visual artifact from this brainstorm.":**
+
+Load `commands/workflows/references/local-visual-artifacts.md`, then dispatch `local-visual-artifact-renderer` with:
+
+```yaml
+source_path: docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.md
+source_workflow: brainstorm
+visual_kind: plan
+template_profile: brainstorm
+```
+
+Use the renderer only for local sidecar files under `docs/visual-artifacts/brainstorm/<slug>/`. Do not add hosted MCP setup, hosted URLs, share flows, or publishing.
 
 **If user selects "Ask more questions":** Return to Phase 1.3 (Collaborative Dialogue) and continue probing deeper -- edge cases, constraints, preferences, or areas not yet explored. After new information emerges, re-synthesize the Problem Narrative and User Story (Phase 1.4) if they need updating. Continue until the user is satisfied, then return to Phase 4.
 
@@ -290,7 +316,8 @@ Load the `document-review` skill in **brainstorm** mode and apply it to the brai
 When document-review returns "Review complete", present next steps:
 
 1. **Move to planning** - Continue to `/workflows:plan` with this document, then use `/workflows:architecture` as the supported next handoff before deepening
-2. **Done for now** - Brainstorming complete. To start planning later: `/workflows:plan [document-path]`
+2. **Create local visual artifact from this brainstorm.** - Dispatch `local-visual-artifact-renderer` with `source_path`, `source_workflow: brainstorm`, `visual_kind: plan`, and `template_profile: brainstorm`
+3. **Done for now** - Brainstorming complete. To start planning later: `/workflows:plan [document-path]`
 
 ## Output Summary
 

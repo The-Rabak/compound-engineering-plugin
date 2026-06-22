@@ -652,6 +652,8 @@ After creating all todo files, present comprehensive summary:
    - Update Work Log as you work
    - Commit todos: `git add todos/ && git commit -m "refactor: add code review findings"`
 
+6. **Create local visual recap from this review/diff.** Offer this after the canonical Markdown artifact is finalized. Load `commands/workflows/references/local-visual-artifacts.md`, then dispatch `local-visual-artifact-renderer` with `source_path` pointing to the review summary or diff artifact, `source_workflow: review`, `visual_kind: recap`, and `template_profile: review`. Use local sidecar files under `docs/visual-artifacts/review/<slug>/` only; do not add hosted MCP setup, hosted URLs, share flows, or publishing.
+
 ```
 
 ### 7. End-to-End Testing (Optional)

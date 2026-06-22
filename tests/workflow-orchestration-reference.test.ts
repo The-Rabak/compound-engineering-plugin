@@ -64,6 +64,58 @@ describe("workflow orchestration references", () => {
     expect(sliceArchitecture).toContain("## Context tiers")
   })
 
+  test("local visual artifact reference defines local-only sidecar rules", async () => {
+    const portableReference = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "local-visual-artifacts.md",
+    )
+    const generatedReference = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "local-visual-artifacts.md",
+    )
+    const forbiddenHostedTools = [
+      "create-visual-plan",
+      "create-visual-recap",
+      "update-visual-plan",
+      "patch-visual-plan-source",
+      "import-visual-plan-source",
+      "export-visual-plan",
+      "set-resource-visibility",
+    ]
+
+    for (const reference of [portableReference, generatedReference]) {
+      expect(reference).toContain("Canonical Markdown artifacts remain the source of truth")
+      expect(reference).toContain("docs/visual-artifacts/<workflow>/<slug>/")
+      expect(reference).toContain(".plan-url")
+      expect(reference).toContain("Raw upstream `visual-plan` and `visual-recap` skills are not vendored")
+      expect(reference).toContain("Hosted MCP tools are forbidden")
+      expect(reference).toContain("@agent-native/core@<approved-version> plan local check")
+      expect(reference).toContain("@agent-native/core@<approved-version> plan local preview")
+      expect(reference).toContain("@agent-native/core@<approved-version> plan local serve")
+      expect(reference).toContain("--app-url http://127.0.0.1:<port>")
+      expect(reference).toContain("--kind recap")
+      expect(reference).toContain("## Workflow Template Profiles")
+      expect(reference).toContain("### brainstorm")
+      expect(reference).toContain("### plan")
+      expect(reference).toContain("### architecture")
+      expect(reference).toContain("### review")
+      expect(reference).not.toContain("mcpServers.plan")
+      expect(reference).not.toContain("@agent-native/core@latest")
+
+      for (const tool of forbiddenHostedTools) {
+        expect(reference).toContain(`\`${tool}\``)
+      }
+    }
+  })
+
   test("minimal effective planning reference defines scope control for brainstorm and plan", async () => {
     const minimalPlanning = await readRepoFile(
       "portable",
@@ -103,6 +155,68 @@ describe("workflow orchestration references", () => {
 
     for (const prompt of [brainstormPrompt, planPrompt]) {
       expect(prompt).toContain("commands/workflows/references/minimal-effective-planning.md")
+    }
+  })
+
+  test("workflow prompts offer local visual artifacts only after canonical artifacts are finalized", async () => {
+    const workflowPrompts = {
+      brainstorm: await readRepoFile(
+        "portable",
+        "compound-engineering",
+        "commands",
+        "workflows",
+        "brainstorm.md",
+      ),
+      plan: await readRepoFile(
+        "portable",
+        "compound-engineering",
+        "commands",
+        "workflows",
+        "plan.md",
+      ),
+      architecture: await readRepoFile(
+        "portable",
+        "compound-engineering",
+        "commands",
+        "workflows",
+        "architecture.md",
+      ),
+      review: await readRepoFile(
+        "portable",
+        "compound-engineering",
+        "commands",
+        "workflows",
+        "review.md",
+      ),
+    }
+
+    expect(workflowPrompts.brainstorm).toContain("Create local visual artifact from this brainstorm.")
+    expect(workflowPrompts.plan).toContain("Create local visual plan from this plan.")
+    expect(workflowPrompts.architecture).toContain("Create local architecture visual artifact.")
+    expect(workflowPrompts.review).toContain("Create local visual recap from this review/diff.")
+
+    expect(workflowPrompts.brainstorm).toContain("Lite mode still presents this option")
+    expect(workflowPrompts.plan).toContain("Lite mode still presents this option")
+
+    expect(workflowPrompts.brainstorm).toContain("source_workflow: brainstorm")
+    expect(workflowPrompts.plan).toContain("source_workflow: plan")
+    expect(workflowPrompts.architecture).toContain("source_workflow: architecture")
+    expect(workflowPrompts.review).toContain("source_workflow: review")
+
+    for (const prompt of [workflowPrompts.brainstorm, workflowPrompts.plan, workflowPrompts.architecture]) {
+      expect(prompt).toContain("visual_kind: plan")
+    }
+    expect(workflowPrompts.review).toContain("visual_kind: recap")
+
+    for (const prompt of Object.values(workflowPrompts)) {
+      expect(prompt).toContain("local-visual-artifact-renderer")
+      expect(prompt).toContain("source_path")
+      expect(prompt).toContain("commands/workflows/references/local-visual-artifacts.md")
+      expect(prompt).toContain("after the canonical Markdown artifact is finalized")
+      expect(prompt).not.toContain("mcpServers.plan")
+      expect(prompt).not.toContain("create-visual-plan")
+      expect(prompt).not.toContain("create-visual-recap")
+      expect(prompt).not.toContain("publish visual")
     }
   })
 
@@ -151,6 +265,53 @@ describe("workflow orchestration references", () => {
     )
     expect(planPrompt).toContain("Reject or rework orphan packets")
     expect(planPrompt).toContain("Complexity Justification path")
+  })
+
+  test("lite mode is a compact path with the same planning contract", async () => {
+    const minimalPlanning = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "minimal-effective-planning.md",
+    )
+    const brainstormPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "brainstorm.md",
+    )
+    const planPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "plan.md",
+    )
+
+    expect(minimalPlanning).toContain("Lite-mode inputs")
+    expect(minimalPlanning).toContain("`--lite`")
+    expect(minimalPlanning).toContain("small")
+    expect(minimalPlanning).toContain("routine")
+    expect(minimalPlanning).toContain("Lite-mode outputs")
+    expect(minimalPlanning).toContain("one or a few execution packets")
+    expect(minimalPlanning).toContain("direct `/workflows:work <plan>`")
+
+    expect(brainstormPrompt).toContain("#### Lite / Already-Clear Requirement Path")
+    expect(brainstormPrompt).toContain("When the user explicitly says `--lite`, \"lite\", \"small\", \"routine\"")
+    expect(brainstormPrompt).toContain("Skip broad discovery and run the shortest decision-bearing dialogue")
+    expect(brainstormPrompt).toContain("still produce or validate the problem narrative, user story, architectural context, and success criteria")
+
+    expect(planPrompt).toContain("#### Lite Mode Contract")
+    expect(planPrompt).toContain("Detect explicit lite intent from `--lite`, \"lite\", \"small\", \"routine\"")
+    expect(planPrompt).toContain("Skip the structured project-input questionnaire unless the user mentions tickets, docs, Figma, or spec files")
+    expect(planPrompt).toContain("Skip external research unless the topic is high-risk, unfamiliar, or lacks local patterns")
+    expect(planPrompt).toContain("Use compact SpecFlow/e2e self-checks for low-risk work")
+    expect(planPrompt).toContain("Produce one or a few execution packets")
+    expect(planPrompt).toContain("Recommend direct `/workflows:work <plan>`")
+    expect(planPrompt).toContain("Lite mode reduces ceremony, not evidence quality or traceability")
   })
 
   test("plan, deepen, work, and review reference the shared orchestration rules instead of duplicating them", async () => {

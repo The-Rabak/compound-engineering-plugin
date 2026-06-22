@@ -1,7 +1,7 @@
 ---
 name: "workflows:plan"
 description: Transform feature descriptions into structured project plans anchored to user story, architectural context, and success criteria from brainstorm (or constructed fresh when no brainstorm exists)
-argument-hint: "[feature description, bug report, or improvement idea]"
+argument-hint: "[--lite] [feature description, bug report, or improvement idea]"
 ---
 
 # Create a plan for a new feature or bug fix
@@ -19,6 +19,8 @@ Transform feature descriptions, bug reports, or improvement ideas into well-stru
 6. **Choose the right execution shape** -- vertical slices are the default, but infra tracks and fix batches are valid when they fit the real work better
 7. **Enable architecture-first execution** -- `/workflows:architecture` turns the plan into a dedicated architecture artifact before `/deepen-plan`, `/workflows:work`, and `/workflows:review` harden or execute it
 8. **Favor simplest viable architecture** -- default to the least-complex design that satisfies the user story and success criteria; only add complexity when research-backed and explicitly justified
+9. **Preserve specified scope** -- apply `commands/workflows/references/minimal-effective-planning.md` so executable work traces to explicit requests, confirmed decisions, or necessary inferences
+10. **Support lite mode** -- when the user asks for `--lite` or another compact path, reduce ceremony while keeping the same WHY, scope, TDD/evidence, execution-shape, and review handoff contract
 
 Plans consume the project constitution from `/workflows:constitution` when available, plus lynchpin artifacts from `/workflows:brainstorm` when available, or construct feature context fresh when running standalone. Either way, the plan document carries forward the WHY, WHERE, DONE, GUARDRAIL, TDD, and **execution shape** contract that all downstream phases depend on. After the plan is written, the next explicit step is `/workflows:architecture`, not direct deepening.
 
@@ -29,6 +31,8 @@ Plans consume the project constitution from `/workflows:constitution` when avail
 **If the feature description above is empty, ask the user:** "What would you like to plan? Please describe the feature, bug fix, or improvement you have in mind."
 
 Do not proceed until you have a clear feature description from the user.
+
+Set `lite_mode=true` when the user explicitly asks for `--lite`, "lite", "small", "routine", or equivalent compact planning. Lite mode reduces ceremony, not evidence quality or traceability.
 
 ### 0. Idea Refinement & WHY Anchoring
 
@@ -91,6 +95,32 @@ When the chosen mode is `vertical-slices`, also apply `commands/workflows/refere
   - what risk/requirement this complexity addresses
   - why deferring it would be harmful
 - **Defer by default:** if complexity is useful but not required for current success criteria, place it in Future Considerations instead of core execution packets
+
+#### Specified Scope Contract (Runs Before Issue Planning)
+
+Apply `commands/workflows/references/minimal-effective-planning.md` before decomposing issues or execution packets. Every plan must classify material scope:
+
+- **Explicitly included:** work the user directly requested.
+- **Confirmed by brainstorm/grill-me:** decisions validated through brainstorm, grill-me, or equivalent user confirmation.
+- **Inferred as necessary:** work required for success criteria, TDD/evidence, constitution rules, runtime stack, or existing architecture constraints.
+- **Deferred / non-goals:** useful ideas that should not enter this execution batch.
+
+Every execution packet must trace to explicit, confirmed, or necessary scope. Reject or rework orphan packets that do not trace to one of those categories, even when they look technically useful. Optional complexity can still be included, but only through the Complexity Justification path: explain why the simpler option is insufficient, which current requirement or risk needs it, and why deferring it would harm the plan.
+
+#### Lite Mode Contract
+
+Detect explicit lite intent from `--lite`, "lite", "small", "routine", or equivalent user wording. Lite mode is a planning mode inside `/workflows:plan`, not a separate command.
+
+When `lite_mode=true`:
+
+- Skip the structured project-input questionnaire unless the user mentions tickets, docs, Figma, or spec files.
+- Skip external research unless the topic is high-risk, unfamiliar, or lacks local patterns.
+- Use compact SpecFlow/e2e self-checks for low-risk work instead of broad specialist fan-out, while still recording justified evidence expectations.
+- Produce one or a few execution packets rather than a full ticketized backlog by default.
+- Recommend direct `/workflows:work <plan>` for small changes after the plan is written.
+- Keep `/workflows:architecture`, `/deepen-plan`, and `/workflows:to-issues` available when risk, ambiguity, coordination, or file ownership warrants them.
+
+Lite mode still emits problem narrative, user story, architectural context, success criteria, TDD/evidence contract, execution shape, and scope fences. Compact prose is fine; missing traceability is not.
 
 #### Path A: Spec/Plan File Provided
 
@@ -206,7 +236,9 @@ Revise based on feedback before proceeding.
 
 ### 0.5 Gather Project Inputs
 
-Use the **AskUserQuestion tool** to collect structured project inputs. Ask these 4 questions in sequence:
+Use the **AskUserQuestion tool** to collect structured project inputs. In normal mode, ask these 4 questions in sequence.
+
+In lite mode, skip this questionnaire unless the feature description or user message mentions tickets, docs, Figma, spec files, or another source artifact. If source artifacts are mentioned, ask only the relevant follow-up questions instead of the full intake sequence.
 
 **Question 1:** "Do you have any project management tickets related to this feature?"
 - Options: `["None", "Enter URLs"]`
@@ -269,17 +301,19 @@ source_docs:
     - docs/specs/existing-feature-spec.md
 ```
 
-If all three inputs are "None", skip this step and proceed.
+If all inputs are "None" or lite mode skips this questionnaire, proceed.
 
 ## Main Tasks
 
-### 1. Local Research (Always Runs - Parallel)
+### 1. Local Research (Default - Parallel)
 
 <thinking>
 First, I need to understand the project's conventions, existing patterns, and any documented learnings. This is fast and local - it informs whether external research is needed.
 </thinking>
 
-Run these agents **in parallel** to gather local context:
+Run these agents **in parallel** to gather local context by default.
+
+In lite mode for clear, low-risk work, replace named-agent fan-out with a compact local self-check: inspect the smallest relevant files, identify established local patterns, and note whether anything makes the work high-risk, unfamiliar, or patternless. Escalate back to the default parallel research path when the self-check finds uncertainty that could change scope, evidence, or architecture.
 
 Before dispatching any named agent below, apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md`.
 
@@ -299,6 +333,8 @@ Based on signals from Step 0 and findings from Step 1, decide on external resear
 **High-risk topics → always research.** Security, payments, external APIs, data privacy. The cost of missing something is too high. This takes precedence over speed signals.
 
 **Strong local context → skip external research.** Codebase has good patterns, CLAUDE.md has guidance, user knows what they want. External research adds little value.
+
+**Lite mode low-risk local work → skip external research.** If `lite_mode=true`, the topic is not high-risk, and local patterns are clear, do not launch external research.
 
 **Uncertainty or unfamiliar territory → research.** User is exploring, codebase has no examples, new technology. External perspective is valuable.
 
@@ -419,6 +455,7 @@ For plans that will be executed via `/workflows:work`, the plan must include the
 
 Each packet must include the fields defined in `commands/workflows/references/execution-shape.md`. Plans without a declared shape and packet structure will be flagged for refinement before execution begins.
 For `vertical-slices`, every packet must also name the feature home and stay honest about which supporting code remains shared/global.
+Every execution packet must trace to explicit, confirmed, or necessary scope from the `## Specified Scope Contract`. Reject or rework orphan packets before the plan is considered execution-ready.
 
 **TDD & Evidence Contract (mandatory):**
 
@@ -433,6 +470,8 @@ For `vertical-slices`, every packet must also name the feature home and stay hon
 ### 3. SpecFlow Analysis (grounded in user story)
 
 After planning the issue structure, run SpecFlow Analyzer to validate the feature specification **against the user story and success criteria**:
+
+In lite mode for low-risk work, first run a compact orchestrator self-check against the same questions below. Dispatch `spec-flow-analyzer` only if the self-check finds ambiguous user flows, missing acceptance criteria, or edge cases that could change execution packets.
 
 Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md` to `spec-flow-analyzer`. Bundled template lookup still comes first, OpenViking/global context is last-resort only, and dispatch is forbidden unless you can quote the first non-empty line of the loaded template.
 
@@ -457,7 +496,9 @@ E2E reveals the cracks at the seams. Before writing the template, design the sug
 
 First, establish the **runtime stack** the suite will drive against. Capture how the app actually runs in **local**, **QA**, and **prod**: entry points, services/datastores, how to start it, and transport (HTTP/RPC/CLI/UI/event). This becomes the `## Runtime Stack & Environments` plan section and the substrate every e2e scenario targets. If the feature has genuinely no runtime surface to drive (pure library, config/asset repo), note that here -- it must become a justified N/A exception per the e2e contract, never a silent skip.
 
-Then dispatch `e2e-test-strategist` in **DESIGN mode**. Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`: bundled template lookup first, OpenViking/global context last-resort only, and do not dispatch unless you can quote the first non-empty line of the loaded template.
+In lite mode for low-risk work, use a compact e2e design self-check before specialist dispatch: identify the runtime surface, the smallest real scenario that proves the success criteria, and any justified no-surface exception. Dispatch `e2e-test-strategist` only when the runtime surface, seams, failure modes, or evidence replacement are unclear.
+
+When specialist dispatch is needed, dispatch `e2e-test-strategist` in **DESIGN mode**. Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`: bundled template lookup first, OpenViking/global context last-resort only, and do not dispatch unless you can quote the first non-empty line of the loaded template.
 
 - Task e2e-test-strategist(mode=DESIGN, user_story, success_criteria, runtime_stack, research_findings, e2e_contract=commands/workflows/references/e2e-testing-contract.md)
 
@@ -483,6 +524,7 @@ Use one adaptive template. Start with the decision-bearing spine, then include o
 - `## Architectural Context`
 - `## Runtime Stack & Environments`
 - `## Success Criteria`
+- `## Specified Scope Contract`
 - `## TDD & Evidence Contract`
 - `## Suggested E2E Suite`
 - `## Execution Shape`
@@ -577,6 +619,13 @@ The real running app that e2e drives against. Fill each environment or mark "inh
 - [ ] [Measurable user outcome tied to the story]
 - [ ] [Observable behavior proving the problem is solved]
 
+## Specified Scope Contract
+- **Explicitly included:** [What the user directly requested]
+- **Confirmed by brainstorm/grill-me:** [Validated decisions and chosen approach, or "None"]
+- **Inferred as necessary:** [Only work required for success criteria, TDD/evidence, constitution, runtime stack, or existing architecture]
+- **Deferred / non-goals:** [Useful ideas intentionally kept out of execution packets]
+- **Complexity Justification path:** [If adding non-trivial complexity, explain why simpler options fail and why deferral would harm current success criteria; otherwise say "None"]
+
 ## TDD & Evidence Contract
 Use the exact section shape from `commands/workflows/references/tdd-evidence-contract.md` with resolved values for this plan. Make every deviation explicit with `replacement_evidence`.
 
@@ -648,6 +697,13 @@ As an on-call engineer, I need retry logs to use one schema so that I can filter
 ## Success Criteria
 - [ ] Every retry log includes `attempt`, `delay_ms`, and `job_id`
 - [ ] Support can filter failed retries by `job_id` in one query
+
+## Specified Scope Contract
+- **Explicitly included:** normalize retry log fields.
+- **Confirmed by brainstorm/grill-me:** none.
+- **Inferred as necessary:** update focused tests for the logging schema.
+- **Deferred / non-goals:** broader observability redesign.
+- **Complexity Justification path:** none.
 
 ## Execution Shape
 - **Mode:** vertical-slices
@@ -753,6 +809,8 @@ public function processUser(User $user): array
 - [ ] If mode is `vertical-slices`, every slice names its feature home and stays explicit about what remains shared/global
 - [ ] If mode is `vertical-slices`, the first slice is a tracer bullet, not a broad foundation phase
 - [ ] If mode is `vertical-slices`, no slice is a disguised horizontal layer bucket unless it still delivers a demoable outcome
+- [ ] Every execution packet must trace to explicit, confirmed, or necessary scope from `## Specified Scope Contract`
+- [ ] Reject or rework orphan packets that do not trace to the specified-scope categories
 - [ ] Packet scope is explicit enough that an executor does not need to infer missing boundaries from adjacent packets
 - [ ] Packet success criteria are testable (not vague)
 - [ ] Dependencies are explicit wherever ordering matters
@@ -813,7 +871,10 @@ After writing the plan file, use the **AskUserQuestion tool** to present these o
 5. **Review and refine** - Improve the document through structured self-review
 6. **Start `/workflows:work`** - Begin implementing this plan locally once the architecture handoff is explicit
 7. **Start `/workflows:work` on remote** - Begin implementing in Claude Code on the web once the architecture handoff is explicit (use `&` to run in background)
-8. **Create Issue** - Create issue in project tracker
+8. **Create local visual plan from this plan.** - Render a local visual sidecar from the finalized plan
+9. **Create Issue** - Create issue in project tracker
+
+Lite mode still presents this option after the canonical Markdown artifact is finalized.
 
 Based on selection:
 - **Open plan in editor** → Run `open docs/plans/<plan_filename>.md` to open the file in the user's default editor
@@ -823,6 +884,7 @@ Based on selection:
 - **Review and refine** → Load the `document-review` skill in **plan** mode against the plan and any linked brainstorm / architecture context already recorded, using concise headless output when this handoff runs non-interactively.
 - **`/workflows:work`** → Call the /workflows:work command with the plan file path once the architecture artifact or explicit architecture handoff contract is available
 - **`/workflows:work` on remote** → Run `/workflows:work docs/plans/<plan_filename>.md &` after the architecture handoff is explicit so execution agents do not guess at boundaries
+- **Create local visual plan from this plan.** → Load `commands/workflows/references/local-visual-artifacts.md`, then dispatch `local-visual-artifact-renderer` with `source_path: docs/plans/<plan_filename>.md`, `source_workflow: plan`, `visual_kind: plan`, and `template_profile: plan`. Use local sidecar files under `docs/visual-artifacts/plan/<slug>/` only; do not add hosted MCP setup, hosted URLs, share flows, or publishing.
 - **Create Issue** → See "Issue Creation" section below
 - **Other** (automatically provided) → Accept free text for rework or specific changes
 

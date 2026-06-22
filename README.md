@@ -2,7 +2,7 @@
 
 Portable source-of-truth and OpenCode-first release repository for the `compound-engineering` plugin.
 
-The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **34 specialized agents, 28 commands, and 26 skills** built from one portable definition set and emitted into multiple agent harnesses.
+The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **36 specialized agents, 28 commands, and 26 skills** built from one portable definition set and emitted into multiple agent harnesses.
 
 - **OpenCode** -- first-class authoring and daily-driver surface
 - **GitHub Copilot** -- second-class generated output
@@ -17,9 +17,17 @@ Most AI engineering toolkits are loose collections of prompts. This repo is opin
 
 The core value is the workflow:
 
-`constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> compound`
+`constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound`
 
 Each phase has a defined purpose, handoff, and artifact. The system is designed to reduce drift between what you intended, what you built, and what got reviewed.
+
+For small, low-risk changes, the compact track is:
+
+`brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`
+
+The lite mode is for small, low-risk changes and preserves TDD/evidence and scope contracts while reducing questionnaire, research, and ticketization ceremony.
+
+Finalized brainstorms, plans, architecture handoffs, and reviews can now offer optional **local-only visual artifacts** as MDX sidecars under `docs/visual-artifacts/` without replacing the canonical Markdown artifact or adding hosted Plan MCP infrastructure. `/visual-artifact <artifact-path>` wraps local rendering so the artifact path is enough for check and static preview.
 
 Planning, deepening, and execution now default to **issue-shaped vertical slices**. The first slice should be a tracer bullet, and later slices widen or harden the feature without regressing into layer-by-layer planning. Those slices now inherit a **feature-home module contract**: business logic should live together under one feature namespace, while truly shared utilities and adapters stay global. When the work is honestly better represented as enablement or a tiny-fix batch, the workflow can switch to explicit `infra-track` or `fix-batch` execution shapes instead of faking verticality.
 
@@ -93,6 +101,7 @@ This repo is built for:
 | `/workflows:to-issues` | local ticket set in `docs/tickets/` | turns one large plan into smaller vertical-slice execution packets, builds a conservative dependency graph plus parallel-safe batches, then gates the set with `ticket-flow-auditor` |
 | `/workflows:work` | executed implementation with session state and learnings | drives the Ralph-first build loop by executing either plan units or the next safe batch from a ticket index through scoped subagents |
 | `/workflows:review` | purpose-aware review against code, architecture, tickets, and evidence | checks fit, not just syntax |
+| `/workflows:triage` | researched todo decisions and safe follow-up execution batches | turns review-created todos into approved actions before compounding or follow-up work |
 | `/workflows:compound` | reusable solution docs and refreshed learnings | turns one solved problem into future leverage |
 
 ### Recommended happy path
@@ -106,7 +115,10 @@ For most serious work:
 5. `/workflows:to-issues`
 6. `/workflows:work`
 7. `/workflows:review`
-8. `/workflows:compound`
+8. `/workflows:triage`
+9. `/workflows:compound`
+
+When review produces follow-up todos, use `/workflows:review` -> `/workflows:triage` -> `/workflows:compound` so findings are researched, resolved, and captured before the work is considered complete.
 
 ### What is new in the ticketized flow
 
@@ -128,7 +140,8 @@ Use the full chain when you want the plugin to take a feature from vague intent 
 | 5 | `/workflows:to-issues` | `docs/tickets/.../index.md` + ticket files | Use `focused-ticket-priming` to shrink each packet into one execution-ready ticket, then write the dependency graph, conservative execution batches, and `last_completed_batch` cursor into the index before `ticket-flow-auditor` signs off. |
 | 6 | `/workflows:work <ticket-index>` | `docs/execution-sessions/...` | Prefer the ticket index as the execution entrypoint. `/workflows:work` reads the next batch from the index, runs only that safe batch, and advances the index cursor when the batch is complete. |
 | 7 | `/workflows:review` | review findings | Review against code, architecture, ticket artifacts, and TDD evidence. This is where post-implementation ticket drift is checked. |
-| 8 | `/workflows:compound` | `docs/solutions/...` | Capture the solved pattern so the next task starts from accumulated knowledge instead of chat history. |
+| 8 | `/workflows:triage` | ready/complete todos or follow-up execution batches | Research review-created todos, choose actions, and execute safe batches when appropriate. |
+| 9 | `/workflows:compound` | `docs/solutions/...` | Capture the solved pattern so the next task starts from accumulated knowledge instead of chat history. |
 
 ### Practical usage rules
 
@@ -136,7 +149,8 @@ Use the full chain when you want the plugin to take a feature from vague intent 
 2. Treat **the ticket index as the default execution entrypoint** once ticket artifacts exist. Let `/workflows:work` pick the next batch from `index.md` instead of hand-selecting from the full plan every time.
 3. Keep **business logic inside the feature home** named by the architecture artifact. Only move code into shared/global space when the reason to change is truly cross-feature.
 4. Let **`ticket-flow-auditor` findings block execution** when it reports missing dependency order, weak WHY tracing, oversized tickets, or scope fences that are too vague to enforce.
-5. Use **`/brownfield-maintenance`** outside the happy path when the repo already exists and the AI-layer docs, prompts, or review contracts need repair before you can trust the workflow.
+5. Use **lite mode** for small, low-risk changes where `/workflows:plan --lite` can produce one or a few execution packets and then hand directly to `/workflows:work`.
+6. Use **`/brownfield-maintenance`** outside the happy path when the repo already exists and the AI-layer docs, prompts, or review contracts need repair before you can trust the workflow.
 
 ### What changed in the new workflow
 
@@ -144,6 +158,8 @@ Use the full chain when you want the plugin to take a feature from vague intent 
 - `/workflows:architecture` is now the supported architecture handoff
 - `/workflows:to-issues` is the local-artifact-first ticketization step between deepening and execution, now powered by the `focused-ticket-priming` skill and the reusable `ticket-flow-auditor`
 - `/workflows:work` can execute the next safe batch directly from `docs/tickets/.../index.md`, while still allowing a single ticket file when you need a narrower manual run
+- `/workflows:triage` now sits after `/workflows:review` in the documented delivery loop, before reusable knowledge is compounded
+- `/workflows:brainstorm --lite` and `/workflows:plan --lite` support compact planning for small changes without weakening TDD/evidence or scope traceability
 - plan/deepen/work now default to issue-shaped vertical slices and tracer-bullet sequencing, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake
 - `/brownfield-maintenance` is the on-demand repair path for inherited repos whose AI-layer docs, prompts, and reviewer coverage have drifted
 - Ralph-driven TDD is explicit across setup, planning, execution, and review

@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 35 specialized agents, 27 commands, and 26 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 36 specialized agents, 28 commands, and 26 skills.
 
 This Claude plugin install surface contains only Claude-relevant files. Codex plugin metadata and Copilot assets are generated only on explicit target builds/installs from the canonical portable source in `portable/compound-engineering/`.
 
@@ -16,6 +16,10 @@ This Claude plugin install surface contains only Claude-relevant files. Codex pl
 
 - `/workflows:architecture` is the architecture-improvement handoff between planning and `/deepen-plan`.
 - `/workflows:to-issues` turns plans into local ticket artifacts with compact execution context, a dependency graph, and conservative execution batches before implementation, using `focused-ticket-priming` and `ticket-flow-auditor`.
+- Full workflow track: `constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound`.
+- Lite workflow track: `brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`.
+- The lite mode is for small, low-risk changes and preserves TDD/evidence and scope contracts while reducing intake, research, and ticketization ceremony.
+- Finalized brainstorms, plans, architecture handoffs, and reviews can offer optional local-only visual artifacts as MDX sidecars under `docs/visual-artifacts/` without hosted Plan MCP infrastructure. `/visual-artifact <artifact-path>` wraps check and static preview from only the artifact path.
 - `/lrj` is a Ralph-style coordinator for existing plans: ticketize, audit/repair the ticket set, then work/review/triage/validate and commit two ticket batches at a time until the ticket index is complete.
 - `/workflows:plan`, `/deepen-plan`, and `/workflows:work` now default to issue-shaped execution slices, with the first slice acting as the tracer bullet, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake.
 - `/workflows:work` can execute the next safe batch directly from a ticket index while preserving parent plan and architecture refs.
@@ -28,6 +32,8 @@ This Claude plugin install surface contains only Claude-relevant files. Codex pl
 
 Use this sequence when you want the full compound workflow instead of an ad hoc prompt chain:
 
+`constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound`
+
 1. `/workflows:brainstorm` -- clarify the problem, user story, and constraints.
 2. `/workflows:plan` -- choose the execution shape and define packets.
 3. `/workflows:architecture` -- lock feature homes, shared/global boundaries, and architecture handoff details.
@@ -35,13 +41,23 @@ Use this sequence when you want the full compound workflow instead of an ad hoc 
 5. `/workflows:to-issues` -- generate `docs/tickets/...` with `focused-ticket-priming`, then write the dependency graph and batch cursor into `index.md` before `ticket-flow-auditor` gates the set.
 6. `/workflows:work <ticket-index>` -- execute the next safe batch from the ticket index while preserving parent plan and architecture refs.
 7. `/workflows:review` -- review code, ticket drift, architecture fit, and TDD evidence together.
-8. `/workflows:compound` -- turn the result into reusable team knowledge.
+8. `/workflows:triage` -- research and resolve review-created todos before follow-up work or compounding.
+9. `/workflows:compound` -- turn the result into reusable team knowledge.
+
+### Lite workflow path
+
+Use the compact track when the request is already clear and low risk:
+
+`brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`
+
+Lite mode keeps the problem narrative, user story, success criteria, TDD/evidence contract, execution shape, and scope fences, but usually emits one or a few execution packets instead of a full ticketized backlog.
 
 ### Ticketized execution guidance
 
 - Prefer `/workflows:to-issues` after `/deepen-plan` for the sharpest execution packets.
 - Use the ticket index as the default `/workflows:work` input once it exists.
 - Treat feature-home ownership and scope fences as hard boundaries, not suggestions.
+- Use `/workflows:triage` after `/workflows:review` when review produces todos or follow-up decisions.
 - Use `/brownfield-maintenance` separately when an inherited repo needs workflow repair before normal feature delivery.
 
 ## Migration notes
@@ -63,8 +79,8 @@ bun test
 
 | Component | Count |
 |-----------|-------|
-| Agents | 35 |
-| Commands | 27 |
+| Agents | 36 |
+| Commands | 28 |
 | Skills | 26 |
 | Hooks | 0 |
 | MCP Servers | 1 |
@@ -118,13 +134,14 @@ Agents are organized into categories for easier discovery.
 | `design-iterator` | Iteratively refine UI through systematic design iterations |
 | `figma-design-sync` | Synchronize web implementations with Figma designs |
 
-### Workflow (5)
+### Workflow (6)
 
 | Agent | Description |
 |-------|-------------|
 | `bug-reproduction-validator` | Systematically reproduce and validate bug reports |
 | `e2e-test-strategist` | Design, harden, advise on, and brutally audit real end-to-end test suites across plan, deepen, work, and review — real app, real infra, no fakes, no hardcoded passes |
 | `execution-agent` | Execute scoped `/workflows:work` tickets and units with strict clean-code, DRY, SOLID, and Ralph-aware delivery discipline |
+| `local-visual-artifact-renderer` | Convert finalized workflow Markdown artifacts into source-loyal local visual MDX sidecars |
 | `pr-comment-resolver` | Address PR comments and implement fixes |
 | `spec-flow-analyzer` | Analyze user flows and identify gaps in specifications |
 
@@ -141,9 +158,9 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/workflows:plan` | Create implementation plans with issue-shaped execution slices and structured project inputs |
 | `/workflows:architecture` | Produce a dedicated architecture improvement artifact before deepening and execution |
 | `/workflows:to-issues` | Convert plans into local vertical-slice ticket artifacts with scoped execution context |
+| `/workflows:work` | Execute execution slices systematically |
 | `/workflows:review` | Run comprehensive code reviews |
 | `/workflows:triage` | Research todos, record chosen actions, then execute safe batches in swarm mode |
-| `/workflows:work` | Execute execution slices systematically |
 | `/workflows:debug` | Orchestrate reproduction, diagnosis, fix decisions, and design escalation for bugs and failures |
 | `/workflows:compound` | Document solved problems to compound team knowledge |
 | `/workflows:compound-refresh` | Refresh stale learnings and pattern docs in `docs/solutions/` |
@@ -165,6 +182,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/resolve_todo_parallel` | Resolve todos in parallel |
 | `/test-browser` | Run browser tests on PR-affected pages |
 | `/feature-video` | Record video walkthroughs and add to PR description |
+| `/visual-artifact` | Render or serve a local visual artifact from only its artifact path |
 | `/ralph-loop` | Start a self-referential loop until completion promise is met |
 | `/cancel-ralph` | Cancel an active ralph loop |
 | `/deploy-docs` | Deploy documentation site |

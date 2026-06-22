@@ -174,4 +174,17 @@ Review depth:
 Next: Run `/deepen-plan <plan_path>` so execution hardening uses this architecture artifact.
 ```
 
+Offer this after the canonical Markdown artifact is finalized:
+
+**Create local architecture visual artifact.** Load `commands/workflows/references/local-visual-artifacts.md`, then dispatch `local-visual-artifact-renderer` with:
+
+```yaml
+source_path: docs/architecture/YYYY-MM-DD-<topic>-architecture.md
+source_workflow: architecture
+visual_kind: plan
+template_profile: architecture
+```
+
+Use local sidecar files under `docs/visual-artifacts/architecture/<slug>/` only. Do not add hosted MCP setup, hosted URLs, share flows, or publishing.
+
 NEVER CODE! This phase produces architecture guidance and artifact contracts, not implementation changes.
