@@ -64,6 +64,95 @@ describe("workflow orchestration references", () => {
     expect(sliceArchitecture).toContain("## Context tiers")
   })
 
+  test("minimal effective planning reference defines scope control for brainstorm and plan", async () => {
+    const minimalPlanning = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "minimal-effective-planning.md",
+    )
+    const brainstormPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "brainstorm.md",
+    )
+    const planPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "plan.md",
+    )
+
+    expect(minimalPlanning).toContain("minimal effective solution")
+    expect(minimalPlanning).toContain("explicit request")
+    expect(minimalPlanning).toContain("confirmed brainstorm")
+    expect(minimalPlanning).toContain("grill-me")
+    expect(minimalPlanning).toContain("necessary inference")
+    expect(minimalPlanning).toContain("deferred / non-goal")
+    expect(minimalPlanning).toContain("complexity gate")
+    expect(minimalPlanning).toContain("WHY")
+    expect(minimalPlanning).toContain("success criteria")
+    expect(minimalPlanning).toContain("TDD/evidence")
+    expect(minimalPlanning).toContain("execution shape")
+    expect(minimalPlanning).toContain("scope fences")
+
+    for (const prompt of [brainstormPrompt, planPrompt]) {
+      expect(prompt).toContain("commands/workflows/references/minimal-effective-planning.md")
+    }
+  })
+
+  test("brainstorm prompt keeps discovery right-sized while preserving downstream handoff", async () => {
+    const brainstormPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "brainstorm.md",
+    )
+
+    expect(brainstormPrompt).toContain("Ask only decision-bearing questions by default")
+    expect(brainstormPrompt).toContain("Non-goals / Deferred Ideas")
+    expect(brainstormPrompt).toContain("Scope Boundary")
+    expect(brainstormPrompt).toContain(
+      "problem narrative, user story, architectural context, and success criteria mandatory",
+    )
+    expect(brainstormPrompt).toContain(
+      "`/workflows:review` -> `/workflows:triage` -> `/workflows:compound`",
+    )
+  })
+
+  test("plan prompt enforces specified scope before execution packet decomposition", async () => {
+    const planPrompt = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "plan.md",
+    )
+    const scopeContractIndex = planPrompt.indexOf(
+      "#### Specified Scope Contract (Runs Before Issue Planning)",
+    )
+    const issuePlanningIndex = planPrompt.indexOf("### 2. Issue Planning & Structure")
+
+    expect(scopeContractIndex).toBeGreaterThan(-1)
+    expect(issuePlanningIndex).toBeGreaterThan(scopeContractIndex)
+    expect(planPrompt).toContain("## Specified Scope Contract")
+    expect(planPrompt).toContain("Explicitly included")
+    expect(planPrompt).toContain("Confirmed by brainstorm/grill-me")
+    expect(planPrompt).toContain("Inferred as necessary")
+    expect(planPrompt).toContain("Deferred / non-goals")
+    expect(planPrompt).toContain(
+      "Every execution packet must trace to explicit, confirmed, or necessary scope",
+    )
+    expect(planPrompt).toContain("Reject or rework orphan packets")
+    expect(planPrompt).toContain("Complexity Justification path")
+  })
+
   test("plan, deepen, work, and review reference the shared orchestration rules instead of duplicating them", async () => {
     const planPrompt = await readRepoFile(
       "portable",

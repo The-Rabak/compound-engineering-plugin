@@ -51,6 +51,8 @@ describe("TDD contract surfaces", () => {
     expect(planPrompt).toContain("execution_shape:")
     expect(planPrompt).toContain("## Execution Shape")
     expect(planPrompt).toContain("vertical-slices")
+    expect(planPrompt).toContain("## Specified Scope Contract")
+    expect(planPrompt).toContain("Every execution packet must trace to explicit, confirmed, or necessary scope")
   })
 
   test("deepen-plan preserves and validates the resolved TDD contract", async () => {

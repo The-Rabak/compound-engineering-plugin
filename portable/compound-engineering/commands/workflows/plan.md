@@ -24,6 +24,7 @@ Transform feature descriptions, bug reports, or improvement ideas into well-stru
 6. **Choose the right execution shape** -- vertical slices are the default, but infra tracks and fix batches are valid when they fit the real work better
 7. **Enable architecture-first execution** -- `/workflows:architecture` turns the plan into a dedicated architecture artifact before `/deepen-plan`, `/workflows:work`, and `/workflows:review` harden or execute it
 8. **Favor simplest viable architecture** -- default to the least-complex design that satisfies the user story and success criteria; only add complexity when research-backed and explicitly justified
+9. **Preserve specified scope** -- apply `commands/workflows/references/minimal-effective-planning.md` so executable work traces to explicit requests, confirmed decisions, or necessary inferences
 
 Plans consume the project constitution from `/workflows:constitution` when available, plus lynchpin artifacts from `/workflows:brainstorm` when available, or construct feature context fresh when running standalone. Either way, the plan document carries forward the WHY, WHERE, DONE, GUARDRAIL, TDD, and **execution shape** contract that all downstream phases depend on. After the plan is written, the next explicit step is `/workflows:architecture`, not direct deepening.
 
@@ -96,6 +97,17 @@ When the chosen mode is `vertical-slices`, also apply `commands/workflows/refere
   - what risk/requirement this complexity addresses
   - why deferring it would be harmful
 - **Defer by default:** if complexity is useful but not required for current success criteria, place it in Future Considerations instead of core execution packets
+
+#### Specified Scope Contract (Runs Before Issue Planning)
+
+Apply `commands/workflows/references/minimal-effective-planning.md` before decomposing issues or execution packets. Every plan must classify material scope:
+
+- **Explicitly included:** work the user directly requested.
+- **Confirmed by brainstorm/grill-me:** decisions validated through brainstorm, grill-me, or equivalent user confirmation.
+- **Inferred as necessary:** work required for success criteria, TDD/evidence, constitution rules, runtime stack, or existing architecture constraints.
+- **Deferred / non-goals:** useful ideas that should not enter this execution batch.
+
+Every execution packet must trace to explicit, confirmed, or necessary scope. Reject or rework orphan packets that do not trace to one of those categories, even when they look technically useful. Optional complexity can still be included, but only through the Complexity Justification path: explain why the simpler option is insufficient, which current requirement or risk needs it, and why deferring it would harm the plan.
 
 #### Path A: Spec/Plan File Provided
 
@@ -424,6 +436,7 @@ For plans that will be executed via `/workflows:work`, the plan must include the
 
 Each packet must include the fields defined in `commands/workflows/references/execution-shape.md`. Plans without a declared shape and packet structure will be flagged for refinement before execution begins.
 For `vertical-slices`, every packet must also name the feature home and stay honest about which supporting code remains shared/global.
+Every execution packet must trace to explicit, confirmed, or necessary scope from the `## Specified Scope Contract`. Reject or rework orphan packets before the plan is considered execution-ready.
 
 **TDD & Evidence Contract (mandatory):**
 
@@ -488,6 +501,7 @@ Use one adaptive template. Start with the decision-bearing spine, then include o
 - `## Architectural Context`
 - `## Runtime Stack & Environments`
 - `## Success Criteria`
+- `## Specified Scope Contract`
 - `## TDD & Evidence Contract`
 - `## Suggested E2E Suite`
 - `## Execution Shape`
@@ -582,6 +596,13 @@ The real running app that e2e drives against. Fill each environment or mark "inh
 - [ ] [Measurable user outcome tied to the story]
 - [ ] [Observable behavior proving the problem is solved]
 
+## Specified Scope Contract
+- **Explicitly included:** [What the user directly requested]
+- **Confirmed by brainstorm/grill-me:** [Validated decisions and chosen approach, or "None"]
+- **Inferred as necessary:** [Only work required for success criteria, TDD/evidence, constitution, runtime stack, or existing architecture]
+- **Deferred / non-goals:** [Useful ideas intentionally kept out of execution packets]
+- **Complexity Justification path:** [If adding non-trivial complexity, explain why simpler options fail and why deferral would harm current success criteria; otherwise say "None"]
+
 ## TDD & Evidence Contract
 Use the exact section shape from `commands/workflows/references/tdd-evidence-contract.md` with resolved values for this plan. Make every deviation explicit with `replacement_evidence`.
 
@@ -653,6 +674,13 @@ As an on-call engineer, I need retry logs to use one schema so that I can filter
 ## Success Criteria
 - [ ] Every retry log includes `attempt`, `delay_ms`, and `job_id`
 - [ ] Support can filter failed retries by `job_id` in one query
+
+## Specified Scope Contract
+- **Explicitly included:** normalize retry log fields.
+- **Confirmed by brainstorm/grill-me:** none.
+- **Inferred as necessary:** update focused tests for the logging schema.
+- **Deferred / non-goals:** broader observability redesign.
+- **Complexity Justification path:** none.
 
 ## Execution Shape
 - **Mode:** vertical-slices
@@ -758,6 +786,8 @@ public function processUser(User $user): array
 - [ ] If mode is `vertical-slices`, every slice names its feature home and stays explicit about what remains shared/global
 - [ ] If mode is `vertical-slices`, the first slice is a tracer bullet, not a broad foundation phase
 - [ ] If mode is `vertical-slices`, no slice is a disguised horizontal layer bucket unless it still delivers a demoable outcome
+- [ ] Every execution packet must trace to explicit, confirmed, or necessary scope from `## Specified Scope Contract`
+- [ ] Reject or rework orphan packets that do not trace to the specified-scope categories
 - [ ] Packet scope is explicit enough that an executor does not need to infer missing boundaries from adjacent packets
 - [ ] Packet success criteria are testable (not vague)
 - [ ] Dependencies are explicit wherever ordering matters
