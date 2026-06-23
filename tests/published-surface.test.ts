@@ -118,7 +118,7 @@ describe("published support surface", () => {
     const changelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
 
     expect(command).toBeDefined()
-    expect(command?.argumentHint).toBe("[artifact path] [--serve] [--port 3000]")
+    expect(command?.argumentHint).toBe("[artifact path] [--serve] [--port 3001]")
     expect(command?.codexModel).toBe("gpt-5.5")
 
     for (const content of [portableCommand, generatedCommand]) {
