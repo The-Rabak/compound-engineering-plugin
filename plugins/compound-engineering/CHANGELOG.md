@@ -5,6 +5,17 @@ All notable changes to the compound-engineering plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Local visual artifact renderer** -- Added the local visual artifact renderer agent, `local-visual-artifact-renderer`, for converting finalized brainstorm, plan, architecture, and review artifacts into source-loyal local Agent-Native MDX sidecars without hosted Plan MCP, database writes, publish/share flows, or source artifact replacement. The published surface now supports local-only visual artifacts and includes 36 specialized agents.
+- **Path-only visual artifact rendering** -- Added the path-only `/visual-artifact` wrapper so users can pass just `docs/visual-artifacts/<workflow>/<slug>` and get local check plus static preview with `--dir`, `--kind`, and `--out` inferred.
+
+### Changed
+
+- **Right-sized planning and lite workflow mode** -- `/workflows:brainstorm --lite` and `/workflows:plan --lite` now describe a compact path for small, low-risk changes while preserving WHY, success criteria, TDD/evidence, execution shape, and scope fences. The documented full workflow now runs through `/workflows:review` -> `/workflows:triage` -> `/workflows:compound`.
+
 ## [4.17.0] - 2026-06-14
 
 ### Added

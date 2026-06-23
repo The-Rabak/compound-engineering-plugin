@@ -62,6 +62,27 @@ describe("published support surface", () => {
     expect(pluginChangelog).toContain("`/workflows:architecture`")
     expect(pluginChangelog).toContain("**Ralph/TDD evidence contract**")
     expect(pluginChangelog).toContain("unit + e2e evidence")
+    expect(pluginChangelog).toContain("**Right-sized planning and lite workflow mode**")
+    expect(pluginChangelog).toContain("`/workflows:plan --lite`")
+  })
+
+  test("README surfaces document full and lite workflow tracks", async () => {
+    const rootReadme = await readRepoFile("README.md")
+    const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
+    const fullTrack =
+      "constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound"
+    const liteTrack =
+      "`brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`"
+
+    for (const readme of [rootReadme, pluginReadme]) {
+      expect(readme).toContain(fullTrack)
+      expect(readme).toContain(liteTrack)
+      expect(readme).toContain("lite mode is for small, low-risk changes")
+      expect(readme).toContain("preserves TDD/evidence and scope contracts")
+    }
+
+    expect(rootReadme).toContain("36 specialized agents, 28 commands, and 26 skills")
+    expect(rootReadme).not.toContain("34 specialized agents, 28 commands, and 26 skills")
   })
 
   test("published surfaces retire ideate as a standalone workflow and skill", async () => {
@@ -75,5 +96,174 @@ describe("published support surface", () => {
     expect(await pathExists("plugins", "compound-engineering", "commands", "workflows", "ideate.md")).toBeFalse()
     expect(await pathExists(".github", "skills", "workflows-ideate", "SKILL.md")).toBeFalse()
     expect(await pathExists("plugins", "compound-engineering", "skills", "ideate", "SKILL.md")).toBeFalse()
+  })
+
+  test("lite planning is a mode of existing workflow commands, not a new portable command", async () => {
+    const plugin = await loadPortablePlugin(portableRoot)
+    const commandNames = plugin.commands.map((command) => command.name)
+
+    expect(commandNames).toContain("workflows:brainstorm")
+    expect(commandNames).toContain("workflows:plan")
+    expect(commandNames).not.toContain("workflows:plan-lite")
+    expect(commandNames).not.toContain("workflows:lite")
+    expect(plugin.commands.length).toBe(28)
+  })
+
+  test("publishes a path-only local visual artifact render wrapper", async () => {
+    const plugin = await loadPortablePlugin(portableRoot)
+    const command = plugin.commands.find((candidate) => candidate.name === "visual-artifact")
+    const portableCommand = await readRepoFile("portable", "compound-engineering", "commands", "visual-artifact.md")
+    const generatedCommand = await readRepoFile("plugins", "compound-engineering", "commands", "visual-artifact.md")
+    const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
+    const changelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
+
+    expect(command).toBeDefined()
+    expect(command?.argumentHint).toBe("[artifact path] [--serve] [--port 3001]")
+    expect(command?.codexModel).toBe("gpt-5.5")
+
+    for (const content of [portableCommand, generatedCommand]) {
+      expect(content).toContain("The user only needs to pass the artifact path")
+      expect(content).toContain("docs/visual-artifacts/<workflow>/<slug>")
+      expect(content).toContain("If the path points to `plan.mdx`, `canvas.mdx`, `prototype.mdx`, or `preview.html`, use its parent directory")
+      expect(content).toContain("review -> `recap`; everything else -> `plan`")
+      expect(content).toContain("plan local check --dir")
+      expect(content).toContain("plan local preview --dir")
+      expect(content).toContain("--out <artifact-dir>/preview.html")
+      expect(content).toContain("--app-url http://127.0.0.1:<port>")
+      expect(content).toContain("@agent-native/core@<approved-version>")
+      expect(content).not.toContain("@agent-native/core@latest")
+      expect(content).not.toContain("mcpServers.plan")
+      expect(content).not.toContain("create-visual-plan")
+      expect(content).not.toContain("create-visual-recap")
+    }
+
+    expect(pluginReadme).toContain("| `/visual-artifact` | Render or serve a local visual artifact from only its artifact path |")
+    expect(pluginReadme).toContain("| Commands | 28 |")
+    expect(changelog).toContain("path-only `/visual-artifact` wrapper")
+  })
+
+  test("publishes one local visual artifact renderer agent across supported surfaces", async () => {
+    const plugin = await loadPortablePlugin(portableRoot)
+    const agent = plugin.agents.find((candidate) => candidate.name === "local-visual-artifact-renderer")
+    const portableAgent = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "agents",
+      "workflow",
+      "local-visual-artifact-renderer.md",
+    )
+    const generatedAgent = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "agents",
+      "workflow",
+      "local-visual-artifact-renderer.md",
+    )
+    const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
+    const changelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
+
+    expect(agent).toBeDefined()
+    expect(agent?.model).toBe("opus-4.8")
+    expect(agent?.codexModel).toBe("gpt-5.5")
+    expect(agent?.copilotModel).toBe("gpt-5.5")
+    expect(agent?.opencodeModel).toBe("openrouter/z-ai/glm-5.2")
+    expect(plugin.agents.length).toBe(36)
+
+    for (const content of [portableAgent, generatedAgent]) {
+      expect(content).toContain("source artifact is authoritative")
+      expect(content).toContain("commands/workflows/references/local-visual-artifacts.md")
+      expect(content).toContain("docs/visual-artifacts/<workflow>/<slug>/")
+      expect(content).toContain("localOnly: true")
+      expect(content).toContain("source_path")
+      expect(content).toContain("source_workflow")
+      expect(content).toContain("visual_kind")
+      expect(content).toContain("template_profile")
+      expect(content).toContain("brainstorm")
+      expect(content).toContain("architecture")
+      expect(content).toContain("kind: recap")
+      expect(content).toContain("Refuse hosted MCP")
+      expect(content).not.toContain("@agent-native/core@latest")
+    }
+
+    expect(pluginReadme).toContain("| `local-visual-artifact-renderer` |")
+    expect(pluginReadme).toContain("| Agents | 36 |")
+    expect(changelog).toContain("local visual artifact renderer")
+  })
+
+  test("local visual artifact guardrails stay local-only across the published surface", async () => {
+    const pluginYaml = await readRepoFile("portable", "compound-engineering", "plugin.yaml")
+    const portableReference = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "local-visual-artifacts.md",
+    )
+    const generatedReference = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "local-visual-artifacts.md",
+    )
+    const workflows = await Promise.all(
+      ["brainstorm", "plan", "architecture", "review"].map((workflow) =>
+        readRepoFile("portable", "compound-engineering", "commands", "workflows", `${workflow}.md`),
+      ),
+    )
+    const renderer = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "agents",
+      "workflow",
+      "local-visual-artifact-renderer.md",
+    )
+    const rootReadme = await readRepoFile("README.md")
+    const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
+    const changelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
+    const gitignore = await readRepoFile(".gitignore")
+    const forbiddenHostedTools = [
+      "create-visual-plan",
+      "create-visual-recap",
+      "update-visual-plan",
+      "patch-visual-plan-source",
+      "import-visual-plan-source",
+      "export-visual-plan",
+      "set-resource-visibility",
+    ]
+
+    expect(pluginYaml).toContain("mcpServers:")
+    expect(pluginYaml).toContain("context7:")
+    expect(pluginYaml).not.toContain("\n  plan:")
+    expect(gitignore).toContain("docs/visual-artifacts/")
+
+    for (const reference of [portableReference, generatedReference]) {
+      expect(reference).toContain("@agent-native/core@<approved-version>")
+      expect(reference).not.toContain("@agent-native/core@latest")
+      expect(reference).not.toContain("mcpServers.plan")
+
+      for (const line of reference.split("\n").filter((candidate) => candidate.includes("plan local serve"))) {
+        expect(line).toContain("--app-url http://127.0.0.1:<port>")
+      }
+    }
+
+    for (const prompt of workflows) {
+      expect(prompt).toContain("local-visual-artifact-renderer")
+      expect(prompt).not.toContain("mcpServers.plan")
+      for (const tool of forbiddenHostedTools) {
+        expect(prompt).not.toContain(tool)
+      }
+    }
+
+    expect(renderer).toContain("@agent-native/core@<approved-version>")
+    expect(renderer).not.toContain("@agent-native/core@latest")
+    expect(renderer).toContain("Do not call hosted Plan tools")
+
+    for (const docsSurface of [rootReadme, pluginReadme, changelog]) {
+      expect(docsSurface).toContain("local-only visual artifacts")
+      expect(docsSurface).toContain("36 specialized agents")
+    }
   })
 })
