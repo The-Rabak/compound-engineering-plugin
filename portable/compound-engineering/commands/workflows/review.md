@@ -550,9 +550,10 @@ Examples:
 
 **Status values:**
 
-- `pending` - New findings, needs triage/decision
-- `ready` - Approved by manager, ready to work
-- `complete` - Work finished
+- `pending` - New finding, not started, or awaiting triage/decision
+- `in_progress` - Execution is actively working this todo
+- `blocked` - A dependency, access issue, missing decision, or external condition prevents progress
+- `complete` - Work finished and validated
 
 **Priority values:**
 
@@ -647,14 +648,14 @@ After creating all todo files, present comprehensive summary:
    ```
 ````
 
-4. **Work on Approved Todos**:
+4. **Work on Triaged Todos**:
 
    ```bash
    /resolve_todo_parallel  # Fix all approved items efficiently
    ```
 
 5. **Track Progress**:
-   - Rename file when status changes: pending → ready → complete
+   - Rename file when status changes: pending → in_progress → complete, or blocked when progress is impeded
    - Update Work Log as you work
    - Commit todos: `git add todos/ && git commit -m "refactor: add code review findings"`
 
@@ -709,3 +710,15 @@ Any unwaived **🏛️ CONSTITUTION VIOLATION** findings should also block merge
 
 Any **⚠️ DRIFT RISK** findings must be explicitly reviewed by the user before acting on them. Never auto-resolve drift risk findings — they require a human decision about whether the user story should change.
 ```
+
+## Final Phase: Workflow Next Step Advisor
+
+After the review summary is presented, todo files are created when findings exist, and any optional local visual recap decision has been handled, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `workflows:review`
+- pass the review target, relevant plan/ticket/session paths, and any created todo paths
+- inspect relevant artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the workflow. If review stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.

@@ -86,5 +86,18 @@ Prefer updating the most specific existing section over inventing a catch-all no
 
 `CONTEXT.md` should be totally devoid of implementation details. Do not treat `CONTEXT.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
 
+## Final Handoff: Workflow Next Step Advisor
+
+After the grilling session has resolved the current decision branch, updated `CONTEXT.md` for canonical domain language, and updated the active brainstorm or plan with concrete decisions, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `grill-with-docs`
+- pass `CONTEXT.md`
+- pass the active brainstorm or plan path that was updated
+- inspect relevant artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the session. If grilling stopped before decisions were resolved, still run the advisor with the current state so it can mark blockers and recommend the recovery step.
+
 
 </supporting-info>

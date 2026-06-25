@@ -287,10 +287,11 @@ Use **AskUserQuestion tool** to present next steps:
 
 **Options:**
 1. **Review and refine** - Improve the document through structured self-review
-2. **Proceed to planning** - Run `/workflows:plan` (will auto-detect this brainstorm, then route through `/workflows:architecture` before `/deepen-plan`)
-3. **Create local visual artifact from this brainstorm.** - Render a local visual sidecar from the finalized brainstorm
-4. **Ask more questions** - I have more questions to clarify before moving on
-5. **Done for now** - Return later
+2. **Run `grill-with-docs`** - Stress-test the brainstorm against domain language, update `CONTEXT.md`, and write clarified decisions back into this brainstorm before planning
+3. **Proceed to planning** - Run `/workflows:plan` only if the brainstorm is already domain-sharp or the change is explicitly lite/trivial
+4. **Create local visual artifact from this brainstorm.** - Render a local visual sidecar from the finalized brainstorm
+5. **Ask more questions** - I have more questions to clarify before moving on
+6. **Done for now** - Return later
 
 Lite mode still presents this option after the canonical Markdown artifact is finalized.
 
@@ -315,9 +316,10 @@ Load the `document-review` skill in **brainstorm** mode and apply it to the brai
 
 When document-review returns "Review complete", present next steps:
 
-1. **Move to planning** - Continue to `/workflows:plan` with this document, then use `/workflows:architecture` as the supported next handoff before deepening
-2. **Create local visual artifact from this brainstorm.** - Dispatch `local-visual-artifact-renderer` with `source_path`, `source_workflow: brainstorm`, `visual_kind: plan`, and `template_profile: brainstorm`
-3. **Done for now** - Brainstorming complete. To start planning later: `/workflows:plan [document-path]`
+1. **Run `grill-with-docs`** - Challenge terminology and decisions, update `CONTEXT.md`, and enrich this brainstorm inline before planning
+2. **Move to planning** - Continue to `/workflows:plan` with this document, then use `/workflows:architecture` as the supported next handoff before deepening
+3. **Create local visual artifact from this brainstorm.** - Dispatch `local-visual-artifact-renderer` with `source_path`, `source_workflow: brainstorm`, `visual_kind: plan`, and `template_profile: brainstorm`
+4. **Done for now** - Brainstorming complete. To start planning later: `/workflows:plan [document-path]`
 
 ## Output Summary
 
@@ -336,10 +338,12 @@ Key decisions:
 - [Decision 1]
 - [Decision 2]
 
-Next: Run `/workflows:plan`, then `/workflows:architecture` before
-`/deepen-plan` or `/workflows:work`; after implementation, use
-`/workflows:review` -> `/workflows:triage` -> `/workflows:compound`
-when review produces follow-up work or reusable knowledge.
+Next: Run `grill-with-docs` against this brainstorm unless the change is
+explicitly lite/trivial, then run `/workflows:plan`, followed by
+`/workflows:architecture` before `/deepen-plan` or `/workflows:work`;
+after implementation, use `/workflows:review` -> `/workflows:triage` ->
+`/workflows:compound` when review produces follow-up work or reusable
+knowledge.
 The plan will use this brainstorm's user story and architectural context
 as its foundation, and the architecture phase will turn that into an
 explicit downstream handoff.
@@ -364,5 +368,17 @@ This brainstorm document is consumed alongside the project constitution:
 - **`/workflows:review`** -- Uses problem narrative, user story, success criteria, and constitution baselines as the frame for evaluating whether the implementation actually solves the stated problem without policy drift. Named review agents are coordinated there, not dispatched ad hoc from other workflows.
 - **`/workflows:triage`** -- Turns review-created todos into approved, deferred, or rejected follow-up work.
 - **`/workflows:compound`** -- Captures reusable learnings only when the work produced knowledge worth preserving.
+
+## Final Phase: Workflow Next Step Advisor
+
+After the brainstorm artifact is finalized and any optional local visual artifact decision has been handled, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `workflows:brainstorm`
+- pass the brainstorm path that was written
+- inspect relevant artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the workflow. If the brainstorm stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.
 
 NEVER CODE! Just explore, understand, and document the WHY, WHAT, and WHERE.

@@ -175,3 +175,15 @@ Every run must end with this shape:
 - Do not skip reproduction when the failure is still only hearsay.
 - Do not implement a fix without an explicit causal chain.
 - Do not keep debugging locally when the real problem is structural drift.
+
+## Final Phase: Workflow Next Step Advisor
+
+After the debug result is written and any fix/diagnosis/design-escalation decision is clear, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `workflows:debug`
+- pass the debug result summary and any artifact paths discovered or changed
+- inspect relevant artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the workflow. If debugging stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.

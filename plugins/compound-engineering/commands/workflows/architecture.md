@@ -182,4 +182,16 @@ template_profile: architecture
 
 Use local sidecar files under `docs/visual-artifacts/architecture/<slug>/` only. Do not add hosted MCP setup, hosted URLs, share flows, or publishing.
 
+## Final Phase: Workflow Next Step Advisor
+
+After the architecture artifact is written, recorded back into the plan, and any optional local visual artifact decision has been handled, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `workflows:architecture`
+- pass the plan path and architecture artifact path
+- inspect relevant artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the workflow. If architecture work stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.
+
 NEVER CODE! This phase produces architecture guidance and artifact contracts, not implementation changes.

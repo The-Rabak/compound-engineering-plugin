@@ -9,11 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Workflow next-step advisor** -- Added the `workflow-next-step` skill and wired it as the final phase of every core workflow so completed runs end with a checked workflow-progress list plus the exact next-session command and inputs. The full workflow now recommends `grill-with-docs` after brainstorming to update `CONTEXT.md` and enrich the brainstorm before planning.
 - **Local visual artifact renderer** -- Added the local visual artifact renderer agent, `local-visual-artifact-renderer`, for converting finalized brainstorm, plan, architecture, and review artifacts into source-loyal local Agent-Native MDX sidecars without hosted Plan MCP, database writes, publish/share flows, or source artifact replacement. The published surface now supports local-only visual artifacts and includes 36 specialized agents.
 - **Path-only visual artifact rendering** -- Added the path-only `/visual-artifact` wrapper so users can pass just `docs/visual-artifacts/<workflow>/<slug>` and get local check plus static preview with `--dir`, `--kind`, `--out`, and pinned `@agent-native/core@0.67.0` inferred.
 
 ### Changed
 
+- **Todo status taxonomy** -- Standardized file-based todo statuses on `pending`, `in_progress`, `blocked`, and `complete`, removing the old `ready` and `done` vocabulary from the todo workflow guidance.
 - **Agent-Native visual style guidance** -- Upgraded `local-visual-artifact-renderer` with a local Agent-Native plan style and primitive reference adapted from the pinned BuilderIO package. The renderer now loads that reference, generates the live `plan blocks` catalog from `@agent-native/core@0.67.0`, and treats flat Markdown-with-background output as a style failure for non-trivial artifacts.
 - **Default local visual preview** -- The `local-visual-artifact-renderer` now treats `preview.html` as the default local handoff, running `plan local check` followed by pinned `plan local preview --out <artifact-dir>/preview.html` when local command execution is available.
 - **Local visual artifact serving** -- Hardened `/visual-artifact --serve` so the wrapper keeps the default local Plan UI port at exactly `3001`, distinguishes the Plan UI `--app-url` from the Agent-Native bridge `--port`, and refuses to create dead `.plan-url` files when no local Plan UI is reachable.

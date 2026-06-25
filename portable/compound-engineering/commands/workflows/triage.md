@@ -50,7 +50,7 @@ This command is for:
 Recommended checks:
 
 ```bash
-rg '^status:\s*(pending|in_progress|ready|blocked)' todos/*.md
+rg '^status:\s*(pending|in_progress|blocked|complete)' todos/*.md
 ```
 
 ### Step 2: Read and Research Every Target Todo Before Asking Decisions
@@ -74,7 +74,7 @@ Present triage output per todo in this format:
 ---
 Todo #NNN: [Title]
 
-Status: [pending/in_progress/ready/blocked]
+Status: [pending/in_progress/blocked/complete]
 Priority: [p1/p2/p3]
 Dependencies: [none/list]
 
@@ -145,7 +145,7 @@ Expected updates:
 4. Keep status accurate:
    - stays `pending` after triage-only updates
    - moves to `in_progress` only when the todo is dispatched to execution
-   - moves to `done` only after independent validation passes
+   - moves to `complete` only after independent validation passes
 
 Work log template:
 
@@ -176,7 +176,7 @@ Create:
 
 Only put todos in the same swarm batch when:
 
-- their dependencies are already done or outside the target set,
+- their dependencies are already complete or outside the target set,
 - their likely file surfaces do not materially overlap,
 - they do not require the same migration, schema, or shared contract change,
 - their validation can run independently.
@@ -255,7 +255,7 @@ For each safe batch:
 4. Wait for every agent in the batch to complete
 5. Review each execution report separately
 6. Validate each todo independently from the orchestration context
-7. Mark validated todos `done`; keep failures `in_progress` or `blocked` with exact reasons
+7. Mark validated todos `complete`; keep failures `in_progress` or `blocked` with exact reasons
 8. Only advance dependent batches after prerequisites are truly complete
 
 Hard rules:
@@ -295,7 +295,7 @@ Completion log template:
 After all todos are processed:
 
 1. Check no target todo remains stale without explanation
-2. Report done, blocked, and in-progress counts
+2. Report complete, blocked, and in-progress counts
 3. List any follow-up work created by the execution batches
 
 Final report format:
@@ -304,10 +304,10 @@ Final report format:
 ## Triage + Swarm Execution Complete
 
 **Total Targeted:** [X]
-**Done:** [Y]
+**Complete:** [Y]
 **Still Open:** [Z]
 
-### Done
+### Complete
 - [todo-id] [title]
 
 ### Still Open / Blocked
@@ -324,7 +324,7 @@ Final report format:
 
 - `pending`: triaged and documented, but not executing yet
 - `in_progress`: actively executing or retrying
-- `done`: validated and closed
+- `complete`: validated and closed
 - `blocked`: cannot continue; include concrete blocker
 
 ### Context Discipline
@@ -360,7 +360,7 @@ Good swarm plan:
 - ❌ Don't code during the research and decision phase.
 - ❌ Don't ask multiple decisions in one message.
 - ❌ Don't start execution before the target set is fully triaged.
-- ❌ Don't mark done before orchestration-side validation.
+- ❌ Don't mark complete before orchestration-side validation.
 - ❌ Don't drop selected actions or research findings from todo logs.
 
 ## Done Options
@@ -373,3 +373,15 @@ What would you like to do next?
 1. commit and push current completed todo batch
 2. stop here
 ```
+
+## Final Phase: Workflow Next Step Advisor
+
+After all targeted todos are triaged, executed when requested, validated, and reported as complete/blocked/in-progress, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `workflows:triage`
+- pass the targeted todo paths and any validation or execution-session evidence
+- inspect relevant artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the workflow. If triage stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.

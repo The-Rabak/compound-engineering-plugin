@@ -70,7 +70,7 @@ describe("published support surface", () => {
     const rootReadme = await readRepoFile("README.md")
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
     const fullTrack =
-      "constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound"
+      "constitution -> brainstorm -> grill-with-docs -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound"
     const liteTrack =
       "`brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`"
 
@@ -81,7 +81,7 @@ describe("published support surface", () => {
       expect(readme).toContain("preserves TDD/evidence and scope contracts")
     }
 
-    expect(rootReadme).toContain("36 specialized agents, 28 commands, and 26 skills")
+    expect(rootReadme).toContain("36 specialized agents, 28 commands, and 27 skills")
     expect(rootReadme).not.toContain("34 specialized agents, 28 commands, and 26 skills")
   })
 

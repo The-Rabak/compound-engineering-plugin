@@ -163,8 +163,8 @@ The triage subcontext must:
 - select the recommended option automatically for every decision,
 - write the selected actions into the todo files,
 - immediately execute the todos using the existing triage execution flow,
-- validate each completed todo independently,
-- return done/blocked counts and validation evidence.
+- validate each todo marked `complete` independently,
+- return complete/blocked counts and validation evidence.
 
 Stop if triage leaves unblocked review todos incomplete.
 

@@ -13,7 +13,7 @@ The `todos/` directory contains a file-based tracking system for managing code r
 
 This skill should be used when:
 - Creating new todos from findings or feedback
-- Managing todo lifecycle (pending → ready → complete)
+- Managing todo lifecycle (pending → in_progress → complete, with blocked for impeded work)
 - Triaging pending items for approval
 - Checking or managing dependencies
 - Converting PR comments or code findings into tracked work
@@ -29,16 +29,19 @@ Todo files follow this naming pattern:
 
 **Components:**
 - **issue_id**: Sequential number (001, 002, 003...) - never reused
-- **status**: `pending` (needs triage), `ready` (approved), `complete` (done)
+- **status**: `pending` (not started or awaiting decision), `in_progress` (actively being worked), `blocked` (cannot proceed), `complete` (validated and closed)
 - **priority**: `p1` (critical), `p2` (important), `p3` (nice-to-have)
 - **description**: kebab-case, brief description
 
 **Examples:**
 ```
 001-pending-p1-mailer-test.md
-002-ready-p1-fix-n-plus-1.md
+002-in_progress-p1-fix-n-plus-1.md
+003-blocked-p2-await-api-access.md
 005-complete-p2-refactor-csv.md
 ```
+
+Use `in_progress` as the machine value in frontmatter and filenames. Display it as "in progress" in prose when needed.
 
 ## File Structure
 
@@ -60,7 +63,7 @@ Each todo is a markdown file with YAML frontmatter and structured sections. Use 
 **YAML frontmatter fields:**
 ```yaml
 ---
-status: ready              # pending | ready | complete
+status: pending            # pending | in_progress | blocked | complete
 priority: p1              # p1 | p2 | p3
 issue_id: "002"
 tags: [laravel, performance, database]
@@ -82,7 +85,7 @@ dependencies: ["001"]     # Issue IDs this is blocked by
    - Proposed Solutions (multiple options)
    - Acceptance Criteria
    - Add initial Work Log entry
-4. Determine status: `pending` (needs triage) or `ready` (pre-approved)
+4. Set status to `pending` unless the work is actively being executed now (`in_progress`) or cannot proceed (`blocked`)
 5. Add relevant tags for filtering
 
 **When to create a todo:**
@@ -109,12 +112,13 @@ dependencies: ["001"]     # Issue IDs this is blocked by
    - Read Problem Statement and Findings
    - Review Proposed Solutions
    - Make decision: approve, defer, or modify priority
-3. Update approved todos:
-   - Rename file: `mv {file}-pending-{pri}-{desc}.md {file}-ready-{pri}-{desc}.md`
-   - Update frontmatter: `status: pending` → `status: ready`
+3. Update triaged todos:
+   - Keep status as `pending` when the action is selected but not executing yet
+   - Move to `in_progress` only when an execution session starts
+   - Move to `blocked` when a dependency, missing decision, missing access, or external blocker prevents progress
    - Fill "Recommended Action" section with clear plan
    - Adjust priority if different from initial assessment
-4. Deferred todos stay in `pending` status
+4. Deferred todos stay in `pending` status with the deferral reason in the work log
 
 **Use slash command:** `/workflows:triage` for research-backed interactive approval workflow
 
@@ -177,9 +181,9 @@ Work logs serve as:
 
 1. Verify all acceptance criteria checked off
 2. Update Work Log with final session and results
-3. Rename file: `mv {file}-ready-{pri}-{desc}.md {file}-complete-{pri}-{desc}.md`
-4. Update frontmatter: `status: ready` → `status: complete`
-5. Check for unblocked work: `grep -l 'dependencies:.*"002"' todos/*-ready-*.md`
+3. Rename file: `mv {file}-in_progress-{pri}-{desc}.md {file}-complete-{pri}-{desc}.md`
+4. Update frontmatter: `status: in_progress` → `status: complete`
+5. Check for unblocked work: `grep -l 'dependencies:.*"002"' todos/*-pending-*.md todos/*-blocked-*.md 2>/dev/null`
 6. Commit with issue reference: `feat: resolve issue 002`
 
 ## Integration with Development Workflows
@@ -197,7 +201,7 @@ Work logs serve as:
 **Finding work:**
 ```bash
 # List highest priority unblocked work
-grep -l 'dependencies: \[\]' todos/*-ready-p1-*.md
+grep -l 'dependencies: \[\]' todos/*-pending-p1-*.md
 
 # List all pending items needing triage
 ls todos/*-pending-*.md
@@ -206,7 +210,7 @@ ls todos/*-pending-*.md
 ls todos/ | grep -o '^[0-9]\+' | sort -n | tail -1 | awk '{printf "%03d", $1+1}'
 
 # Count by status
-for status in pending ready complete; do
+for status in pending in_progress blocked complete; do
   echo "$status: $(ls -1 todos/*-$status-*.md 2>/dev/null | wc -l)"
 done
 ```

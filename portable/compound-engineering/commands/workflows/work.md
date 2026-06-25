@@ -947,3 +947,15 @@ For most features: tests + linting + following patterns is sufficient.
 - **Dumping all session files into subagent context** - Use the learnings brief, filtered by domain
 - **Over-reviewing simple changes** - Save reviewer agents for complex work
 - **80% done syndrome** - Finish the feature, don't move on early
+
+## Final Phase: Workflow Next Step Advisor
+
+After execution state is saved, source plan/ticket statuses are updated, validation evidence is recorded, and branch completion handling is done, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `workflows:work`
+- pass the source plan, ticket index or ticket path, and execution session `STATE.md`
+- inspect relevant artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the workflow. If execution stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.

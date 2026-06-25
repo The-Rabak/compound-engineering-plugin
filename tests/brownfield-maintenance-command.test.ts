@@ -40,7 +40,7 @@ describe("brownfield maintenance command", () => {
 
     expect(rootReadme).toContain("/brownfield-maintenance")
     expect(pluginReadme).toContain("/brownfield-maintenance")
-    expect(pluginReadme).toContain("Includes 36 specialized agents, 28 commands, and 26 skills.")
+    expect(pluginReadme).toContain("Includes 36 specialized agents, 28 commands, and 27 skills.")
     expect(changelog).toContain("**`/brownfield-maintenance` command**")
   })
 })
