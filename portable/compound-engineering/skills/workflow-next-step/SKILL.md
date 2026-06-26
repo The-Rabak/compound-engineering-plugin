@@ -8,6 +8,8 @@ model: gpt-5.5
 
 Use this skill as the final handoff phase after a core compound-engineering workflow completes. Inspect repo artifacts, mark completed phases for the current feature or maintenance lane, and tell the user exactly what to run in the next session.
 
+This is an advisor, not another workflow phase. It must make one narrow decision: given the artifacts that already exist, what is the next safest command or skill to run, with which inputs?
+
 ## Core Graph
 
 Full feature delivery path:
@@ -40,6 +42,30 @@ Prefer explicit paths over discovery:
 
 Never mark a step complete only because an unrelated file exists. Match by explicit ref, topic slug, date proximity, source path, or parent/child frontmatter.
 
+## Advisor Procedure
+
+Run the advisor in this order. Do not jump directly from the just-finished command to a recommendation.
+
+1. **Identify the active lane**: choose `full feature`, `lite feature`, `debug side lane`, or `maintenance lane`.
+2. **Bind the current chain**: collect only artifacts that belong to the same feature, bug, plan, ticket set, execution session, or maintenance target.
+3. **Audit completion evidence**: evaluate every relevant checklist row against the artifact checks below.
+4. **Summarize completed stages**: extract one precise handoff summary for each completed stage in the current chain.
+5. **Apply decision gates in order**: resolve blockers, optional advisor-owned actions, visual routing, then the graph transition.
+6. **Emit one next-session directive**: output the exact command or skill invocation and the inputs needed to run it.
+
+### Current Chain Selection
+
+Treat artifacts as belonging to the same chain only when at least one of these links is present:
+
+- a direct path from the completed workflow output
+- a parent/child ref such as `brainstorm_ref`, `plan_ref`, `architecture_ref`, `tickets_ref`, or execution-session source path
+- the same date/topic slug plus consistent title, problem statement, or feature home
+- a ticket index that points back to the plan being evaluated
+- todos created by the review summary for the same work/review scope
+- a debug result that names the affected feature, command, failing test, or source artifact
+
+If chain identity is ambiguous, do not infer completion from nearby files. Mark the uncertain step as unchecked and set the next recommendation to the narrowest clarifying workflow or artifact review that can resolve the ambiguity.
+
 ## Artifact Checks
 
 Use these checks to decide whether each step is complete for the current feature.
@@ -58,9 +84,41 @@ Use these checks to decide whether each step is complete for the current feature
 | triage | Targeted todo files are `complete` or explicitly `blocked`, with selected actions, research notes, and validation/work logs recorded. |
 | compound | A relevant `docs/solutions/<category>/<filename>.md` exists for a non-trivial solved problem, or the workflow explicitly determined no reusable knowledge needed capture. |
 
+## Stage Summaries
+
+The advisor must summarize previous steps so the next session can restart without re-reading the whole chain. Summaries must be factual, path-grounded, and short.
+
+For each completed stage in the active chain, include exactly one bullet in `Completed Stage Summaries`:
+
+- `constitution`: governing constraint, version/date, or why constitution was not needed for this feature
+- `brainstorm`: user story, chosen approach, key constraints, and unresolved-risk status
+- `grill-with-docs`: canonical terms/boundaries added to `CONTEXT.md` and the brainstorm/plan section that was enriched
+- `plan`: execution shape, TDD/evidence contract, packet count, runtime/e2e expectations, and known scope fences
+- `architecture`: feature home, shared/global boundary decisions, interfaces/contracts, and deepening candidates
+- `deepen-plan`: major hardening decisions, research/review conclusions, and whether ticketization is now warranted
+- `to-issues`: ticket index path, execution batches, dependency graph status, and next batch cursor
+- `work`: execution-session state path, completed units/batches, validation evidence, and source status updates
+- `review`: review result, findings count, todo paths or "no todos", and any evidence gaps
+- `triage`: todo scope resolved, code/doc changes made, validation evidence, and remaining blocked items
+- `compound`: solution doc path or explicit no-capture rationale
+- `debug`: reproduced trigger, root cause/failure mechanism, fix status, and named `Fix or next step`
+- `compound-refresh`: refreshed solution docs, stale docs left blocked, and validation performed
+
+Do not summarize stages that are merely adjacent or discovered by date. If a stage is incomplete, summarize the missing requirement in `Workflow Progress` instead of pretending there is a completed-stage summary.
+
 ## Routing Rules
 
-Apply these rules after building the checklist.
+Apply these rules only after the advisor procedure and artifact checks are complete.
+
+### Decision Gate Order
+
+1. **Validity gate**: If the just-finished artifact fails its required checks, recommend the same workflow again or `document-review <artifact-path>` when review can repair ambiguity without rerunning the workflow.
+2. **Blocked-input gate**: If the next graph step lacks a required input path, recommend the narrowest command or skill that can produce or identify that input. Do not invent a path.
+3. **Visual-plan gate**: For complete brainstorm, plan, or architecture artifacts without a matching local visual sidecar, recommend visual generation first, followed immediately by the graph command.
+4. **Graph gate**: If the artifact is valid and inputs are known, recommend the next graph command from the stage rules below.
+5. **Stop gate**: If the chain is complete or the lane is maintenance-only, recommend `complete` with no command required.
+
+### Stage Rules
 
 1. After `constitution`, recommend `/workflows:brainstorm <feature-or-goal>` when no feature artifact exists. Recommend `/workflows:plan <existing feature description or brainstorm path>` only when the user already supplied a clear feature description or a matching brainstorm exists.
 2. After `brainstorm`, recommend `grill-with-docs` before planning unless the request is explicitly lite/trivial and no domain terms or open boundary questions exist.
@@ -75,6 +133,8 @@ Apply these rules after building the checklist.
 11. After `compound`, report the chain complete unless the user wants to add the learning to a skill or refresh existing docs.
 12. After `debug`, recommend the command named in the debug result's `Fix or next step`. If the result is `rethink design`, prefer `/workflows:brainstorm` or `/workflows:architecture` according to the stated issue.
 13. After `compound-refresh`, report maintenance complete and recommend the next feature workflow only when the user has an active feature artifact.
+
+When several rules appear plausible, prefer the earliest incomplete graph stage in the active chain over a later convenience action. Never skip `review` after `work`, never skip `triage` when review-created todos are pending, and never skip `compound` when a reusable solution was produced.
 
 ## Advisor-Owned Options
 
@@ -128,6 +188,10 @@ End with exactly these sections.
 - [ ] review — <artifact or missing requirement>
 - [ ] triage — <artifact or missing requirement>
 - [ ] compound — <artifact or missing requirement>
+
+## Completed Stage Summaries
+
+- `<stage>` — <one factual summary tied to an artifact path>
 
 ## Next Session
 

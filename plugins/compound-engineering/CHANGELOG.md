@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Workflow next-step advisor gates** -- Tightened `workflow-next-step` with explicit active-chain binding, ordered validity/input/visual/graph/stop gates, and completed-stage summaries so every final workflow handoff explains both previous-stage evidence and the next-session route.
 - **Todo status taxonomy** -- Standardized file-based todo statuses on `pending`, `in_progress`, `blocked`, and `complete`, removing the old `ready` and `done` vocabulary from the todo workflow guidance.
 - **Agent-Native visual style guidance** -- Upgraded `local-visual-artifact-renderer` with a local Agent-Native plan style and primitive reference adapted from the pinned BuilderIO package. The renderer now loads that reference, generates the live `plan blocks` catalog from `@agent-native/core@0.67.0`, and treats flat Markdown-with-background output as a style failure for non-trivial artifacts.
 - **Default local visual preview** -- The `local-visual-artifact-renderer` now treats `preview.html` as the default local handoff, running `plan local check` followed by pinned `plan local preview --out <artifact-dir>/preview.html` when local command execution is available.
