@@ -726,6 +726,19 @@ Based on selection:
 - **Deepen further** → Ask which sections need more research, then re-run those agents
 - **Revert** → Restore from git or backup
 
+## Final Phase: Workflow Next Step Advisor
+
+After the plan has been deepened and post-enhancement options are handled, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `deepen-plan`
+- pass the deepened plan path
+- pass `architecture_ref` and `tickets_ref` when present
+- inspect relevant artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the workflow. If deepening stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.
+
 ## Example Enhancement
 
 **Before (from /workflows:plan):**

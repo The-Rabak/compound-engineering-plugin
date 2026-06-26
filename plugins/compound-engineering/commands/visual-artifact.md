@@ -6,7 +6,7 @@ argument-hint: "[artifact path] [--serve] [--port 3001]"
 
 # Visual Artifact
 
-Render or serve a local visual artifact folder created by `local-visual-artifact-renderer`. The user only needs to pass the artifact path; this command fills `--dir`, `--kind`, `--out`, and local `--app-url` flags.
+Render or serve a local visual artifact folder created by `local-visual-artifact-renderer`. The user only needs to pass the artifact path; this command fills `--dir`, `--kind`, `--out`, and local viewer flags.
 
 ## Inputs
 
@@ -22,8 +22,8 @@ The first argument may also point at a file inside that folder. If the path poin
 
 Optional flags:
 
-- `--serve` -- use the local Plan viewer bridge instead of static preview.
-- `--port <port>` -- localhost port for `--serve`; default to `3001`.
+- `--serve` -- use the local Plan bridge against a local Plan UI instead of static preview.
+- `--port <port>` -- wrapper-level local Plan UI port for `--serve`; default exactly to `3001`.
 
 ## Workflow
 
@@ -38,29 +38,39 @@ Optional flags:
    - Otherwise infer from the workflow path segment: review -> `recap`; everything else -> `plan`.
    - Do not ask the user for `--kind`.
 
-3. Resolve the approved local CLI version.
+3. Resolve the pinned local CLI version.
    - Read `commands/workflows/references/local-visual-artifacts.md`.
-   - If an exact approved `@agent-native/core@x.y.z` version is recorded there or in `.plan-state.json.agentNativeCoreVersion`, use it.
-   - If only `@agent-native/core@<approved-version>` is present, stop before running commands and report the exact command shape with `<approved-version>`. Do not use `@latest`.
+   - Use the plugin-pinned `@agent-native/core@0.67.0`.
+   - If `.plan-state.json.agentNativeCoreVersion` exists and differs from `0.67.0`, warn about the mismatch and continue with the plugin-pinned version.
+   - Do not use `@latest`.
 
-4. Run or report the filled command.
+4. Resolve serve settings when `--serve` is present.
+   - Set `DEFAULT_LOCAL_PLAN_APP_PORT = 3001`.
+   - If no `--port` was supplied, use exactly `3001`; never use `30001`.
+   - Validate the wrapper-level local Plan UI port as an integer from `1` to `65535`.
+   - Map the wrapper-level port only into `--app-url http://127.0.0.1:<port>`.
+   - Do not pass the wrapper-level port to the CLI `--port` flag; the CLI `--port` controls the localhost bridge port, not the Plan UI port.
+   - Treat an existing `.plan-url` as stale local bridge state unless it was produced by the current successful `serve` command.
+
+5. Run or report the filled command.
    - Default behavior runs check, then static preview.
-   - `--serve` runs the localhost viewer bridge.
-   - Do not write `.plan-url`.
+   - `--serve` first checks that `http://127.0.0.1:<port>` is already reachable as a local Plan UI.
+   - If the local Plan UI is not reachable, do not run `serve`, do not write `.plan-url`, and report the default static preview command as the fallback.
+   - This wrapper does not start the local Plan UI; it only starts the local artifact bridge after the UI is reachable.
 
 ## Filled Commands
 
 Default path-only render:
 
 ```bash
-npx @agent-native/core@<approved-version> plan local check --dir <artifact-dir>
-npx @agent-native/core@<approved-version> plan local preview --dir <artifact-dir> --kind <inferred-kind> --out <artifact-dir>/preview.html
+npx @agent-native/core@0.67.0 plan local check --dir <artifact-dir>
+npx @agent-native/core@0.67.0 plan local preview --dir <artifact-dir> --kind <inferred-kind> --out <artifact-dir>/preview.html
 ```
 
 Local viewer bridge with `--serve`:
 
 ```bash
-npx @agent-native/core@<approved-version> plan local serve --dir <artifact-dir> --kind <inferred-kind> --app-url http://127.0.0.1:<port> --open
+npx @agent-native/core@0.67.0 plan local serve --dir <artifact-dir> --kind <inferred-kind> --app-url http://127.0.0.1:<port> --open
 ```
 
 ## Guardrails
@@ -70,6 +80,8 @@ npx @agent-native/core@<approved-version> plan local serve --dir <artifact-dir> 
 - Do not call hosted Plan tools.
 - Do not use floating package tags.
 - Reject non-localhost `--app-url`; this command always fills `--app-url http://127.0.0.1:<port>` itself.
+- Never infer `30001` from the default; the default local Plan UI port is exactly `3001`.
+- Do not run `serve` when the local Plan UI origin is down, because that creates a dead `.plan-url`.
 - Do not publish, share, update visibility, or create hosted comments.
 
 ## Report
@@ -81,4 +93,5 @@ Return:
 - mode: `check+preview` or `serve`
 - command run or blocked command shape
 - output file path when preview succeeds
-- whether the approved-version gate blocked execution
+- whether `.plan-state.json` had a version mismatch
+- local Plan UI port and reachability when `--serve` is requested

@@ -257,3 +257,15 @@ Based on problem type, these agents can enhance documentation:
 
 - `/research [topic]` - Deep investigation (searches docs/solutions/ for patterns)
 - `/workflows:plan` - Planning workflow (references documented solutions)
+
+## Final Phase: Workflow Next Step Advisor
+
+After the solution document is written and any optional enhancement/review decision has been handled, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `workflows:compound`
+- pass the created `docs/solutions/<category>/<filename>.md` path
+- inspect relevant artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the workflow. If compounding stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.

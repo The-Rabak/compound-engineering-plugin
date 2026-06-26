@@ -195,4 +195,16 @@ Recommended next step:
 - Run `/workflows:work` on the generated `index.md` so execution can pick the next safe batch automatically, or target one ticket file manually when you need to force a narrower run.
 ```
 
+## Final Phase: Workflow Next Step Advisor
+
+After the ticket set is written, recorded back into the plan, and reviewed by `ticket-flow-auditor`, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `workflows:to-issues`
+- pass the plan path and generated ticket index path
+- inspect relevant artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the workflow. If ticketization stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.
+
 NEVER CODE! This phase shapes execution artifacts and context packets. It does not implement the feature itself.

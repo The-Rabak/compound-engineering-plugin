@@ -70,7 +70,7 @@ describe("published support surface", () => {
     const rootReadme = await readRepoFile("README.md")
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
     const fullTrack =
-      "constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound"
+      "constitution -> brainstorm -> grill-with-docs -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound"
     const liteTrack =
       "`brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`"
 
@@ -81,7 +81,7 @@ describe("published support surface", () => {
       expect(readme).toContain("preserves TDD/evidence and scope contracts")
     }
 
-    expect(rootReadme).toContain("36 specialized agents, 28 commands, and 26 skills")
+    expect(rootReadme).toContain("36 specialized agents, 28 commands, and 27 skills")
     expect(rootReadme).not.toContain("34 specialized agents, 28 commands, and 26 skills")
   })
 
@@ -130,8 +130,13 @@ describe("published support surface", () => {
       expect(content).toContain("plan local preview --dir")
       expect(content).toContain("--out <artifact-dir>/preview.html")
       expect(content).toContain("--app-url http://127.0.0.1:<port>")
-      expect(content).toContain("@agent-native/core@<approved-version>")
+      expect(content).toContain("DEFAULT_LOCAL_PLAN_APP_PORT = 3001")
+      expect(content).toContain("the CLI `--port` controls the localhost bridge port")
+      expect(content).toContain("Never infer `30001`")
+      expect(content).not.toContain("http://127.0.0.1:30001")
+      expect(content).toContain("@agent-native/core@0.67.0")
       expect(content).not.toContain("@agent-native/core@latest")
+      expect(content).not.toContain("@agent-native/core@<approved-version>")
       expect(content).not.toContain("mcpServers.plan")
       expect(content).not.toContain("create-visual-plan")
       expect(content).not.toContain("create-visual-recap")
@@ -159,6 +164,22 @@ describe("published support surface", () => {
       "workflow",
       "local-visual-artifact-renderer.md",
     )
+    const portableStyleReference = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "agent-native-plan-style.md",
+    )
+    const generatedStyleReference = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "agent-native-plan-style.md",
+    )
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
     const changelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
 
@@ -172,8 +193,19 @@ describe("published support surface", () => {
     for (const content of [portableAgent, generatedAgent]) {
       expect(content).toContain("source artifact is authoritative")
       expect(content).toContain("commands/workflows/references/local-visual-artifacts.md")
+      expect(content).toContain("commands/workflows/references/agent-native-plan-style.md")
+      expect(content).toContain("plan blocks --format reference")
+      expect(content).toContain("plan blocks --format schema")
       expect(content).toContain("docs/visual-artifacts/<workflow>/<slug>/")
       expect(content).toContain("localOnly: true")
+      expect(content).toContain("agentNativeCoreVersion: \"0.67.0\"")
+      expect(content).toContain("Generate `preview.html` with `npx @agent-native/core@0.67.0 plan local preview`")
+      expect(content).toContain("--out <output-dir>/preview.html")
+      expect(content).toContain("Static preview is the default handoff")
+      expect(content).toContain("Plain Markdown with only cosmetic styling is a failure")
+      expect(content).toContain("`diagram` with `data.html` / `data.css`")
+      expect(content).toContain("`file-tree`, `tabs`, `annotated-code`, `diff`, `data-model`, `api-endpoint`, `json-explorer`, `checklist`, `table`, `callout`, and `question-form`")
+      expect(content).toContain("canvas.mdx` and `wireframe` blocks only when the source artifact contains product UI")
       expect(content).toContain("source_path")
       expect(content).toContain("source_workflow")
       expect(content).toContain("visual_kind")
@@ -182,12 +214,44 @@ describe("published support surface", () => {
       expect(content).toContain("architecture")
       expect(content).toContain("kind: recap")
       expect(content).toContain("Refuse hosted MCP")
+      expect(content).toContain("do not hand-author the HTML")
       expect(content).not.toContain("@agent-native/core@latest")
     }
 
+    for (const reference of [portableStyleReference, generatedStyleReference]) {
+      expect(reference).toContain("Agent-Native Plan Style And Primitives")
+      expect(reference).toContain("BuilderIO Agent-Native visual-plan style guidance")
+      expect(reference).toContain("@agent-native/core@0.67.0")
+      expect(reference).toContain("plan blocks --format reference")
+      expect(reference).toContain("plan blocks --format schema")
+      expect(reference).toContain("Complete Primitive Catalog")
+      expect(reference).toContain("Anti-Flat-MDX Gate")
+      expect(reference).toContain("Visual Surface Choice")
+      expect(reference).toContain("Diagram Rules")
+      expect(reference).toContain("Wireframe Rules")
+      expect(reference).toContain("Canvas Rules")
+      expect(reference).toContain("`diagram`")
+      expect(reference).toContain("`file-tree`")
+      expect(reference).toContain("`tabs`")
+      expect(reference).toContain("`annotated-code`")
+      expect(reference).toContain("`diff`")
+      expect(reference).toContain("`data-model`")
+      expect(reference).toContain("`api-endpoint`")
+      expect(reference).toContain("`json-explorer`")
+      expect(reference).toContain("`checklist`")
+      expect(reference).toContain("`question-form`")
+      expect(reference).toContain("`wireframe`")
+      expect(reference).toContain(".diagram-panel")
+      expect(reference).toContain("--wf-*")
+      expect(reference).not.toContain("@agent-native/core@latest")
+    }
+
     expect(pluginReadme).toContain("| `local-visual-artifact-renderer` |")
+    expect(pluginReadme).toContain("BuilderIO Agent-Native plan style guidance")
+    expect(pluginReadme).toContain("structured Plan primitives")
     expect(pluginReadme).toContain("| Agents | 36 |")
     expect(changelog).toContain("local visual artifact renderer")
+    expect(changelog).toContain("Agent-Native visual style guidance")
   })
 
   test("local visual artifact guardrails stay local-only across the published surface", async () => {
@@ -207,6 +271,22 @@ describe("published support surface", () => {
       "workflows",
       "references",
       "local-visual-artifacts.md",
+    )
+    const portableStyleReference = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "agent-native-plan-style.md",
+    )
+    const generatedStyleReference = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "agent-native-plan-style.md",
     )
     const workflows = await Promise.all(
       ["brainstorm", "plan", "architecture", "review"].map((workflow) =>
@@ -240,13 +320,38 @@ describe("published support surface", () => {
     expect(gitignore).toContain("docs/visual-artifacts/")
 
     for (const reference of [portableReference, generatedReference]) {
-      expect(reference).toContain("@agent-native/core@<approved-version>")
+      expect(reference).toContain("@agent-native/core@0.67.0")
+      expect(reference).toContain("license: MIT")
+      expect(reference).toContain("commands/workflows/references/agent-native-plan-style.md")
+      expect(reference).toContain("plan blocks --format reference")
+      expect(reference).toContain("plan-blocks.md")
+      expect(reference).toContain("plain Markdown with a different background is a rendering failure")
       expect(reference).not.toContain("@agent-native/core@latest")
+      expect(reference).not.toContain("@agent-native/core@<approved-version>")
       expect(reference).not.toContain("mcpServers.plan")
+      expect(reference).toContain("preview.html` when command execution is available")
+      expect(reference).toContain("--kind recap --out docs/visual-artifacts/review/<slug>/preview.html")
+      expect(reference).toContain("Static preview is the default local handoff")
 
       for (const line of reference.split("\n").filter((candidate) => candidate.includes("plan local serve"))) {
-        expect(line).toContain("--app-url http://127.0.0.1:<port>")
+        expect(line).toContain("--app-url http://127.0.0.1:3001")
       }
+
+      expect(reference).toContain("never silently substitute `30001`")
+      expect(reference).toContain("`--port` controls the bridge port")
+      expect(reference).not.toContain("http://127.0.0.1:30001")
+    }
+
+    for (const reference of [portableStyleReference, generatedStyleReference]) {
+      expect(reference).toContain("local-only workflow")
+      expect(reference).toContain("license: MIT")
+      expect(reference).toContain("Do not author from memory")
+      expect(reference).toContain("Plain Markdown with only cosmetic styling is a failure")
+      expect(reference).toContain("`diagram`, `file-tree`, `tabs`, `annotated-code`, `diff`, `data-model`, `api-endpoint`, `json-explorer`, `checklist`, `table`, `callout`, `question-form`, `wireframe`")
+      expect(reference).toContain("Do not use a top canvas for architecture-only")
+      expect(reference).toContain("Do not write `<html>`, `<body>`, `<script>`, `<style>`")
+      expect(reference).not.toContain("@agent-native/core@latest")
+      expect(reference).not.toContain("mcpServers.plan")
     }
 
     for (const prompt of workflows) {
@@ -257,8 +362,9 @@ describe("published support surface", () => {
       }
     }
 
-    expect(renderer).toContain("@agent-native/core@<approved-version>")
+    expect(renderer).toContain("@agent-native/core@0.67.0")
     expect(renderer).not.toContain("@agent-native/core@latest")
+    expect(renderer).not.toContain("@agent-native/core@<approved-version>")
     expect(renderer).toContain("Do not call hosted Plan tools")
 
     for (const docsSurface of [rootReadme, pluginReadme, changelog]) {

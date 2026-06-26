@@ -81,6 +81,22 @@ describe("workflow orchestration references", () => {
       "references",
       "local-visual-artifacts.md",
     )
+    const portableStyleReference = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "agent-native-plan-style.md",
+    )
+    const generatedStyleReference = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "references",
+      "agent-native-plan-style.md",
+    )
     const forbiddenHostedTools = [
       "create-visual-plan",
       "create-visual-recap",
@@ -97,10 +113,23 @@ describe("workflow orchestration references", () => {
       expect(reference).toContain(".plan-url")
       expect(reference).toContain("Raw upstream `visual-plan` and `visual-recap` skills are not vendored")
       expect(reference).toContain("Hosted MCP tools are forbidden")
-      expect(reference).toContain("@agent-native/core@<approved-version> plan local check")
-      expect(reference).toContain("@agent-native/core@<approved-version> plan local preview")
-      expect(reference).toContain("@agent-native/core@<approved-version> plan local serve")
-      expect(reference).toContain("--app-url http://127.0.0.1:<port>")
+      expect(reference).toContain("commands/workflows/references/agent-native-plan-style.md")
+      expect(reference).toContain("native Agent-Native Plan primitives")
+      expect(reference).toContain("plain Markdown with a different background is a rendering failure")
+      expect(reference).toContain("@agent-native/core@0.67.0 plan blocks --format reference")
+      expect(reference).toContain("@agent-native/core@0.67.0 plan blocks --format schema")
+      expect(reference).toContain("@agent-native/core@0.67.0 plan local check")
+      expect(reference).toContain("@agent-native/core@0.67.0 plan local preview")
+      expect(reference).toContain("@agent-native/core@0.67.0 plan local serve")
+      expect(reference).toContain("preview.html` when command execution is available")
+      expect(reference).toContain("--kind recap --out docs/visual-artifacts/review/<slug>/preview.html")
+      expect(reference).toContain("Static preview is the default local handoff")
+      expect(reference).toContain("license: MIT")
+      expect(reference).toContain("engines.node: >=22")
+      expect(reference).toContain("--app-url http://127.0.0.1:3001")
+      expect(reference).toContain("never silently substitute `30001`")
+      expect(reference).toContain("`--port` controls the bridge port")
+      expect(reference).not.toContain("http://127.0.0.1:30001")
       expect(reference).toContain("--kind recap")
       expect(reference).toContain("## Workflow Template Profiles")
       expect(reference).toContain("### brainstorm")
@@ -109,10 +138,31 @@ describe("workflow orchestration references", () => {
       expect(reference).toContain("### review")
       expect(reference).not.toContain("mcpServers.plan")
       expect(reference).not.toContain("@agent-native/core@latest")
+      expect(reference).not.toContain("@agent-native/core@<approved-version>")
 
       for (const tool of forbiddenHostedTools) {
         expect(reference).toContain(`\`${tool}\``)
       }
+    }
+
+    for (const reference of [portableStyleReference, generatedStyleReference]) {
+      expect(reference).toContain("Agent-Native Plan Style And Primitives")
+      expect(reference).toContain("BuilderIO Agent-Native visual-plan style guidance")
+      expect(reference).toContain("Complete Primitive Catalog")
+      expect(reference).toContain("Anti-Flat-MDX Gate")
+      expect(reference).toContain("Visual Surface Choice")
+      expect(reference).toContain("Diagram Rules")
+      expect(reference).toContain("Wireframe Rules")
+      expect(reference).toContain("Canvas Rules")
+      expect(reference).toContain("Do not author from memory")
+      expect(reference).toContain("Plain Markdown with only cosmetic styling is a failure")
+      expect(reference).toContain("`diagram`")
+      expect(reference).toContain("`file-tree`")
+      expect(reference).toContain("`wireframe`")
+      expect(reference).toContain(".diagram-panel")
+      expect(reference).toContain("--wf-*")
+      expect(reference).not.toContain("@agent-native/core@latest")
+      expect(reference).not.toContain("mcpServers.plan")
     }
   })
 

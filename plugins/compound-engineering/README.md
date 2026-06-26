@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 36 specialized agents, 28 commands, and 26 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 36 specialized agents, 28 commands, and 27 skills.
 
 This Claude plugin install surface contains only Claude-relevant files. Codex plugin metadata and Copilot assets are generated only on explicit target builds/installs from the canonical portable source in `portable/compound-engineering/`.
 
@@ -16,10 +16,11 @@ This Claude plugin install surface contains only Claude-relevant files. Codex pl
 
 - `/workflows:architecture` is the architecture-improvement handoff between planning and `/deepen-plan`.
 - `/workflows:to-issues` turns plans into local ticket artifacts with compact execution context, a dependency graph, and conservative execution batches before implementation, using `focused-ticket-priming` and `ticket-flow-auditor`.
-- Full workflow track: `constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound`.
+- Full workflow track: `constitution -> brainstorm -> grill-with-docs -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound`.
 - Lite workflow track: `brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`.
 - The lite mode is for small, low-risk changes and preserves TDD/evidence and scope contracts while reducing intake, research, and ticketization ceremony.
-- Finalized brainstorms, plans, architecture handoffs, and reviews can offer optional local-only visual artifacts as MDX sidecars under `docs/visual-artifacts/` without hosted Plan MCP infrastructure. `/visual-artifact <artifact-path>` wraps check and static preview from only the artifact path.
+- Every core workflow ends with `workflow-next-step`, which prints a phase checklist and exact next-session command/input handoff.
+- Finalized brainstorms, plans, architecture handoffs, and reviews can offer optional local-only visual artifacts as MDX sidecars under `docs/visual-artifacts/` without hosted Plan MCP infrastructure. The renderer loads the BuilderIO Agent-Native plan style guidance, generates the pinned block catalog with `@agent-native/core@0.67.0`, and writes structured Plan primitives such as diagrams, file trees, tabs, checklists, annotated code, diffs, schema/API blocks, and wireframes when the source supports them. It writes `preview.html` by default, and `/visual-artifact <artifact-path>` wraps check and static preview from only the artifact path; `--serve` requires a reachable local Plan UI on `127.0.0.1:3001` by default.
 - `/lrj` is a Ralph-style coordinator for existing plans: ticketize, audit/repair the ticket set, then work/review/triage/validate and commit two ticket batches at a time until the ticket index is complete.
 - `/workflows:plan`, `/deepen-plan`, and `/workflows:work` now default to issue-shaped execution slices, with the first slice acting as the tracer bullet, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake.
 - `/workflows:work` can execute the next safe batch directly from a ticket index while preserving parent plan and architecture refs.
@@ -32,17 +33,18 @@ This Claude plugin install surface contains only Claude-relevant files. Codex pl
 
 Use this sequence when you want the full compound workflow instead of an ad hoc prompt chain:
 
-`constitution -> brainstorm -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound`
+`constitution -> brainstorm -> grill-with-docs -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound`
 
 1. `/workflows:brainstorm` -- clarify the problem, user story, and constraints.
-2. `/workflows:plan` -- choose the execution shape and define packets.
-3. `/workflows:architecture` -- lock feature homes, shared/global boundaries, and architecture handoff details.
-4. `/deepen-plan` -- harden the plan with research and review.
-5. `/workflows:to-issues` -- generate `docs/tickets/...` with `focused-ticket-priming`, then write the dependency graph and batch cursor into `index.md` before `ticket-flow-auditor` gates the set.
-6. `/workflows:work <ticket-index>` -- execute the next safe batch from the ticket index while preserving parent plan and architecture refs.
-7. `/workflows:review` -- review code, ticket drift, architecture fit, and TDD evidence together.
-8. `/workflows:triage` -- research and resolve review-created todos before follow-up work or compounding.
-9. `/workflows:compound` -- turn the result into reusable team knowledge.
+2. `grill-with-docs` -- stress-test domain language, update `CONTEXT.md`, and enrich the brainstorm inline.
+3. `/workflows:plan` -- choose the execution shape and define packets.
+4. `/workflows:architecture` -- lock feature homes, shared/global boundaries, and architecture handoff details.
+5. `/deepen-plan` -- harden the plan with research and review.
+6. `/workflows:to-issues` -- generate `docs/tickets/...` with `focused-ticket-priming`, then write the dependency graph and batch cursor into `index.md` before `ticket-flow-auditor` gates the set.
+7. `/workflows:work <ticket-index>` -- execute the next safe batch from the ticket index while preserving parent plan and architecture refs.
+8. `/workflows:review` -- review code, ticket drift, architecture fit, and TDD evidence together.
+9. `/workflows:triage` -- research and resolve review-created todos before follow-up work or compounding.
+10. `/workflows:compound` -- turn the result into reusable team knowledge.
 
 ### Lite workflow path
 
@@ -81,7 +83,7 @@ bun test
 |-----------|-------|
 | Agents | 36 |
 | Commands | 28 |
-| Skills | 26 |
+| Skills | 27 |
 | Hooks | 0 |
 | MCP Servers | 1 |
 
@@ -225,6 +227,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `setup` | Configure which review agents run for your project |
 | `systematic-debugging` | Structured debugging with explicit causal chains, prediction tests, and design escalation gates |
 | `ubiquitous-language` | Build a DDD-style glossary and canonical domain vocabulary from the conversation |
+| `workflow-next-step` | Inspect workflow artifacts, print the phase checklist, and hand off the exact next-session command |
 
 ### Multi-Agent Orchestration
 

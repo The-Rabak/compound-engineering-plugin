@@ -958,4 +958,17 @@ The plan document is a structured contract consumed by all downstream phases. He
 - **Stakeholder Impact** (when present) -- informs stakeholder-perspective review
 - **Named reviewer ownership** -- `/workflows:review` owns named review-agent coordination, template loading, and WHY-context injection for reviewer prompts
 
+## Final Phase: Workflow Next Step Advisor
+
+After the plan file is written, post-generation options are handled, and any optional local visual artifact decision has been handled, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `workflows:plan`
+- pass the plan path that was written
+- pass `brainstorm_ref` and `architecture_ref` when present
+- inspect relevant artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the workflow. If planning stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.
+
 NEVER CODE! Just research and write the plan.

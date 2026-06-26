@@ -279,3 +279,15 @@ handoff:
 - [ ] The constitution uses durable, observable language
 - [ ] Downstream workflow expectations are explicit
 - [ ] Versioning and amendment handling are defined
+
+## Final Phase: Workflow Next Step Advisor
+
+After `docs/constitution.md` is written or amended and the downstream impact summary is complete, load the `workflow-next-step` skill.
+
+Run it in advisory mode only:
+- pass the current workflow name: `workflows:constitution`
+- pass `docs/constitution.md`
+- inspect relevant feature artifacts without mutating them
+- output the full core workflow checklist and the exact next-session command with required inputs
+
+This must be the last phase of the workflow. If constitution work stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.
