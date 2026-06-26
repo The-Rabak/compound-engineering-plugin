@@ -706,29 +706,13 @@ Before finalizing:
 - [ ] `tdd` frontmatter and `## TDD & Evidence Contract` still agree on precedence, effective loop, evidence, and exceptions
 - [ ] `## Suggested E2E Suite` was hardened (or a justified no-surface N/A confirmed), still drives the real app with no fakes/hardcoded passes, and no scenario was removed or softened
 
-## Post-Enhancement Options
+## Post-Enhancement Boundary
 
-After writing the enhanced plan, use the **AskUserQuestion tool** to present these options:
-
-**Question:** "Plan deepened at `[plan_path]`. What would you like to do next?"
-
-**Options:**
-1. **View diff** - Show what was added/changed
-2. **Review and refine** - Improve the enhanced plan through structured document review
-3. **Start `/workflows:work`** - Begin implementing this enhanced plan with its architecture artifact or explicit handoff contract
-4. **Deepen further** - Run another round of research on specific sections
-5. **Revert** - Restore original plan (if backup exists)
-
-Based on selection:
-- **View diff** → Run `git diff [plan_path]` or show before/after
-- **Review and refine** → Load the `document-review` skill in **plan** mode against the enhanced plan and the architecture artifact or explicit handoff contract that informed it, keeping the review concise and handoff-focused
-- **`/workflows:work`** → Call the /workflows:work command with the plan file path so execution loads the same architecture artifact or explicit handoff contract
-- **Deepen further** → Ask which sections need more research, then re-run those agents
-- **Revert** → Restore from git or backup
+Do not offer post-enhancement option menus, direct work starts, review/refine choices, deepen-further loops, diff viewing, or revert prompts here. The final `workflow-next-step` advisor owns downstream routing after the enhanced plan is written.
 
 ## Final Phase: Workflow Next Step Advisor
 
-After the plan has been deepened and post-enhancement options are handled, load the `workflow-next-step` skill.
+After the plan has been deepened, load the `workflow-next-step` skill.
 
 Run it in advisory mode only:
 - pass the current workflow name: `deepen-plan`

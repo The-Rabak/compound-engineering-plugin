@@ -288,10 +288,17 @@ describe("published support surface", () => {
       "references",
       "agent-native-plan-style.md",
     )
-    const workflows = await Promise.all(
+    const [brainstormWorkflow, planWorkflow, architectureWorkflow, reviewWorkflow] = await Promise.all(
       ["brainstorm", "plan", "architecture", "review"].map((workflow) =>
         readRepoFile("portable", "compound-engineering", "commands", "workflows", `${workflow}.md`),
       ),
+    )
+    const workflowNextStep = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "workflow-next-step",
+      "SKILL.md",
     )
     const renderer = await readRepoFile(
       "portable",
@@ -354,8 +361,17 @@ describe("published support surface", () => {
       expect(reference).not.toContain("mcpServers.plan")
     }
 
-    for (const prompt of workflows) {
-      expect(prompt).toContain("local-visual-artifact-renderer")
+    expect(workflowNextStep).toContain("local-visual-artifact-renderer")
+    expect(workflowNextStep).toContain("Generate the local visual plan")
+    expect(workflowNextStep).toContain("Do not recommend hosted Plan MCP setup")
+    expect(workflowNextStep).not.toContain("mcpServers.plan")
+    for (const tool of forbiddenHostedTools) {
+      expect(workflowNextStep).not.toContain(tool)
+    }
+
+    for (const prompt of [brainstormWorkflow, planWorkflow, architectureWorkflow, reviewWorkflow]) {
+      expect(prompt).not.toContain("local-visual-artifact-renderer")
+      expect(prompt).not.toContain("commands/workflows/references/local-visual-artifacts.md")
       expect(prompt).not.toContain("mcpServers.plan")
       for (const tool of forbiddenHostedTools) {
         expect(prompt).not.toContain(tool)

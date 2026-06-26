@@ -857,53 +857,9 @@ Examples:
 - ❌ `docs/plans/2026-01-15-feat: user auth-plan.md` (invalid characters - colon and space)
 - ❌ `docs/plans/feat-user-auth-plan.md` (missing date prefix)
 
-## Post-Generation Options
+## Post-Generation Boundary
 
-After writing the plan file, use the **AskUserQuestion tool** to present these options:
-
-**Question:** "Plan ready at `docs/plans/YYYY-MM-DD-<type>-<name>-plan.md`. What would you like to do next?"
-
-**Options:**
-1. **Open plan in editor** - Open the plan file for review
-2. **Run `/workflows:architecture`** - Create the dedicated architecture improvement artifact in `docs/architecture/` and record the handoff contract
-3. **Run `/deepen-plan`** - Enhance each section with architecture guidance plus parallel research agents after the architecture handoff is explicit
-4. **Run `/workflows:to-issues`** - Create local ticket artifacts once the architecture handoff is explicit
-5. **Review and refine** - Improve the document through structured self-review
-6. **Start `/workflows:work`** - Begin implementing this plan locally once the architecture handoff is explicit
-7. **Start `/workflows:work` on remote** - Begin implementing in Claude Code on the web once the architecture handoff is explicit (use `&` to run in background)
-8. **Create local visual plan from this plan.** - Render a local visual sidecar from the finalized plan
-9. **Create Issue** - Create issue in project tracker
-
-Lite mode still presents this option after the canonical Markdown artifact is finalized.
-
-Based on selection:
-- **Open plan in editor** → Run `open docs/plans/<plan_filename>.md` to open the file in the user's default editor
-- **`/workflows:architecture`** → Call the /workflows:architecture command with the plan file path
-- **`/deepen-plan`** → Call the /deepen-plan command with the plan file path only after architecture improvement is complete and `architecture_ref` or a labeled handoff artifact has been recorded
-- **`/workflows:to-issues`** → Call `/workflows:to-issues` with the plan file path after architecture guidance is explicit; recommend this after `/deepen-plan`, but allow it directly after `/workflows:plan` when the user wants earlier backlog shaping
-- **Review and refine** → Load the `document-review` skill in **plan** mode against the plan and any linked brainstorm / architecture context already recorded, using concise headless output when this handoff runs non-interactively.
-- **`/workflows:work`** → Call the /workflows:work command with the plan file path once the architecture artifact or explicit architecture handoff contract is available
-- **`/workflows:work` on remote** → Run `/workflows:work docs/plans/<plan_filename>.md &` after the architecture handoff is explicit so execution agents do not guess at boundaries
-- **Create local visual plan from this plan.** → Load `commands/workflows/references/local-visual-artifacts.md`, then dispatch `local-visual-artifact-renderer` with `source_path: docs/plans/<plan_filename>.md`, `source_workflow: plan`, `visual_kind: plan`, and `template_profile: plan`. Use local sidecar files under `docs/visual-artifacts/plan/<slug>/` only; do not add hosted MCP setup, hosted URLs, share flows, or publishing.
-- **Create Issue** → See "Issue Creation" section below
-- **Other** (automatically provided) → Accept free text for rework or specific changes
-
-**Note:** If running `/workflows:plan` with ultrathink enabled, automatically run `/workflows:architecture` and then `/deepen-plan` after plan creation for maximum depth and grounding.
-
-Loop back to options after Simplify or Other changes until user selects `/workflows:work`.
-
-## Issue Creation
-
-When user selects "Create Issue":
-
-1. **Save the plan as a tracker-ready description:**
-
-   The plan file is already in markdown format. Inform the user:
-   - "Plan saved at `[plan_path]`. You can create a ticket using the plan content."
-   - Copy the plan content to clipboard if possible, or point to the file path
-
-2. **After creation:**
-   - Ask if they want to proceed to `/workflows:architecture`, then `/deepen-plan`, or `/workflows:work` once the architecture handoff is explicit
+Do not offer post-generation option menus, issue creation handoffs, direct work starts, remote work starts, review/refine choices, or local visual artifact choices here. The final `workflow-next-step` advisor owns downstream routing after the plan file is written.
 
 ## Downstream Phase Integration
 
@@ -955,7 +911,7 @@ The plan document is a structured contract consumed by all downstream phases. He
 
 ## Final Phase: Workflow Next Step Advisor
 
-After the plan file is written, post-generation options are handled, and any optional local visual artifact decision has been handled, load the `workflow-next-step` skill.
+After the plan file is written, load the `workflow-next-step` skill.
 
 Run it in advisory mode only:
 - pass the current workflow name: `workflows:plan`

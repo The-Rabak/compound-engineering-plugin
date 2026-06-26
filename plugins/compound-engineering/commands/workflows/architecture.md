@@ -169,22 +169,11 @@ Review depth:
 Next: Run `/deepen-plan <plan_path>` so execution hardening uses this architecture artifact.
 ```
 
-Offer this after the canonical Markdown artifact is finalized:
-
-**Create local architecture visual artifact.** Load `commands/workflows/references/local-visual-artifacts.md`, then dispatch `local-visual-artifact-renderer` with:
-
-```yaml
-source_path: docs/architecture/YYYY-MM-DD-<topic>-architecture.md
-source_workflow: architecture
-visual_kind: plan
-template_profile: architecture
-```
-
-Use local sidecar files under `docs/visual-artifacts/architecture/<slug>/` only. Do not add hosted MCP setup, hosted URLs, share flows, or publishing.
+Do not offer a local visual artifact choice here. The final `workflow-next-step` advisor owns visual-plan recommendations and downstream routing after the architecture artifact is finalized.
 
 ## Final Phase: Workflow Next Step Advisor
 
-After the architecture artifact is written, recorded back into the plan, and any optional local visual artifact decision has been handled, load the `workflow-next-step` skill.
+After the architecture artifact is written and recorded back into the plan, load the `workflow-next-step` skill.
 
 Run it in advisory mode only:
 - pass the current workflow name: `workflows:architecture`

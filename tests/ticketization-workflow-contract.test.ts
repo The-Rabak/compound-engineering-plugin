@@ -102,6 +102,13 @@ describe("ticketization workflow contract", () => {
       "workflows",
       "plan.md",
     )
+    const nextStepSkill = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "workflow-next-step",
+      "SKILL.md",
+    )
     const changelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
 
     expect(rootReadme).toContain(
@@ -123,7 +130,7 @@ describe("ticketization workflow contract", () => {
     expect(pluginReadme).toContain(
       "`brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`",
     )
-    expect(planPrompt).toContain("Run `/workflows:to-issues`")
+    expect(nextStepSkill).toContain("After `deepen-plan`, recommend `/workflows:to-issues")
     expect(planPrompt).toContain("tickets_ref")
     expect(changelog).toContain("**`/workflows:to-issues` command**")
     expect(changelog).toContain("**Right-sized planning and lite workflow mode**")

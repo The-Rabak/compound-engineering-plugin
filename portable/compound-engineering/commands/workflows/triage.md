@@ -363,16 +363,9 @@ Good swarm plan:
 - ❌ Don't mark complete before orchestration-side validation.
 - ❌ Don't drop selected actions or research findings from todo logs.
 
-## Done Options
+## Completion Boundary
 
-When all targeted todos are processed, end with:
-
-```markdown
-What would you like to do next?
-
-1. commit and push current completed todo batch
-2. stop here
-```
+Do not offer done-option menus here. The final `workflow-next-step` advisor owns commit/push, review, compound, or stop recommendations after targeted todos are processed.
 
 ## Final Phase: Workflow Next Step Advisor
 

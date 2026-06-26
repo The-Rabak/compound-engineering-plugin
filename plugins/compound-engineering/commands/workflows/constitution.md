@@ -173,11 +173,7 @@ After writing the constitution, summarize what downstream workflows must now do:
 - **`/workflows:work`** -- inject constitution guardrails into execution prompts and stop for approval when the constitution requires it
 - **`/workflows:review`** -- treat unwaived constitution violations as blocking
 
-Then offer next steps:
-
-1. Proceed to `/workflows:brainstorm`
-2. Proceed to `/workflows:plan`
-3. Done for now
+Do not offer next-step options here. The final `workflow-next-step` advisor owns downstream routing after the constitution is written or amended.
 
 ## Constitution Template
 

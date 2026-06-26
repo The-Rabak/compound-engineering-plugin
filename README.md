@@ -21,7 +21,7 @@ The core value is the workflow:
 
 Each phase has a defined purpose, handoff, and artifact. The system is designed to reduce drift between what you intended, what you built, and what got reviewed.
 
-Every core workflow ends by loading `workflow-next-step`, which prints the full progress checklist and the exact command/input package to use in the next session.
+Every core workflow ends by loading `workflow-next-step`, which binds the active artifact chain, audits completion evidence, summarizes completed stages, and prints the exact command/input package to use in the next session.
 
 For small, low-risk changes, the compact track is:
 
@@ -166,7 +166,7 @@ Use the full chain when you want the plugin to take a feature from vague intent 
 - `/workflows:work` can execute the next safe batch directly from `docs/tickets/.../index.md`, while still allowing a single ticket file when you need a narrower manual run
 - `/workflows:triage` now sits after `/workflows:review` in the documented delivery loop, before reusable knowledge is compounded
 - `grill-with-docs` is now the recommended bridge after brainstorming when domain language or boundaries need pressure-testing before planning
-- `workflow-next-step` now closes each core workflow with a progress checklist and next-session command/input handoff
+- `workflow-next-step` now closes each core workflow with chain binding, evidence gates, completed-stage summaries, and next-session command/input handoff
 - `/workflows:brainstorm --lite` and `/workflows:plan --lite` support compact planning for small changes without weakening TDD/evidence or scope traceability
 - plan/deepen/work now default to issue-shaped vertical slices and tracer-bullet sequencing, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake
 - `/brownfield-maintenance` is the on-demand repair path for inherited repos whose AI-layer docs, prompts, and reviewer coverage have drifted

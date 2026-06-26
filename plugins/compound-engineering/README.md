@@ -19,7 +19,7 @@ This Claude plugin install surface contains only Claude-relevant files. Codex pl
 - Full workflow track: `constitution -> brainstorm -> grill-with-docs -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound`.
 - Lite workflow track: `brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`.
 - The lite mode is for small, low-risk changes and preserves TDD/evidence and scope contracts while reducing intake, research, and ticketization ceremony.
-- Every core workflow ends with `workflow-next-step`, which prints a phase checklist and exact next-session command/input handoff.
+- Every core workflow ends with `workflow-next-step`, which binds the active artifact chain, audits completion evidence, summarizes completed stages, and prints the exact next-session command/input handoff.
 - Finalized brainstorms, plans, architecture handoffs, and reviews can offer optional local-only visual artifacts as MDX sidecars under `docs/visual-artifacts/` without hosted Plan MCP infrastructure. The renderer loads the BuilderIO Agent-Native plan style guidance, generates the pinned block catalog with `@agent-native/core@0.67.0`, and writes structured Plan primitives such as diagrams, file trees, tabs, checklists, annotated code, diffs, schema/API blocks, and wireframes when the source supports them. It writes `preview.html` by default, and `/visual-artifact <artifact-path>` wraps check and static preview from only the artifact path; `--serve` requires a reachable local Plan UI on `127.0.0.1:3001` by default.
 - `/lrj` is a Ralph-style coordinator for existing plans: ticketize, audit/repair the ticket set, then work/review/triage/validate and commit two ticket batches at a time until the ticket index is complete.
 - `/workflows:plan`, `/deepen-plan`, and `/workflows:work` now default to issue-shaped execution slices, with the first slice acting as the tracer bullet, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake.
@@ -227,7 +227,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `setup` | Configure which review agents run for your project |
 | `systematic-debugging` | Structured debugging with explicit causal chains, prediction tests, and design escalation gates |
 | `ubiquitous-language` | Build a DDD-style glossary and canonical domain vocabulary from the conversation |
-| `workflow-next-step` | Inspect workflow artifacts, print the phase checklist, and hand off the exact next-session command |
+| `workflow-next-step` | Inspect workflow artifacts, summarize completed stages, apply routing gates, and hand off the exact next-session command |
 
 ### Multi-Agent Orchestration
 

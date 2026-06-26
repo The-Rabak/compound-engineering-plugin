@@ -638,9 +638,8 @@ After creating all todo files, present comprehensive summary:
 3. **Triage All Todos**:
    ```bash
    ls todos/*-pending-*.md  # View all pending todos
-   /workflows:triage        # Use slash command for interactive triage
+   /workflows:triage todos 001-005  # Replace with the actual first-last todo numbers created in this review
    ```
-````
 
 4. **Work on Triaged Todos**:
 
@@ -653,42 +652,7 @@ After creating all todo files, present comprehensive summary:
    - Update Work Log as you work
    - Commit todos: `git add todos/ && git commit -m "refactor: add code review findings"`
 
-6. **Create local visual recap from this review/diff.** Offer this after the canonical Markdown artifact is finalized. Load `commands/workflows/references/local-visual-artifacts.md`, then dispatch `local-visual-artifact-renderer` with `source_path` pointing to the review summary or diff artifact, `source_workflow: review`, `visual_kind: recap`, and `template_profile: review`. Use local sidecar files under `docs/visual-artifacts/review/<slug>/` only; do not add hosted MCP setup, hosted URLs, share flows, or publishing.
-
-```
-
-### 7. End-to-End Testing (Optional)
-
-<offer_testing>
-
-After presenting the Summary Report, offer browser testing:
-
-```markdown
-**"Want to run browser tests on the affected pages?"**
-1. Yes - run `/test-browser`
-2. No - skip
-```
-
-</offer_testing>
-
-#### If User Accepts Testing:
-
-Spawn a subagent to run browser tests (preserves main context):
-
-```
-Task general-purpose("Run /test-browser for the current branch. Test all affected pages, check for console errors, handle failures by creating todos and fixing.")
-```
-
-The subagent will:
-1. Identify pages affected by the PR
-2. Navigate to each page and capture snapshots (using agent-browser CLI)
-3. Check for console errors
-4. Test critical interactions
-5. Pause for human verification on OAuth/email/payment flows
-6. Create P1 todos for any failures
-7. Fix and retry until all tests pass
-
-**Standalone:** `/test-browser`
+````
 
 ### Important: P1 Findings and User Story Delivery Block Merge
 
@@ -707,11 +671,12 @@ Any **⚠️ DRIFT RISK** findings must be explicitly reviewed by the user befor
 
 ## Final Phase: Workflow Next Step Advisor
 
-After the review summary is presented, todo files are created when findings exist, and any optional local visual recap decision has been handled, load the `workflow-next-step` skill.
+After the review summary is presented and todo files are created when findings exist, load the `workflow-next-step` skill. This must be the only final process of the review workflow.
 
 Run it in advisory mode only:
 - pass the current workflow name: `workflows:review`
 - pass the review target, relevant plan/ticket/session paths, and any created todo paths
+- when todos were created, pass the exact created todo filenames so the advisor can recommend the most specific triage command, preferably `/workflows:triage todos <first>-<last>`
 - inspect relevant artifacts without mutating them
 - output the full core workflow checklist and the exact next-session command with required inputs
 

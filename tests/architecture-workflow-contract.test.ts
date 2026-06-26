@@ -17,10 +17,11 @@ describe("architecture workflow contract", () => {
 
     const brainstormPrompt = await readRepoFile("portable", "compound-engineering", "commands", "workflows", "brainstorm.md")
     const planPrompt = await readRepoFile("portable", "compound-engineering", "commands", "workflows", "plan.md")
+    const nextStepSkill = await readRepoFile("portable", "compound-engineering", "skills", "workflow-next-step", "SKILL.md")
     expect(brainstormPrompt).toContain("`/workflows:architecture` before `/deepen-plan`")
 
-    const architectureIndex = planPrompt.indexOf("Run `/workflows:architecture`")
-    const deepenIndex = planPrompt.indexOf("Run `/deepen-plan`")
+    const architectureIndex = nextStepSkill.indexOf("After `plan`, recommend `/workflows:architecture")
+    const deepenIndex = nextStepSkill.indexOf("After `architecture`, recommend `/deepen-plan")
 
     expect(architectureIndex).toBeGreaterThan(-1)
     expect(deepenIndex).toBeGreaterThan(architectureIndex)
