@@ -208,7 +208,7 @@ describe("workflow orchestration references", () => {
     }
   })
 
-  test("workflow prompts offer local visual artifacts only after canonical artifacts are finalized", async () => {
+  test("workflow prompts leave visual artifact routing to the next-step advisor", async () => {
     const workflowPrompts = {
       brainstorm: await readRepoFile(
         "portable",
@@ -239,30 +239,40 @@ describe("workflow orchestration references", () => {
         "review.md",
       ),
     }
+    const nextStepSkill = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "workflow-next-step",
+      "SKILL.md",
+    )
 
-    expect(workflowPrompts.brainstorm).toContain("Create local visual artifact from this brainstorm.")
-    expect(workflowPrompts.plan).toContain("Create local visual plan from this plan.")
-    expect(workflowPrompts.architecture).toContain("Create local architecture visual artifact.")
-    expect(workflowPrompts.review).toContain("Create local visual recap from this review/diff.")
+    expect(workflowPrompts.review).not.toContain("Create local visual recap from this review/diff.")
+    expect(workflowPrompts.review).not.toContain("Want to run browser tests")
+    expect(workflowPrompts.review).toContain("This must be the only final process of the review workflow.")
 
-    expect(workflowPrompts.brainstorm).toContain("Lite mode still presents this option")
-    expect(workflowPrompts.plan).toContain("Lite mode still presents this option")
+    expect(nextStepSkill).toContain("## Visual Plan Routing")
+    expect(nextStepSkill).toContain("Generate the local visual plan with local-visual-artifact-renderer")
+    expect(nextStepSkill).toContain("source_workflow: <brainstorm|plan|architecture>")
+    expect(nextStepSkill).toContain("template_profile: <brainstorm|plan|architecture>")
+    expect(nextStepSkill).toContain("brainstorm -> `grill-with-docs <brainstorm-path>`")
+    expect(nextStepSkill).toContain("plan -> `/workflows:architecture <plan-path>`")
+    expect(nextStepSkill).toContain("architecture -> `/deepen-plan <plan-path>`")
 
-    expect(workflowPrompts.brainstorm).toContain("source_workflow: brainstorm")
-    expect(workflowPrompts.plan).toContain("source_workflow: plan")
-    expect(workflowPrompts.architecture).toContain("source_workflow: architecture")
-    expect(workflowPrompts.review).toContain("source_workflow: review")
+    expect(nextStepSkill).toContain("source_path")
+    expect(nextStepSkill).toContain("visual_kind: plan")
+    expect(nextStepSkill).toContain("local-visual-artifact-renderer")
 
-    for (const prompt of [workflowPrompts.brainstorm, workflowPrompts.plan, workflowPrompts.architecture]) {
-      expect(prompt).toContain("visual_kind: plan")
-    }
-    expect(workflowPrompts.review).toContain("visual_kind: recap")
+    expect(workflowPrompts.brainstorm).not.toContain("source_workflow: brainstorm")
+    expect(workflowPrompts.plan).not.toContain("source_workflow: plan")
+    expect(workflowPrompts.architecture).not.toContain("source_workflow: architecture")
+    expect(workflowPrompts.review).not.toContain("source_workflow: review")
 
     for (const prompt of Object.values(workflowPrompts)) {
-      expect(prompt).toContain("local-visual-artifact-renderer")
-      expect(prompt).toContain("source_path")
-      expect(prompt).toContain("commands/workflows/references/local-visual-artifacts.md")
-      expect(prompt).toContain("after the canonical Markdown artifact is finalized")
+      expect(prompt).not.toContain("local-visual-artifact-renderer")
+      expect(prompt).not.toContain("commands/workflows/references/local-visual-artifacts.md")
+      expect(prompt).not.toContain("visual_kind: plan")
+      expect(prompt).not.toContain("visual_kind: recap")
       expect(prompt).not.toContain("mcpServers.plan")
       expect(prompt).not.toContain("create-visual-plan")
       expect(prompt).not.toContain("create-visual-recap")

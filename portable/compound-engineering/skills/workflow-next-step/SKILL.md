@@ -62,18 +62,53 @@ Use these checks to decide whether each step is complete for the current feature
 
 Apply these rules after building the checklist.
 
-1. After `brainstorm`, recommend `grill-with-docs` before planning unless the request is explicitly lite/trivial and no domain terms or open boundary questions exist.
-2. After `grill-with-docs`, recommend `/workflows:plan` with the enriched brainstorm path.
-3. After `plan`, recommend `/workflows:architecture` with the plan path. Allow direct `/workflows:work <plan>` only for lite/small plans with an explicit architecture handoff.
-4. After `architecture`, recommend `/deepen-plan <plan>`.
-5. After `deepen-plan`, recommend `/workflows:to-issues <plan>` when the plan has a real `architecture_ref` and more than one execution packet, meaningful dependencies, or feature-home boundaries to preserve. Recommend `/workflows:work <plan>` only for compact/lite plans.
-6. After `to-issues`, recommend `/workflows:work <ticket-index>`.
-7. After `work`, recommend `/workflows:review`, passing the ticket index plus execution session when ticketized execution was used.
-8. After `review`, recommend `/workflows:triage` when `todos/*-pending-*.md` exists. If no todos exist, recommend `/workflows:compound` only when the solution was non-trivial or introduced reusable knowledge.
-9. After `triage`, recommend another scoped `/workflows:review` when triage executed code changes. Otherwise recommend `/workflows:compound` when reusable knowledge exists.
-10. After `compound`, report the chain complete unless the user wants to add the learning to a skill or refresh existing docs.
-11. After `debug`, recommend the command named in the debug result's `Fix or next step`. If the result is `rethink design`, prefer `/workflows:brainstorm` or `/workflows:architecture` according to the stated issue.
-12. After `compound-refresh`, report maintenance complete and recommend the next feature workflow only when the user has an active feature artifact.
+1. After `constitution`, recommend `/workflows:brainstorm <feature-or-goal>` when no feature artifact exists. Recommend `/workflows:plan <existing feature description or brainstorm path>` only when the user already supplied a clear feature description or a matching brainstorm exists.
+2. After `brainstorm`, recommend `grill-with-docs` before planning unless the request is explicitly lite/trivial and no domain terms or open boundary questions exist.
+3. After `grill-with-docs`, recommend `/workflows:plan <enriched-brainstorm-path>`.
+4. After `plan`, recommend `/workflows:architecture <plan-path>`. Allow direct `/workflows:work <plan-path>` only for lite/small plans with an explicit architecture handoff.
+5. After `architecture`, recommend `/deepen-plan <plan-path>`.
+6. After `deepen-plan`, recommend `/workflows:to-issues <plan-path>` when the plan has a real `architecture_ref` and more than one execution packet, meaningful dependencies, or feature-home boundaries to preserve. Recommend `/workflows:work <plan-path>` only for compact/lite plans.
+7. After `to-issues`, recommend `/workflows:work <ticket-index-path>`.
+8. After `work`, recommend `/workflows:review <ticket-index-or-plan-path> <execution-session-state>` when ticketized execution was used; otherwise pass the plan path and execution session.
+9. After `review`, recommend a full `/workflows:triage` command when current-review pending todos exist. Prefer the todo paths passed by the review workflow over broad discovery. If their numeric filename prefixes form a clear first-last span, use `/workflows:triage todos <first>-<last>` (for example, `/workflows:triage todos 13-23`). If they are non-contiguous or cannot be safely ranged, pass the narrowest exact scope or explicit todo paths instead of a bare command. If no todos exist, recommend `/workflows:compound` only when the solution was non-trivial or introduced reusable knowledge.
+10. After `triage`, recommend another scoped `/workflows:review <changed-scope>` when triage executed code changes. If completed work is not committed and the user asked for shipping discipline, recommend `git commit`/`git push` as the next-session directive before review. Otherwise recommend `/workflows:compound` when reusable knowledge exists.
+11. After `compound`, report the chain complete unless the user wants to add the learning to a skill or refresh existing docs.
+12. After `debug`, recommend the command named in the debug result's `Fix or next step`. If the result is `rethink design`, prefer `/workflows:brainstorm` or `/workflows:architecture` according to the stated issue.
+13. After `compound-refresh`, report maintenance complete and recommend the next feature workflow only when the user has an active feature artifact.
+
+## Advisor-Owned Options
+
+The core workflow commands do not present handoff menus. Preserve their former choices here as conditional recommendations, but output one recommended path, not a menu.
+
+- **Review/refine**: Recommend `document-review` only when the just-written artifact is internally contradictory, missing required handoff fields, or likely to become a durable reference. Otherwise recommend the next graph step.
+- **Ask more questions / deepen further / other rework**: Recommend returning to the same command only when required artifact checks fail or unresolved questions block routing.
+- **Issue creation**: After `plan`, mention tracker issue creation only as an input/supporting action when explicitly requested by the user; do not let it replace `/workflows:architecture`.
+- **Open/view diff/revert**: After `plan` or `deepen-plan`, include these only as optional human inspection notes under "Inputs to pass" or "Why this is next"; do not make them the recommended next command unless the artifact is invalid or the user explicitly asked.
+- **Commit/push after triage**: Recommend commit/push only when triage executed changes that are complete and validated but not committed; otherwise route to review or compound.
+- **Done/stop**: When no next workflow is needed, set the recommended next step to `complete` and state that no command is required.
+
+## Visual Plan Routing
+
+For `brainstorm`, `plan`, and `architecture`, visual rendering is advisor-owned. If the source artifact is complete and a matching `docs/visual-artifacts/<workflow>/<slug>/` sidecar does not already exist, recommend generating the local visual plan first, then immediately proceed to the next graph command in the same next-session directive.
+
+Use this format in `Run it with` when a visual plan is next:
+
+```text
+Generate the local visual plan with local-visual-artifact-renderer:
+source_path: <artifact-path>
+source_workflow: <brainstorm|plan|architecture>
+visual_kind: plan
+template_profile: <brainstorm|plan|architecture>
+
+Then run:
+<next workflow command with exact inputs>
+```
+
+Do not recommend hosted Plan MCP setup, hosted URLs, share flows, publishing, or review visual recaps. For the next graph command after visual generation:
+
+- brainstorm -> `grill-with-docs <brainstorm-path>` unless lite/trivial, then `/workflows:plan <brainstorm-path>`
+- plan -> `/workflows:architecture <plan-path>`
+- architecture -> `/deepen-plan <plan-path>`
 
 ## Required Output
 

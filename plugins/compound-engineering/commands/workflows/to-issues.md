@@ -187,8 +187,8 @@ Execution readiness:
 - Blocking gaps: <count>
 - Recommendations: <count>
 
-Recommended next step:
-- Run `/workflows:work` on the generated `index.md` so execution can pick the next safe batch automatically, or target one ticket file manually when you need to force a narrower run.
+Next-session directive:
+- Provided by the final `workflow-next-step` advisor.
 ```
 
 ## Final Phase: Workflow Next Step Advisor

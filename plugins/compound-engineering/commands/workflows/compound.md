@@ -187,12 +187,8 @@ File created:
 This documentation will be searchable for future reference when similar
 issues occur in the Email Processing or Brief System modules.
 
-What's next?
-1. Continue workflow (recommended)
-2. Link related documentation
-3. Update other references
-4. View documentation
-5. Other
+Next-session directive:
+- Provided by the final `workflow-next-step` advisor.
 ```
 
 ## The Compounding Philosophy
@@ -256,7 +252,7 @@ Based on problem type, these agents can enhance documentation:
 
 ## Final Phase: Workflow Next Step Advisor
 
-After the solution document is written and any optional enhancement/review decision has been handled, load the `workflow-next-step` skill.
+After the solution document is written and any artifact-quality enhancement/review pass has been handled, load the `workflow-next-step` skill.
 
 Run it in advisory mode only:
 - pass the current workflow name: `workflows:compound`

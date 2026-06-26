@@ -275,51 +275,13 @@ user story and success criteria.]
 - [Questions that were resolved during brainstorming, with answers]
 ```
 
-**IMPORTANT:** Before proceeding to Phase 4, check if there are any Open Questions listed in the brainstorm document. If there are open questions, YOU MUST ask the user about each one using AskUserQuestion before offering to proceed to planning. Move resolved questions to the "Resolved Questions" section.
+**IMPORTANT:** Before finalizing the brainstorm artifact, check if there are any Open Questions listed in the brainstorm document. If there are open questions, YOU MUST ask the user about each one using AskUserQuestion before completion. Move resolved questions to the "Resolved Questions" section.
 
 **Validation:** Check that all `handoff` frontmatter fields are `true`. If any section is empty or missing, go back and fill it. The downstream phases depend on this contract.
 
-### Phase 4: Handoff
+### Phase 4: Finalize Artifact
 
-Use **AskUserQuestion tool** to present next steps:
-
-**Question:** "Brainstorm captured with problem narrative, user story, architectural context, and design decisions. What would you like to do next?"
-
-**Options:**
-1. **Review and refine** - Improve the document through structured self-review
-2. **Run `grill-with-docs`** - Stress-test the brainstorm against domain language, update `CONTEXT.md`, and write clarified decisions back into this brainstorm before planning
-3. **Proceed to planning** - Run `/workflows:plan` only if the brainstorm is already domain-sharp or the change is explicitly lite/trivial
-4. **Create local visual artifact from this brainstorm.** - Render a local visual sidecar from the finalized brainstorm
-5. **Ask more questions** - I have more questions to clarify before moving on
-6. **Done for now** - Return later
-
-Lite mode still presents this option after the canonical Markdown artifact is finalized.
-
-**If user selects "Create local visual artifact from this brainstorm.":**
-
-Load `commands/workflows/references/local-visual-artifacts.md`, then dispatch `local-visual-artifact-renderer` with:
-
-```yaml
-source_path: docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.md
-source_workflow: brainstorm
-visual_kind: plan
-template_profile: brainstorm
-```
-
-Use the renderer only for local sidecar files under `docs/visual-artifacts/brainstorm/<slug>/`. Do not add hosted MCP setup, hosted URLs, share flows, or publishing.
-
-**If user selects "Ask more questions":** Return to Phase 1.3 (Collaborative Dialogue) and continue probing deeper -- edge cases, constraints, preferences, or areas not yet explored. After new information emerges, re-synthesize the Problem Narrative and User Story (Phase 1.4) if they need updating. Continue until the user is satisfied, then return to Phase 4.
-
-**If user selects "Review and refine":**
-
-Load the `document-review` skill in **brainstorm** mode and apply it to the brainstorm document. Let the review focus on WHY fidelity, ambiguity, stakeholder clarity, and readiness for planning. When invoked from automation, run it headlessly and keep the output concise and action-oriented.
-
-When document-review returns "Review complete", present next steps:
-
-1. **Run `grill-with-docs`** - Challenge terminology and decisions, update `CONTEXT.md`, and enrich this brainstorm inline before planning
-2. **Move to planning** - Continue to `/workflows:plan` with this document, then use `/workflows:architecture` as the supported next handoff before deepening
-3. **Create local visual artifact from this brainstorm.** - Dispatch `local-visual-artifact-renderer` with `source_path`, `source_workflow: brainstorm`, `visual_kind: plan`, and `template_profile: brainstorm`
-4. **Done for now** - Brainstorming complete. To start planning later: `/workflows:plan [document-path]`
+Do not offer next-step, review/refine, planning, "done for now", or local visual artifact menus here. The final `workflow-next-step` advisor owns those downstream recommendations after the brainstorm artifact is complete.
 
 ## Output Summary
 
@@ -371,7 +333,7 @@ This brainstorm document is consumed alongside the project constitution:
 
 ## Final Phase: Workflow Next Step Advisor
 
-After the brainstorm artifact is finalized and any optional local visual artifact decision has been handled, load the `workflow-next-step` skill.
+After the brainstorm artifact is finalized, load the `workflow-next-step` skill.
 
 Run it in advisory mode only:
 - pass the current workflow name: `workflows:brainstorm`
