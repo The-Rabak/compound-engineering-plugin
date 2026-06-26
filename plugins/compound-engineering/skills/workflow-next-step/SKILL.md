@@ -1,7 +1,6 @@
 ---
 name: workflow-next-step
 description: This skill should be used at the end of core compound-engineering workflows to inspect completed artifacts, show the workflow progress checklist, and give the exact next-session command with inputs.
-model: gpt-5.5
 ---
 
 # Workflow Next Step
