@@ -2,7 +2,7 @@
 model: claude-sonnet-4.6
 platforms:
   codex:
-    model: gpt-5.5
+    model:
   copilot:
     model: gpt-5.3-codex
   opencode:

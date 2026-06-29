@@ -3,7 +3,7 @@ name: deploy-docs
 description: Validate and prepare documentation for GitHub Pages deployment
 platforms:
   codex:
-    model: gpt-5.5
+    model:
   claude:
     disable-model-invocation: true
 

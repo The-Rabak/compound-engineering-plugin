@@ -4,8 +4,7 @@ description: Diagnose bugs end-to-end using artifact-first recall, structured re
 argument-hint: '[bug report, failing command, issue URL, or symptom description]'
 platforms:
   codex:
-    model: gpt-5.5
-
+    model:
 ---
 
 # Debug a Bug or Failure

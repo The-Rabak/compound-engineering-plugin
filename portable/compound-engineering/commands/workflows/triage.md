@@ -2,10 +2,10 @@
 name: workflows:triage
 description: Research each todo, resolve decisions one-by-one, write chosen actions into todo files, then execute safe batches in swarm mode with execution-agent
 argument-hint: '[todo range or scope] [--auto-recommended] [--execute]'
-model: opus-4.8
+model:
 platforms:
   codex:
-    model: gpt-5.5
+    model:
   claude:
     disable-model-invocation: true
 

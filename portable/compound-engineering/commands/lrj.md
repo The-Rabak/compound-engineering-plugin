@@ -2,10 +2,10 @@
 name: lrj
 description: LEEROY JENKINS - Full autonomous engineering workflow from an existing plan through ticketization, ticket audit, two-batch work/review/triage loops, and validation
 argument-hint: '[path to plan file]'
-model: opus-4.8
+model:
 platforms:
   codex:
-    model: gpt-5.5
+    model:
   claude:
     disable-model-invocation: true
 

@@ -5,7 +5,7 @@ argument-hint:
   - skill description or requirements
 platforms:
   codex:
-    model: gpt-5.5
+    model:
   claude:
     allowed-tools: Skill(create-agent-skills)
     disable-model-invocation: true

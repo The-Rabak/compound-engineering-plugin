@@ -4,8 +4,7 @@ description: Create or update the project constitution for downstream workflows
 argument-hint: '[optional: project standards, constraints, or amendment goal]'
 platforms:
   codex:
-    model: gpt-5.5
-
+    model:
 ---
 
 # Create or Update a Project Constitution

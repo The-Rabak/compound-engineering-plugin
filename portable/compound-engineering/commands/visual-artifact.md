@@ -4,8 +4,7 @@ description: Render or serve a local visual artifact from only its artifact path
 argument-hint: "[artifact path] [--serve] [--port 3001]"
 platforms:
   codex:
-    model: gpt-5.5
-
+    model:
 ---
 
 # Visual Artifact

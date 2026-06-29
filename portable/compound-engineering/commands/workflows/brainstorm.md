@@ -4,8 +4,7 @@ description: Explore the WHY and WHAT of a feature through collaborative dialogu
 argument-hint: '[--lite] [feature idea or problem to explore]'
 platforms:
   codex:
-    model: gpt-5.5
-
+    model:
 ---
 
 # Brainstorm a Feature or Improvement
