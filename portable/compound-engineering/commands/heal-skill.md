@@ -5,7 +5,7 @@ argument-hint:
   - optional: specific issue to fix
 platforms:
   codex:
-    model: gpt-5.5
+    model:
   claude:
     allowed-tools:
       - Read

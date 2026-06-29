@@ -5,8 +5,7 @@ description: >-
 argument-hint: '[path to plan file]'
 platforms:
   codex:
-    model: gpt-5.5
-
+    model:
 ---
 
 # Deepen Plan - Power Enhancement Mode

@@ -4,7 +4,7 @@ description: Refresh stale learnings and pattern docs in docs/solutions/ against
 argument-hint: '[mode:autonomous] [optional: scope hint]'
 platforms:
   codex:
-    model: gpt-5.5
+    model:
   claude:
     allowed-tools: Skill(compound-refresh), Skill(workflow-next-step)
     disable-model-invocation: true

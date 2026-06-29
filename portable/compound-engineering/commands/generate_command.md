@@ -4,7 +4,7 @@ description: Create a new custom slash command following conventions and best pr
 argument-hint: '[command purpose and requirements]'
 platforms:
   codex:
-    model: gpt-5.5
+    model:
   claude:
     disable-model-invocation: true
 

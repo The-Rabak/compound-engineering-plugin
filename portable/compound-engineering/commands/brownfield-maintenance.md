@@ -4,8 +4,7 @@ description: Audit and fill brownfield AI-layer gaps on demand outside the main 
 argument-hint: '[repo area, workflow surface, or AI-layer problem statement]'
 platforms:
   codex:
-    model: gpt-5.5
-
+    model:
 ---
 
 # Brownfield AI-Layer Maintenance

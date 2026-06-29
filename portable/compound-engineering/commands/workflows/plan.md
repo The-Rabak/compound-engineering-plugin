@@ -5,8 +5,7 @@ description: >-
 argument-hint: '[--lite] [feature description, bug report, or improvement idea]'
 platforms:
   codex:
-    model: gpt-5.5
-
+    model:
 ---
 
 # Create a plan for a new feature or bug fix

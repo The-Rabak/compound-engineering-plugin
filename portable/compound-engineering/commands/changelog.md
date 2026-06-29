@@ -4,7 +4,7 @@ description: Create engaging changelogs for recent merges to main branch
 argument-hint: '[optional: daily|weekly, or time period in days]'
 platforms:
   codex:
-    model: gpt-5.5
+    model:
   claude:
     disable-model-invocation: true
 

@@ -4,7 +4,7 @@ description: Start a self-referential loop that continues until a completion pro
 argument-hint: '"<prompt>" --completion-promise "<text>" --max-iterations <n>'
 platforms:
   codex:
-    model: gpt-5.5
+    model:
   claude:
     disable-model-invocation: true
 
