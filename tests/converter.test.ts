@@ -71,7 +71,7 @@ describe("convertClaudeToOpenCode", () => {
     const securityAgent = bundle.agents.find((agent) => agent.name === "security-sentinel")
     expect(securityAgent).toBeDefined()
     const parsed = parseFrontmatter(securityAgent!.content)
-    expect(parsed.data.model).toBe("anthropic/claude-sonnet-4-6")
+    expect(parsed.data.model).toBe("anthropic/claude-sonnet-5")
     expect(parsed.data.temperature).toBe(0.1)
 
     const modelCommand = bundle.commandFiles.find((f) => f.name === "workflows:work")

@@ -4,7 +4,7 @@ description: >-
   This skill manages Git worktrees for isolated parallel development. It handles creating, listing,
   switching, and cleaning up worktrees with a simple interactive interface, following KISS
   principles.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 platforms:
   codex:
     model: gpt-5.5

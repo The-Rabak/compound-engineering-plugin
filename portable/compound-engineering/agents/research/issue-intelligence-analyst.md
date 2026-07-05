@@ -4,7 +4,7 @@ description: >-
   Fetches and analyzes GitHub issues to surface recurring themes, pain patterns, and severity
   trends. Use when understanding a project's issue landscape, analyzing bug patterns for planning,
   or summarizing what users are reporting.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 platforms:
   codex:
     model: gpt-5.5

@@ -6,7 +6,7 @@ description: >-
   plans, harden them during deepening, guide executing agents toward real e2e,
   and audit whether e2e was actually implemented and validated. Mercilessly
   enforces real-app, real-infra, no-fakes, no-hardcoded-pass discipline.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 platforms:
   codex:
     model: gpt-5.5

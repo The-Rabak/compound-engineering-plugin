@@ -235,7 +235,7 @@ enum ModelTier {
     var modelId: String {
         switch self {
         case .fast: return "claude-3-haiku-20240307"
-        case .balanced: return "claude-sonnet-4-6"
+        case .balanced: return "claude-sonnet-5"
         case .powerful: return "claude-opus-4-20250514"
         }
     }

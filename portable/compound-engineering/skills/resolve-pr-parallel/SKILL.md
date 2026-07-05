@@ -3,7 +3,7 @@ name: resolve-pr-parallel
 description: >-
   Resolve all PR comments using parallel processing. Use when addressing PR review feedback,
   resolving review threads, or batch-fixing PR comments.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 platforms:
   codex:
     model: gpt-5.5

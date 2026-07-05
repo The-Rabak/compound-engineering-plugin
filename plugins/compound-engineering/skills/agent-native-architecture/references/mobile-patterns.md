@@ -463,14 +463,14 @@ Use the cheapest model that achieves the outcome:
 ```swift
 enum ModelTier {
     case fast      // claude-haiku-4-5-20251001: ~$0.25/1M tokens
-    case balanced  // claude-sonnet-4-6-4-6: ~$3/1M tokens
-    case powerful  // claude-sonnet-4-6-4-6: ~$15/1M tokens
+    case balanced  // claude-sonnet-5: ~$3/1M tokens
+    case powerful  // claude-sonnet-5: ~$15/1M tokens
 
     var modelId: String {
         switch self {
         case .fast: return "claude-haiku-4-5-20251001"
-        case .balanced: return "claude-sonnet-4-6-4-6"
-        case .powerful: return "claude-sonnet-4-6-4-6"
+        case .balanced: return "claude-sonnet-5"
+        case .powerful: return "claude-sonnet-5"
         }
     }
 }

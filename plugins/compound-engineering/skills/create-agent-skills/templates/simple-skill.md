@@ -1,7 +1,7 @@
 ---
 name: {{SKILL_NAME}}
 description: {{What it does}} Use when {{trigger conditions}}.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 ---
 
 <objective>

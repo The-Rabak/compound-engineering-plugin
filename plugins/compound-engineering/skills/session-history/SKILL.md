@@ -1,7 +1,7 @@
 ---
 name: session-history
 description: Recover prior attempts safely by searching repo artifacts first and only then using a bounded recent-session fallback when the harness exposes searchable history
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 ---
 
 # Session History

@@ -5,7 +5,7 @@ description: >-
   and Task system. It applies when coordinating multiple agents, running parallel code reviews,
   creating pipeline workflows with dependencies, building self-organizing task queues, or any task
   benefiting from divide-and-conquer patterns.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 platforms:
   codex:
     model: gpt-5.5
