@@ -1,7 +1,7 @@
 ---
 name: adversarial-plan-audit
 description: Run a deep adversarial review of plans and architecture before implementation. Use when validating strategy docs, contracts, roadmaps, and competitive positioning with scored findings and prioritized recommendations.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 disable-model-invocation: true
 ---
 

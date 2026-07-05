@@ -3,7 +3,7 @@ name: pr-comment-resolver
 description: >-
   Addresses PR review comments by implementing requested changes and reporting resolutions. Use when
   code review feedback needs to be resolved with code changes.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 platforms:
   codex:
     model: gpt-5.5

@@ -5,7 +5,7 @@ description: >-
   scope fences, feature-home ownership, and evidence commands. Use when converting plans into local
   tickets or when execution needs one ticket-sized context pack without the full plan.
 user-invocable: false
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 platforms:
   codex:
     model: gpt-5.5

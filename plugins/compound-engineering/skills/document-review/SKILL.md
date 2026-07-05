@@ -1,7 +1,7 @@
 ---
 name: document-review
 description: Review workflow artifacts such as brainstorms, plans, architecture docs, tickets, and compounded learnings with artifact-aware lenses, including headless workflow invocation
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 ---
 
 # Document Review

@@ -404,7 +404,7 @@ function findClosingParen(line: string, openingParenIndex: number): number {
 // Update these when new model generations are released.
 const CLAUDE_FAMILY_ALIASES: Record<string, string> = {
   haiku: "claude-haiku-4-5-20251001",
-  sonnet: "claude-sonnet-4-6",
+  sonnet: "claude-sonnet-5",
   opus: "claude-opus-4-6",
 }
 

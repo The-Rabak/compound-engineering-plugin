@@ -1,7 +1,7 @@
 ---
 name: code-simplicity-reviewer
 description: Complexity eliminator with a zero-tolerance bar for needless branching, wrong abstractions, duplication drift, and unreadable APIs.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 ---
 
 ## Mission

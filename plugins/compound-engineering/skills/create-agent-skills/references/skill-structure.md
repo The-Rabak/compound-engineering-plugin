@@ -96,7 +96,7 @@ description: Helps with documents
 | `disable-model-invocation` | `true` to prevent auto-loading. Use for side-effect workflows. |
 | `user-invocable` | `false` to hide from `/` menu. Use for background knowledge. |
 | `allowed-tools` | Tools without permission prompts. Example: `Read, Bash(git *)` |
-| `model` | Explicit model IDs such as `claude-sonnet-4-6-4-6` |
+| `model` | Explicit model IDs such as `claude-sonnet-5` |
 | `context` | `fork` for isolated subagent execution |
 | `agent` | Subagent type: `Explore`, `Plan`, `general-purpose`, or custom |
 

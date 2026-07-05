@@ -1,7 +1,7 @@
 ---
 name: focused-ticket-priming
 description: Package one plan execution packet into a compact ticket-local execution packet with parent refs, scope fences, feature-home ownership, and evidence commands. Use when converting plans into local tickets or when execution needs one ticket-sized context pack without the full plan.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 ---
 
 # Focused Ticket Priming

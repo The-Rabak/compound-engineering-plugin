@@ -1,7 +1,7 @@
 ---
 name: uncle-bob
 description: Clean-code reviewer that audits naming, cohesion, side effects, boundaries, dead code, misleading signatures, structural bloat, and tests with a ruthless bias toward readable, change-friendly software.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 ---
 
 ## Mission

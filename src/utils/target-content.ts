@@ -8,7 +8,7 @@ type ModelTier = "primary" | "small"
 
 const TARGET_MODELS: Record<TargetContentSurface, Record<ModelTier, string>> = {
   claude: {
-    primary: "claude-sonnet-4-6",
+    primary: "claude-sonnet-5",
     small: "claude-haiku-4-5-20251001",
   },
   copilot: {
@@ -35,18 +35,23 @@ const SMALL_MODEL_PATTERNS = [
   /minimax\/minimax-m2\.7/g,
 ]
 
+const LEGACY_SONNET_MINOR_PATTERN = ["4", "[.-]", "6"].join("")
+const LEGACY_SONNET_PATTERN = ["claude-sonnet", LEGACY_SONNET_MINOR_PATTERN].join("-")
+
 const PRIMARY_MODEL_PATTERNS = [
   /openrouter\/moonshotai\/kimi-k2\.6/g,
-  /anthropic\/claude-sonnet-4[.-]6/g,
+  /anthropic\/claude-sonnet-5/g,
+  new RegExp(`anthropic\\/${LEGACY_SONNET_PATTERN}`, "g"),
   /anthropic\/claude-opus-4(?:-20250514|-6)/g,
   /openai\/gpt-5\.3-codex/g,
   /openai\/gpt-5\.5/g,
   /claude-3-sonnet(?:-\d{8})?/g,
   /claude-3-opus(?:-\d{8})?/g,
-  /claude-sonnet-4[.-]6/g,
+  /claude-sonnet-5/g,
+  new RegExp(LEGACY_SONNET_PATTERN, "g"),
   /claude-opus-4(?:-20250514|-6)/g,
-  /claude-sonnet\b/g,
-  /claude-opus\b/g,
+  /claude-sonnet(?!-)/g,
+  /claude-opus(?!-)/g,
   /gpt-5\.3-codex/g,
 ]
 

@@ -4,7 +4,7 @@ description: >-
   Executes one scoped ticket or work unit with strict clean-code, DRY, SOLID,
   and Ralph-aware delivery discipline. Use for `/workflows:work`
   implementation, retries, and regression repairs.
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 platforms:
   codex:
     model: gpt-5.5

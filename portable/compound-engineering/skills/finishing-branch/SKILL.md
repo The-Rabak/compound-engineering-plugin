@@ -3,7 +3,7 @@ name: finishing-branch
 description: >-
   Use when completing development on a feature branch -- verifies quality, presents completion
   options, and cleans up
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 platforms:
   codex:
     model: gpt-5.5
