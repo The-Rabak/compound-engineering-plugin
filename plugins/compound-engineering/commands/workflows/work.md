@@ -2,6 +2,7 @@
 name: "workflows:work"
 description: Execute work plans while maintaining WHY tracing from problem narrative through user story to implementation. Grounds every subagent in purpose.
 argument-hint: "[plan file, ticket index, ticket file, specification, or todo file path] [--batches N-M] [--review-mode bulk|inline|both]"
+model: claude-opus-4-8
 ---
 
 # Work Plan Execution Command

@@ -4,7 +4,7 @@ description: >-
   Perform exhaustive code reviews grounded in the user story. Filters technical
   findings through WHY context to protect purpose while improving quality.
 argument-hint: '[branch name, file path, ticket index + execution session, or empty for current branch] [--batches N-M]'
-model:
+model: claude-opus-4-8
 platforms:
   codex:
     model:

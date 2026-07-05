@@ -2,6 +2,7 @@
 name: lrj
 description: LEEROY JENKINS - Full autonomous engineering workflow from an existing plan through ticketization, ticket audit, two-batch work/review/triage loops, and validation
 argument-hint: "[path to plan file]"
+model: claude-opus-4-8
 disable-model-invocation: true
 ---
 
@@ -20,7 +21,7 @@ If the input is empty, ambiguous, or not a readable plan file, stop and ask for 
 Each phase must run in its own isolated subcontext using the highest-grade model available for the harness:
 
 - Codex: `gpt-5.5`
-- Claude and other non-Codex harnesses: `opus-4.8`
+- Claude and other non-Codex harnesses: `claude-opus-4-8`
 
 The main LRJ context is responsible for orchestration, artifact capture, dependency ordering, and validation only. Every phase subcontext may spawn its own subagents and processes according to that command's workflow; coordinate them one phase at a time and wait for each phase to finish before launching the next.
 

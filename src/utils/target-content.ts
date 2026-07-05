@@ -37,19 +37,30 @@ const SMALL_MODEL_PATTERNS = [
 
 const LEGACY_SONNET_MINOR_PATTERN = ["4", "[.-]", "6"].join("")
 const LEGACY_SONNET_PATTERN = ["claude-sonnet", LEGACY_SONNET_MINOR_PATTERN].join("-")
+const CLAUDE_OPUS_4_8_ID = ["claude-opus", "4", "8"].join("-")
+const OPUS_4_8_MINOR_PATTERN = ["4", "[.-]", "8"].join("")
+const CLAUDE_OPUS_4_8_PATTERN = ["claude-opus", OPUS_4_8_MINOR_PATTERN].join("-")
+const OPUS_4_8_SHORTHAND_PATTERN = ["(?<!claude-)opus", OPUS_4_8_MINOR_PATTERN].join("-")
+const LEGACY_CLAUDE_OPUS_PATTERN = ["claude-opus", "4(?:-20250514|-6)"].join("-")
+
+const OPUS_4_8_MODEL_PATTERNS = [
+  new RegExp(`anthropic\\/${CLAUDE_OPUS_4_8_PATTERN}`, "g"),
+  new RegExp(CLAUDE_OPUS_4_8_PATTERN, "g"),
+  new RegExp(OPUS_4_8_SHORTHAND_PATTERN, "g"),
+]
 
 const PRIMARY_MODEL_PATTERNS = [
   /openrouter\/moonshotai\/kimi-k2\.6/g,
   /anthropic\/claude-sonnet-5/g,
   new RegExp(`anthropic\\/${LEGACY_SONNET_PATTERN}`, "g"),
-  /anthropic\/claude-opus-4(?:-20250514|-6)/g,
+  new RegExp(`anthropic\\/${LEGACY_CLAUDE_OPUS_PATTERN}`, "g"),
   /openai\/gpt-5\.3-codex/g,
   /openai\/gpt-5\.5/g,
   /claude-3-sonnet(?:-\d{8})?/g,
   /claude-3-opus(?:-\d{8})?/g,
   /claude-sonnet-5/g,
   new RegExp(LEGACY_SONNET_PATTERN, "g"),
-  /claude-opus-4(?:-20250514|-6)/g,
+  new RegExp(LEGACY_CLAUDE_OPUS_PATTERN, "g"),
   /claude-sonnet(?!-)/g,
   /claude-opus(?!-)/g,
   /gpt-5\.3-codex/g,
@@ -71,6 +82,11 @@ export function replaceModelIdsForTarget(content: string, target: TargetContentS
   let result = content
   for (const pattern of SMALL_MODEL_PATTERNS) {
     result = result.replace(pattern, modelForTargetTier(target, "small"))
+  }
+  for (const pattern of OPUS_4_8_MODEL_PATTERNS) {
+    pattern.lastIndex = 0
+    const model = target === "claude" ? CLAUDE_OPUS_4_8_ID : modelForTargetTier(target, "primary")
+    result = result.replace(pattern, model)
   }
   for (const pattern of PRIMARY_MODEL_PATTERNS) {
     result = result.replace(pattern, modelForTargetTier(target, "primary"))
@@ -226,6 +242,9 @@ function normalizeFrontmatterModel(model: string | undefined, target: TargetCont
   if (normalized === "haiku" || normalized.endsWith("/haiku") || normalized.includes("haiku")) {
     return modelForTargetTier(target, "small")
   }
+  if (isOpus48Model(model)) {
+    return target === "claude" ? CLAUDE_OPUS_4_8_ID : modelForTargetTier(target, "primary")
+  }
   if (isKnownPrimaryModel(model) || isKnownSmallModel(model)) {
     return modelForTargetTier(target, modelTier(model))
   }
@@ -241,6 +260,13 @@ function isKnownSmallModel(model: string): boolean {
 
 function isKnownPrimaryModel(model: string): boolean {
   return PRIMARY_MODEL_PATTERNS.some((pattern) => {
+    pattern.lastIndex = 0
+    return pattern.test(model)
+  })
+}
+
+function isOpus48Model(model: string): boolean {
+  return OPUS_4_8_MODEL_PATTERNS.some((pattern) => {
     pattern.lastIndex = 0
     return pattern.test(model)
   })
