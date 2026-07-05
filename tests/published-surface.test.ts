@@ -66,6 +66,22 @@ describe("published support surface", () => {
     expect(pluginChangelog).toContain("`/workflows:plan --lite`")
   })
 
+  test("high-grade workflow commands declare the Claude Opus API model", async () => {
+    const plugin = await loadPortablePlugin(portableRoot)
+    const commandNames = ["lrj", "workflows:to-issues", "workflows:work", "workflows:review", "workflows:triage"]
+
+    for (const commandName of commandNames) {
+      const command = plugin.commands.find((candidate) => candidate.name === commandName)
+      expect(command?.model).toBe("claude-opus-4-8")
+
+      const generatedPath = commandName.includes(":")
+        ? ["plugins", "compound-engineering", "commands", ...commandName.split(":").map((part, index) => index === 1 ? `${part}.md` : part)]
+        : ["plugins", "compound-engineering", "commands", `${commandName}.md`]
+      const generatedCommand = await readRepoFile(...generatedPath)
+      expect(generatedCommand).toContain("model: claude-opus-4-8")
+    }
+  })
+
   test("README surfaces document full and lite workflow tracks", async () => {
     const rootReadme = await readRepoFile("README.md")
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
@@ -184,7 +200,7 @@ describe("published support surface", () => {
     const changelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
 
     expect(agent).toBeDefined()
-    expect(agent?.model).toBe("opus-4.8")
+    expect(agent?.model).toBe("claude-opus-4-8")
     expect(agent?.codexModel).toBe("gpt-5.5")
     expect(agent?.copilotModel).toBe("gpt-5.5")
     expect(agent?.opencodeModel).toBe("openrouter/z-ai/glm-5.2")

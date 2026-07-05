@@ -4,7 +4,7 @@ description: >-
   Converts finalized compound workflow Markdown artifacts into source-loyal local
   Agent-Native MDX sidecars without hosted Plan MCP, database writes, publish,
   share, or source artifact replacement.
-model: opus-4.8
+model: claude-opus-4-8
 platforms:
   codex:
     model: gpt-5.5
