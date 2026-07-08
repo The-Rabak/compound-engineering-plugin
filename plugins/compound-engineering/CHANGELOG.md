@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Workflow next-step advisor** -- Added the `workflow-next-step` skill and wired it as the final phase of every core workflow so completed runs end with a checked workflow-progress list plus the exact next-session command and inputs. The full workflow now recommends `grill-with-docs` after brainstorming to update `CONTEXT.md` and enrich the brainstorm before planning.
-- **Local visual artifact renderer** -- Added the local visual artifact renderer agent, `local-visual-artifact-renderer`, for converting finalized brainstorm, plan, architecture, and review artifacts into source-loyal local Agent-Native MDX sidecars without hosted Plan MCP, database writes, publish/share flows, or source artifact replacement. The published surface now supports local-only visual artifacts and includes 36 specialized agents.
+- **Local visual artifact renderer** -- Added the local visual artifact renderer agent, `local-visual-artifact-renderer`, for converting finalized brainstorm, plan, architecture, and review artifacts into source-loyal local Agent-Native MDX sidecars without hosted Plan MCP, database writes, publish/share flows, or source artifact replacement. The published surface now supports local-only visual artifacts and includes 38 specialized agents.
+- **Inline workflow reviewers** -- Added `inline-spec-compliance-reviewer` and `inline-code-quality-reviewer` as Sonnet-routed workflow agents for `/workflows:work --review-mode inline|both`.
 - **Path-only visual artifact rendering** -- Added the path-only `/visual-artifact` wrapper so users can pass just `docs/visual-artifacts/<workflow>/<slug>` and get local check plus static preview with `--dir`, `--kind`, `--out`, and pinned `@agent-native/core@0.67.0` inferred.
 
 ### Changed
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Default local visual preview** -- The `local-visual-artifact-renderer` now treats `preview.html` as the default local handoff, running `plan local check` followed by pinned `plan local preview --out <artifact-dir>/preview.html` when local command execution is available.
 - **Local visual artifact serving** -- Hardened `/visual-artifact --serve` so the wrapper keeps the default local Plan UI port at exactly `3001`, distinguishes the Plan UI `--app-url` from the Agent-Native bridge `--port`, and refuses to create dead `.plan-url` files when no local Plan UI is reachable.
 - **Right-sized planning and lite workflow mode** -- `/workflows:brainstorm --lite` and `/workflows:plan --lite` now describe a compact path for small, low-risk changes while preserving WHY, success criteria, TDD/evidence, execution shape, and scope fences. The documented full workflow now runs through `/workflows:review` -> `/workflows:triage` -> `/workflows:compound`.
+- **Claude workflow model routing** -- `/workflows:work` now declares `claude-sonnet-5`, while `/lrj`, `/workflows:to-issues`, `/workflows:review`, and `/workflows:triage` remain Opus-led for critical orchestration. Workflow subagent prompts now dispatch resolved Claude plugin subagent identifiers without pasting agent file bodies into payloads.
 
 ## [4.17.0] - 2026-06-14
 
@@ -89,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **`/workflows:work`** -- Ticket execution, retries, and regression repairs now dispatch through the named `execution-agent`, with the full bundled agent template plus injected execution packet context loaded on every run.
+- **`/workflows:work`** -- Ticket execution, retries, and regression repairs now dispatch through the named `execution-agent` with an injected execution packet context scaffold.
 - **Execution prompt contract** -- `execution-agent-prompt.md` now serves as the injected context scaffold for the named `execution-agent` instead of acting like a standalone worker prompt.
 
 ## [4.12.0] - 2026-05-24

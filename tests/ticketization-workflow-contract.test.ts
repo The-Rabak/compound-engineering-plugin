@@ -116,12 +116,12 @@ describe("ticketization workflow contract", () => {
     )
     expect(rootReadme).toContain("`/workflows:to-issues`")
     expect(rootReadme).toContain("`/workflows:review` -> `/workflows:triage` -> `/workflows:compound`")
-    expect(rootReadme).toContain("36 specialized agents, 28 commands, and 27 skills")
+    expect(rootReadme).toContain("38 specialized agents, 28 commands, and 27 skills")
     expect(rootReadme).toContain(
       "`brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`",
     )
     expect(rootReadme).toContain("docs/tickets/")
-    expect(pluginReadme).toContain("Includes 36 specialized agents, 28 commands, and 27 skills.")
+    expect(pluginReadme).toContain("Includes 38 specialized agents, 28 commands, and 27 skills.")
     expect(pluginReadme).toContain("| Commands | 28 |")
     expect(pluginReadme).toContain("`/workflows:to-issues`")
     expect(pluginReadme).toContain(

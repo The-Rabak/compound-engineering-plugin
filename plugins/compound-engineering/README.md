@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 36 specialized agents, 28 commands, and 27 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 38 specialized agents, 28 commands, and 27 skills.
 
 This Claude plugin install surface contains only Claude-relevant files. Codex plugin metadata and Copilot assets are generated only on explicit target builds/installs from the canonical portable source in `portable/compound-engineering/`.
 
@@ -81,7 +81,7 @@ bun test
 
 | Component | Count |
 |-----------|-------|
-| Agents | 36 |
+| Agents | 38 |
 | Commands | 28 |
 | Skills | 27 |
 | Hooks | 0 |
@@ -136,13 +136,15 @@ Agents are organized into categories for easier discovery.
 | `design-iterator` | Iteratively refine UI through systematic design iterations |
 | `figma-design-sync` | Synchronize web implementations with Figma designs |
 
-### Workflow (6)
+### Workflow (8)
 
 | Agent | Description |
 |-------|-------------|
 | `bug-reproduction-validator` | Systematically reproduce and validate bug reports |
 | `e2e-test-strategist` | Design, harden, advise on, and brutally audit real end-to-end test suites across plan, deepen, work, and review — real app, real infra, no fakes, no hardcoded passes |
 | `execution-agent` | Execute scoped `/workflows:work` tickets and units with strict clean-code, DRY, SOLID, and Ralph-aware delivery discipline |
+| `inline-code-quality-reviewer` | Performs the lightweight per-unit code quality check inside `/workflows:work` inline review mode after spec compliance passes |
+| `inline-spec-compliance-reviewer` | Performs the lightweight per-unit spec compliance check inside `/workflows:work` inline review mode |
 | `local-visual-artifact-renderer` | Convert finalized workflow Markdown artifacts into source-loyal local visual MDX sidecars |
 | `pr-comment-resolver` | Address PR comments and implement fixes |
 | `spec-flow-analyzer` | Analyze user flows and identify gaps in specifications |

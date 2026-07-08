@@ -4,7 +4,7 @@ description: >-
   Execute work plans while maintaining WHY tracing from problem narrative
   through user story to implementation. Grounds every subagent in purpose.
 argument-hint: '[plan file, ticket index, ticket file, specification, or todo file path] [--batches N-M] [--review-mode bulk|inline|both]'
-model: claude-opus-4-8
+model: claude-sonnet-5
 platforms:
   codex:
     model:
@@ -29,12 +29,12 @@ This command takes a work document (plan, ticket index, ticket, specification, o
 This command supports a `--review-mode` argument that controls when code review happens:
 
 - **`bulk`** (default) -- Review happens after ALL tasks complete, using `/workflows:review`. This is the standard behavior and the only mode where named review agents run.
-- **`inline`** -- After each task, a lightweight two-stage review (spec compliance then code quality) runs automatically using prompt templates and `general-purpose` subagents only. Inline mode must NOT spawn named review agents directly.
+- **`inline`** -- After each task, a lightweight two-stage review (spec compliance then code quality) runs automatically using prompt templates and dedicated Sonnet inline reviewer subagents.
 - **`both`** -- Inline review per task AND comprehensive `/workflows:review` at the end. Maximum quality assurance.
 
 If no `--review-mode` is specified, check `compound-engineering.local.md` for a `review_mode` setting. If not found there either, default to `bulk`.
 
-**Hard rule:** Named review agents belong to `/workflows:review`. `/workflows:work` may coordinate inline template-based checks, but it must never bypass `/workflows:review` by dispatching named reviewers directly.
+**Hard rule:** Comprehensive named review agents belong to `/workflows:review`. `/workflows:work` may coordinate only the dedicated inline reviewer subagents below; it must never bypass `/workflows:review` by dispatching broad review agents directly.
 
 ### Ticket Batch Selection
 
@@ -310,9 +310,10 @@ For each unit, the orchestrator constructs a focused prompt for the named `execu
 
 Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`, substituting `execution-agent`.
 
-- Quote the first non-empty line of the loaded bundled agent template before continuing.
-- Every execution, retry, fix, and regression-repair subagent in this workflow must start from a freshly loaded copy of that same agent template.
-- Build `scoped_prompt` by injecting the full loaded `execution-agent` template plus the resolved context packet below. Do not summarize, abbreviate, or paraphrase the agent template.
+- Quote the resolved `execution-agent` source path plus verified `name` and `model` metadata before continuing.
+- Every execution, retry, fix, and regression-repair subagent in this workflow must dispatch the same resolved `execution-agent` subagent identity.
+- Resolve the concrete `execution-agent` subagent identifier from the verified agent metadata. For the generated Claude plugin this is `compound-engineering:workflow:execution-agent`.
+- Build `scoped_prompt` from only the resolved context packet below. Do not read or paste the full `execution-agent` body into the prompt; the subagent file is its system prompt.
 - Apply the shared `Reference Template Loading` protocol from `commands/workflows/references/orchestration-protocol.md`, substituting `execution-agent-prompt.md`, and quote the first non-empty line of that scaffold before continuing.
 - Also load `commands/workflows/references/execution-agent-prompt.md` as the scaffold for the context packet so the injected headings stay stable across retries and follow-up fixes.
 - Fill the scaffold completely. Do not continue if any required section is missing or any `{{PLACEHOLDER}}` value is unresolved.
@@ -353,7 +354,7 @@ Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/refere
   - **{{TDD_CONTRACT}}** -- the resolved execution contract: effective mode, Ralph/default loop, required unit/e2e evidence, any explicit exceptions, and any fix/regression context that the retried unit must address
   - **{{E2E_CONTRACT}}** -- inject the rules from `commands/workflows/references/e2e-testing-contract.md` so e2e evidence means **real** e2e: drive the running app over its real transport against real infra (per the plan's `## Runtime Stack & Environments`), no fakes, poll real conditions instead of sleeping, every assertion derives from a live value, and a test the unit cannot yet satisfy fails RED rather than being softened to green. If the plan declares no runtime surface, carry the justified N/A exception instead. For e2e-heavy units, optionally dispatch `e2e-test-strategist` in ADVISE mode (via the Named Agent Dispatch protocol) and fold its guidance into this section before spawning the worker.
 
-The loaded `execution-agent` template instructs each subagent to follow a 4-phase protocol:
+The resolved `execution-agent` subagent follows a 4-phase protocol:
 1. **Understand** -- review requirements, surface ambiguities, state assumptions before coding
 2. **Implement** -- follow the resolved Ralph/default execution mode, retry on failure (up to 3 attempts)
 3. **Self-review** -- check completeness, quality, discipline, testing, and evidence
@@ -364,10 +365,10 @@ The loaded `execution-agent` template instructs each subagent to follow a 4-phas
 Delegate the unit to a focused subagent:
 
 ```
-Task(execution-agent, prompt=scoped_prompt)
+Task(compound-engineering:workflow:execution-agent, prompt=scoped_prompt)
 ```
 
-The subagent prompt is constructed from the loaded bundled `execution-agent` template plus the fully injected context packet scaffold from `commands/workflows/references/execution-agent-prompt.md`. Do not substitute a custom summary prompt for any execution worker, and do not dispatch ticket implementation through `general-purpose`:
+The subagent prompt is constructed from the fully injected context packet scaffold from `commands/workflows/references/execution-agent-prompt.md`. Do not substitute a custom summary prompt for any execution worker, do not paste the agent file body into the payload, and do not dispatch ticket implementation through `general-purpose`:
 
 1. Read referenced files and understand existing patterns
 2. Follow the resolved Ralph/default execution contract
@@ -496,15 +497,15 @@ If the `--review-mode` argument is `inline` or `both`, perform a two-stage inlin
 
    **Stage 1: Spec Compliance Review**
 
-   Apply the shared `Reference Template Loading` protocol from `commands/workflows/references/orchestration-protocol.md`, substituting `spec-review-prompt.md`. If the template cannot be loaded and quoted, stop the inline review loop and report the missing template instead of improvising. Then fill in:
+   Apply the shared `Reference Template Loading` protocol from `commands/workflows/references/orchestration-protocol.md`, substituting `spec-review-prompt.md`. If the template cannot be loaded and quoted, stop the inline review loop and report the missing template instead of improvising. Then apply the shared `Named Agent Dispatch` protocol to `inline-spec-compliance-reviewer`; for the generated Claude plugin the resolved identifier is `compound-engineering:workflow:inline-spec-compliance-reviewer`. Then fill in:
    - `{{UNIT_REQUIREMENTS}}` -- the unit description, outcome scenario, scope fence, and success criteria
    - `{{SUCCESS_CRITERIA}}` -- the success criteria checkboxes
    - `{{IMPLEMENTER_REPORT}}` -- the execution report from the subagent
    - `{{UNIT_PURPOSE}}` -- what user story aspect or enabling outcome this unit delivers (from the unit's purpose line)
 
-   Spawn a spec reviewer subagent:
+   Spawn the inline spec reviewer subagent:
    ```
-   Task(general-purpose, prompt=filled_spec_review_prompt)
+   Task(compound-engineering:workflow:inline-spec-compliance-reviewer, prompt=filled_spec_review_prompt)
    ```
 
    The spec reviewer should check not just checkbox compliance but whether the implementation actually delivers on the recorded purpose. A unit can pass all checkboxes but miss the intent.
@@ -514,13 +515,13 @@ If the `--review-mode` argument is `inline` or `both`, perform a two-stage inlin
 
    **Stage 2: Code Quality Review** (only after spec compliance passes)
 
-   Apply the shared `Reference Template Loading` protocol from `commands/workflows/references/orchestration-protocol.md`, substituting `quality-review-prompt.md`. If the template cannot be loaded and quoted, stop the inline review loop and report the missing template instead of improvising. Then fill in:
+   Apply the shared `Reference Template Loading` protocol from `commands/workflows/references/orchestration-protocol.md`, substituting `quality-review-prompt.md`. If the template cannot be loaded and quoted, stop the inline review loop and report the missing template instead of improvising. Then apply the shared `Named Agent Dispatch` protocol to `inline-code-quality-reviewer`; for the generated Claude plugin the resolved identifier is `compound-engineering:workflow:inline-code-quality-reviewer`. Then fill in:
    - `{{IMPLEMENTER_REPORT}}` -- the execution report
    - `{{FILES_CHANGED}}` -- list of files from the report
 
-   Spawn a quality reviewer subagent:
+   Spawn the inline quality reviewer subagent:
    ```
-   Task(general-purpose, prompt=filled_quality_review_prompt)
+   Task(compound-engineering:workflow:inline-code-quality-reviewer, prompt=filled_quality_review_prompt)
    ```
 
    - If **PASS**: proceed to next steps

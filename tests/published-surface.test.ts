@@ -66,9 +66,9 @@ describe("published support surface", () => {
     expect(pluginChangelog).toContain("`/workflows:plan --lite`")
   })
 
-  test("high-grade workflow commands declare the Claude Opus API model", async () => {
+  test("critical orchestration workflow commands declare the Claude Opus API model", async () => {
     const plugin = await loadPortablePlugin(portableRoot)
-    const commandNames = ["lrj", "workflows:to-issues", "workflows:work", "workflows:review", "workflows:triage"]
+    const commandNames = ["lrj", "workflows:to-issues", "workflows:review", "workflows:triage"]
 
     for (const commandName of commandNames) {
       const command = plugin.commands.find((candidate) => candidate.name === commandName)
@@ -79,6 +79,24 @@ describe("published support surface", () => {
         : ["plugins", "compound-engineering", "commands", `${commandName}.md`]
       const generatedCommand = await readRepoFile(...generatedPath)
       expect(generatedCommand).toContain("model: claude-opus-4-8")
+    }
+  })
+
+  test("workflows work declares the Claude Sonnet API model", async () => {
+    const plugin = await loadPortablePlugin(portableRoot)
+    const command = plugin.commands.find((candidate) => candidate.name === "workflows:work")
+
+    expect(command?.model).toBe("claude-sonnet-5")
+
+    const generatedCommand = await readRepoFile("plugins", "compound-engineering", "commands", "workflows", "work.md")
+    expect(generatedCommand).toContain("model: claude-sonnet-5")
+
+    for (const agentName of ["inline-spec-compliance-reviewer", "inline-code-quality-reviewer"]) {
+      const agent = plugin.agents.find((candidate) => candidate.name === agentName)
+      expect(agent?.model).toBe("claude-sonnet-5")
+
+      const generatedAgent = await readRepoFile("plugins", "compound-engineering", "agents", "workflow", `${agentName}.md`)
+      expect(generatedAgent).toContain("model: claude-sonnet-5")
     }
   })
 
@@ -97,7 +115,7 @@ describe("published support surface", () => {
       expect(readme).toContain("preserves TDD/evidence and scope contracts")
     }
 
-    expect(rootReadme).toContain("36 specialized agents, 28 commands, and 27 skills")
+    expect(rootReadme).toContain("38 specialized agents, 28 commands, and 27 skills")
     expect(rootReadme).not.toContain("34 specialized agents, 28 commands, and 26 skills")
   })
 
@@ -204,7 +222,7 @@ describe("published support surface", () => {
     expect(agent?.codexModel).toBe("gpt-5.5")
     expect(agent?.copilotModel).toBe("gpt-5.5")
     expect(agent?.opencodeModel).toBe("openrouter/z-ai/glm-5.2")
-    expect(plugin.agents.length).toBe(36)
+    expect(plugin.agents.length).toBe(38)
 
     for (const content of [portableAgent, generatedAgent]) {
       expect(content).toContain("source artifact is authoritative")
@@ -265,7 +283,7 @@ describe("published support surface", () => {
     expect(pluginReadme).toContain("| `local-visual-artifact-renderer` |")
     expect(pluginReadme).toContain("BuilderIO Agent-Native plan style guidance")
     expect(pluginReadme).toContain("structured Plan primitives")
-    expect(pluginReadme).toContain("| Agents | 36 |")
+    expect(pluginReadme).toContain("| Agents | 38 |")
     expect(changelog).toContain("local visual artifact renderer")
     expect(changelog).toContain("Agent-Native visual style guidance")
   })
@@ -401,7 +419,7 @@ describe("published support surface", () => {
 
     for (const docsSurface of [rootReadme, pluginReadme, changelog]) {
       expect(docsSurface).toContain("local-only visual artifacts")
-      expect(docsSurface).toContain("36 specialized agents")
+      expect(docsSurface).toContain("38 specialized agents")
     }
   })
 })

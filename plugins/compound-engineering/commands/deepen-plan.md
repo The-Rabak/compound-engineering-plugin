@@ -529,7 +529,7 @@ Skip agents that do not materially improve the current unresolved areas.
 
 **Step 3: Launch selected agents with WHY context**
 
-Before dispatching any named agent discovered in this step, apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md`. Pass the WHY context block from this workflow together with the loaded template.
+Before dispatching any named agent discovered in this step, apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md`. Pass the WHY context block and unresolved-risk payload only; do not append the agent file body.
 
 ```
 Task [agent-name]: "Review this plan using your expertise for this unresolved area: [question/risk].
@@ -553,7 +553,7 @@ Focus on this unresolved area and return concrete recommendations that improve e
 E2E reveals the cracks at the seams. Deepening is where the suggested e2e suite gets stress-tested for uncovered seams, missing failure modes, weak assertions, and fake risks -- before any code is written. This never weakens the e2e contract; it only sharpens it.
 </thinking>
 
-If the plan has a runtime surface (`runtime_stack.e2e_surface` is not `false`), dispatch `e2e-test-strategist` in **HARDEN mode**. Apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md` (bundled template first, OpenViking/global last-resort, quote the first non-empty line before dispatching).
+If the plan has a runtime surface (`runtime_stack.e2e_surface` is not `false`), dispatch `e2e-test-strategist` in **HARDEN mode**. Apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md` (bundled agent lookup first, OpenViking/global last-resort, verify source and metadata before dispatching).
 
 - Task e2e-test-strategist(mode=HARDEN, suggested_e2e_suite, runtime_stack, user_story, success_criteria, open_risks, e2e_contract=commands/workflows/references/e2e-testing-contract.md)
 

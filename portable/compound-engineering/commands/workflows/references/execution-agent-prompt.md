@@ -14,7 +14,7 @@ platforms:
 
 This template is the **injected context packet** that `/workflows:work` passes into the named `execution-agent`.
 
-**Canonical execution rules live in `agents/workflow/execution-agent.md`.** `/workflows:work` must load that bundled agent template, then inject the fully populated context packet below when dispatching `Task(execution-agent, prompt=scoped_prompt)`.
+**Canonical execution rules live in `agents/workflow/execution-agent.md`.** `/workflows:work` must verify that bundled agent's metadata to resolve the concrete subagent identifier, then pass only the fully populated context packet below when dispatching the resolved `execution-agent` subagent.
 
 **This is NOT an invocable agent.** It is a reference document consumed by the orchestrator so the exact context scaffold ships with generated workflow bundles.
 
@@ -22,7 +22,7 @@ This template is the **injected context packet** that `/workflows:work` passes i
 
 ---
 
-The bundled `execution-agent` enforces clean-code, DRY, SOLID, feature-home boundary discipline, doc blocks above non-trivial functions/classes, imports at the top of files unless a real exception exists, explicit failure handling, and the structured execution report contract. Populate the scaffold below completely before dispatch.
+The bundled `execution-agent` enforces clean-code, DRY, SOLID, feature-home boundary discipline, doc blocks above non-trivial functions/classes, imports at the top of files unless a real exception exists, explicit failure handling, and the structured execution report contract through its own system prompt. Populate the scaffold below completely before dispatch; do not paste the agent template into this payload.
 
 `## Why This Unit Exists` must be a compact WHY linkage block, not copied plan prose. Always provide the canonical source path (`brainstorm_ref` when present, otherwise `plan_ref`) plus a concise local intent line for this unit.
 

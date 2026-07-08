@@ -180,7 +180,7 @@ If parallel safety is unclear, split the work into smaller or serial batches.
 
 ### Step 6: Build a Full Execution Packet per Todo
 
-Before launching execution-agent, prepare a full context packet. Do not send minimal prompts.
+Before launching `execution-agent`, apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`, resolve the concrete subagent identifier, and prepare a full context packet. For the generated Claude plugin the resolved identifier is `compound-engineering:workflow:execution-agent`. Do not send minimal prompts, and do not read or paste the full agent body into the packet; the subagent file is its system prompt.
 
 Every packet must include:
 
@@ -197,7 +197,7 @@ Every packet must include:
 Execution packet skeleton:
 
 ```markdown
-AGENT_TEMPLATE loaded via local agent repository. Follow exactly.
+Resolved execution-agent subagent metadata verified via local agent repository. Follow that subagent's system prompt exactly.
 
 Repository: [path]
 Branch: [branch]
@@ -245,7 +245,7 @@ Execute by safe batch, not by one giant parallel blast and not by immediate one-
 For each safe batch:
 
 1. Set each batch todo status to `in_progress`
-2. Dispatch one `execution-agent` per todo with its full packet and dedicated scope
+2. Dispatch one resolved `execution-agent` subagent per todo with its full packet and dedicated scope
 3. Keep the orchestrator focused on batch coordination, validation, and status integrity
 4. Wait for every agent in the batch to complete
 5. Review each execution report separately

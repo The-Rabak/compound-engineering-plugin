@@ -473,7 +473,7 @@ After planning the issue structure, run SpecFlow Analyzer to validate the featur
 
 In lite mode for low-risk work, first run a compact orchestrator self-check against the same questions below. Dispatch `spec-flow-analyzer` only if the self-check finds ambiguous user flows, missing acceptance criteria, or edge cases that could change execution packets.
 
-Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md` to `spec-flow-analyzer`. Bundled template lookup still comes first, OpenViking/global context is last-resort only, and dispatch is forbidden unless you can quote the first non-empty line of the loaded template.
+Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md` to `spec-flow-analyzer`. Bundled agent lookup still comes first, OpenViking/global context is last-resort only, and dispatch is forbidden unless you can verify the agent source and metadata.
 
 - Task spec-flow-analyzer(feature_description, user_story, success_criteria, research_findings)
 
@@ -498,7 +498,7 @@ First, establish the **runtime stack** the suite will drive against. Capture how
 
 In lite mode for low-risk work, use a compact e2e design self-check before specialist dispatch: identify the runtime surface, the smallest real scenario that proves the success criteria, and any justified no-surface exception. Dispatch `e2e-test-strategist` only when the runtime surface, seams, failure modes, or evidence replacement are unclear.
 
-When specialist dispatch is needed, dispatch `e2e-test-strategist` in **DESIGN mode**. Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`: bundled template lookup first, OpenViking/global context last-resort only, and do not dispatch unless you can quote the first non-empty line of the loaded template.
+When specialist dispatch is needed, dispatch `e2e-test-strategist` in **DESIGN mode**. Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`: bundled agent lookup first, OpenViking/global context last-resort only, and do not dispatch unless you can verify the agent source and metadata.
 
 - Task e2e-test-strategist(mode=DESIGN, user_story, success_criteria, runtime_stack, research_findings, e2e_contract=commands/workflows/references/e2e-testing-contract.md)
 

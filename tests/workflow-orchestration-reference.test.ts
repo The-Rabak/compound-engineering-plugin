@@ -46,7 +46,9 @@ describe("workflow orchestration references", () => {
     expect(orchestration).toContain("## Reference Template Loading")
     expect(orchestration).toContain("## Named Agent Dispatch")
     expect(orchestration).toContain("Never dispatch a named agent by name alone")
-    expect(orchestration).toContain("Do not summarize or abbreviate the template")
+    expect(orchestration).toContain("compound-engineering:<category>:<agent-name>")
+    expect(orchestration).toContain("read only the metadata/header needed to verify")
+    expect(orchestration).toContain("Do not paste the agent file body into the delegated prompt")
 
     expect(tdd).toContain("## Contract Resolution")
     expect(tdd).toContain("## Plan Section Shape")

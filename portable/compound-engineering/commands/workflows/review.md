@@ -225,15 +225,15 @@ Run all configured review agents in parallel using Task tool. For each agent in 
 
 Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md` before every named reviewer dispatch.
 
-- Start with the bundled agent directory and load the local template when it exists.
-- Fall back to OpenViking/global context only when no bundled template can be loaded.
-- Quote the first non-empty line of the loaded template and record which source you used before dispatching.
-- Include the loaded template's rules in the delegated prompt without paraphrasing away mandatory constraints.
+- Start with the bundled agent directory and verify the local agent metadata when it exists.
+- Fall back to OpenViking/global context only when no bundled agent can be resolved.
+- Quote the resolved source path plus the `name` and `model` metadata before dispatching.
+- Resolve the concrete subagent identifier and dispatch the subagent itself. Do not paste the agent file body into the delegated prompt.
 - If any configured or mandatory reviewer cannot be loaded and quoted, report that the review is incomplete and stop rather than substituting a different reviewer or silently reducing coverage.
 - Never dispatch a named agent by name alone.
 
 ```
-Task {agent-name}(branch diff content + review context from settings body + WHY context block)
+Task {resolved-agent-id}(branch diff content + review context from settings body + WHY context block)
 ```
 
 **Every agent prompt MUST include the WHY linkage block and architecture handoff block** from the step above. This ensures agents evaluate fitness-for-purpose, not just technical quality. After loading the template, dispatch each reviewer with a prompt like:
@@ -398,7 +398,7 @@ Complete system context map with component interactions
 
 ### 4. Simplification and Minimalism Review
 
-Apply the shared `Named Agent Dispatch` protocol above to `code-simplicity-reviewer`, then dispatch it to see if the code can be simplified. If the template cannot be quoted from a loaded source, stop and report that gap instead of dispatching blindly.
+Apply the shared `Named Agent Dispatch` protocol above to `code-simplicity-reviewer`, then dispatch it to see if the code can be simplified. If the agent source and metadata cannot be verified, stop and report that gap instead of dispatching blindly.
 
 ### 5. Findings Synthesis and Todo Creation Using file-todos Skill
 
