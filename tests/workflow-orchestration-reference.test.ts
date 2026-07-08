@@ -430,6 +430,82 @@ describe("workflow orchestration references", () => {
     )
   })
 
+  test("review keeps simplicity reviewer mandatory while deduplicating configured reviewers", async () => {
+    const portableReview = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "review.md",
+    )
+    const generatedReview = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "review.md",
+    )
+    const portableSetup = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "setup",
+      "SKILL.md",
+    )
+    const generatedSetup = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "skills",
+      "setup",
+      "SKILL.md",
+    )
+    const mandatoryReviewers =
+      "`agent-native-reviewer`, `learnings-researcher`, `uncle-bob`, `ticket-flow-auditor`, `e2e-test-strategist`, and `code-simplicity-reviewer`"
+
+    for (const prompt of [portableReview, generatedReview]) {
+      expect(prompt).toContain(mandatoryReviewers)
+      expect(prompt).toContain("Dispatch each resolved reviewer at most once")
+      expect(prompt).toContain("does not replace the mandatory specialist reviewer")
+      expect(prompt).toContain("Apply the protocol above to `code-simplicity-reviewer`")
+      expect(prompt).not.toContain("if it is not configured, do not dispatch it separately")
+    }
+
+    for (const setup of [portableSetup, generatedSetup]) {
+      expect(setup).toContain(mandatoryReviewers)
+      expect(setup).toContain("deduplicates configured and mandatory reviewers before dispatch")
+    }
+  })
+
+  test("triage delegates focused todo research through the todo triage researcher contract", async () => {
+    const portableTriage = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "triage.md",
+    )
+    const generatedTriage = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "triage.md",
+    )
+
+    for (const prompt of [portableTriage, generatedTriage]) {
+      expect(prompt).toContain("## Triage Brief Contract")
+      expect(prompt).toContain("Every focused triage research result must return exactly this compact, todo-ready shape")
+      expect(prompt).toContain("## Todo Triage Brief")
+      expect(prompt).toContain("## Evidence Facts")
+      expect(prompt).toContain("## Recommended Action")
+      expect(prompt).toContain("## Execution Fields")
+      expect(prompt).toContain("## Decision Needed")
+      expect(prompt).toContain("dispatch the resolved `todo-triage-researcher` agent with the Triage Brief Contract")
+      expect(prompt).toContain("request the Triage Brief Contract, not a raw investigation report")
+      expect(prompt).toContain("do not redo broad repository research after a focused triage researcher returns a complete brief")
+    }
+  })
+
   test("shared TDD reference drives plan, execution, and review evidence contracts", async () => {
     const planPrompt = await readRepoFile(
       "portable",

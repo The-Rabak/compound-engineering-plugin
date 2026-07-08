@@ -1,276 +1,301 @@
 ---
 name: "workflows:triage"
-description: Research each todo, resolve decisions one-by-one, write chosen actions into todo files, then execute safe batches in swarm mode with execution-agent
+description: Validate review-created todos, record selected actions, and execute only vetted safe batches through execution-agent
 argument-hint: "[todo range or scope] [--auto-recommended] [--execute]"
 model: claude-opus-4-8
 disable-model-invocation: true
 ---
 
-- Read all target todo files before asking decisions.
-- Keep main context as orchestration, research, decision, and validation space; execution agents do implementation.
-- Do not start execution until all targeted todos are fully triaged and updated in place.
-- If invoked with `--auto-recommended`, select the researched recommended action for every open decision without asking the user.
+# Triage Review Todos
 
-Use this command when you need to process review todos end-to-end:
+## Operating Contract
 
-1. research each todo against the current codebase,
-2. present grounded action options to the user,
-3. resolve open questions one-by-one,
-4. write the selected action and context back into every todo file,
-5. build safe swarm batches with dedicated execution scopes,
-6. orchestrate execution-agent runs with full packets,
-7. validate each result independently,
-8. close statuses cleanly.
+You are the triage orchestrator. Your job is to turn review-created todos into validated, execution-ready decisions without making the main model redo every specialist's work.
 
-## Core Rule Set
+Do the work of an orchestrator:
+- identify the exact todo scope
+- load every target todo before asking or executing anything
+- dispatch focused research only when the todo is not already action-ready
+- synthesize compact research briefs into selected actions
+- validate evidence, completeness, scope fences, dependencies, and execution safety
+- catch contradictions, unsupported recommendations, missing acceptance criteria, and unsafe parallelism
+- write the final selected action and work-log entries into todo files
+- when `--execute` is present, coordinate execution-agent batches and independently validate completion
 
-**IMPORTANT: During research and decision phases, DO NOT implement code fixes.**
+Do not become a passive router:
+- reject or repair weak research briefs before using them
+- inspect cited evidence paths when a recommendation looks unsupported or risky
+- block a todo rather than auto-selecting an action that lacks enough evidence
+- ensure every selected action is the smallest credible fix for the accepted review finding
+- preserve user story, architecture, ticket scope, and evidence contracts when those artifacts exist
 
-This command is for:
+Do not duplicate delegated work:
+- do not redo broad repository research after a focused triage researcher returns a complete brief
+- do not redo security, data, e2e, architecture, clean-code, framework, or ticket-flow analysis already delegated by review, except to catch an obvious contradiction or missing blocker
+- do not implement code in the orchestration context
+- do not paste agent file bodies into subagent prompts
+- do not append raw research dumps to todo files
 
-- Review-todo triage and decision closure
-- Converting vague todos into researched, executable units
-- Writing action-ready todo files before execution starts
-- Swarm orchestration with strict scope fences and independent validation
+## Scope
+
+<triage_scope> #$ARGUMENTS </triage_scope>
+
+Flags:
+- `--auto-recommended`: select the vetted recommended action for each decision without asking the user. If the recommendation is not evidence-backed, mark the todo `blocked` instead of guessing.
+- `--execute`: after all target todos have selected actions recorded, build safe batches and dispatch execution-agent. Without this flag, stop after triage decisions are written.
+
+`--auto-recommended` does not imply `--execute`.
+
+## Required References
+
+Use these contracts when needed. Load only the relevant reference, and do not paste full reference text into subagent prompts.
+
+- `commands/workflows/references/orchestration-protocol.md`
+- `commands/workflows/references/execution-agent-prompt.md` when `--execute` is present
+- `commands/workflows/references/tdd-evidence-contract.md` when resolving execution evidence expectations
+- `commands/workflows/references/e2e-testing-contract.md` when a todo touches runtime/user-facing behavior or e2e evidence
+
+When dispatching a named agent, apply `Named Agent Dispatch` from `orchestration-protocol.md`: verify the bundled agent source and metadata, dispatch the resolved agent identifier, and pass only the workflow-specific payload plus compact resolved context. Do not paste the agent file body.
+
+## Triage Brief Contract
+
+Every focused triage research result must return exactly this compact, todo-ready shape:
+
+```markdown
+## Todo Triage Brief
+Todo: <path>
+Title: <title>
+Verdict: ready | needs-decision | blocked
+Confidence: high | medium | low
+
+## Evidence Facts
+- <path:line or artifact path> - <fact that affects the action>
+
+## Recommended Action
+<smallest credible action, or "None - blocked" with reason>
+
+## Alternatives Considered
+- <alternative> - <why rejected/deferred>
+
+## Execution Fields
+- Likely files: <paths or "unknown">
+- Scope fence: <what must not change>
+- Acceptance criteria: <testable checklist>
+- Validation command: <specific command or justified missing command>
+- Dependency notes: <none or exact blockers>
+
+## Decision Needed
+None | <one concrete question with options>
+
+## Risks / Specialist Escalation
+- <risk, contradiction, missing evidence, or "None">
+```
+
+Reject broad notes that do not fit this contract. The orchestrator may ask a researcher for a repaired brief, inspect the cited evidence directly, or mark the todo blocked.
 
 ## Workflow
 
-### Step 1: Bootstrap and Scope
+### Step 1: Bootstrap and Target Scope
 
-1. Load project context and memory first.
-2. Identify target todos from user scope (range, priority, status, or "all open").
-3. Build a deterministic queue sorted by todo id.
-4. Confirm dependency order before any execution planning.
+1. Load project instructions and relevant local workflow context.
+2. Resolve the narrowest target todo set from the user scope:
+   - explicit file paths
+   - numeric ranges such as `todos 001-005`
+   - priority/status filters
+   - "all open" only when the user explicitly asked for broad scope
+3. Read every target todo fully before asking decisions or dispatching execution.
+4. Build a deterministic queue sorted by issue id.
+5. Record frontmatter status, priority, dependencies, title, current findings, proposed solutions, recommended action, acceptance criteria, likely files, and work-log state.
 
-Recommended checks:
+Recommended discovery:
 
 ```bash
 rg '^status:\s*(pending|in_progress|blocked|complete)' todos/*.md
 ```
 
-### Step 2: Read and Research Every Target Todo Before Asking Decisions
+If the target set is empty, report the exact scope checked and stop.
 
-Read each todo fully before asking any question. Then do focused repository research for that todo so your proposed actions are grounded in reality rather than guesswork.
+### Step 2: Build a Readiness Ledger
 
-Research for each todo should cover:
+For each target todo, classify the existing file before dispatching research:
 
-- Problem statement quality and missing acceptance criteria
-- Relevant code paths, modules, tests, docs, and prior patterns
-- Dependency and ordering concerns
-- Likely implementation surface and blast radius
-- Validation expectations and evidence commands
-- Risks, blockers, or ambiguity that should shape the decision
+- `ready`: has evidence-backed findings, a clear proposed solution or recommended action, likely files/scope fence, testable acceptance criteria, and validation expectations.
+- `needs-research`: missing evidence, likely files, acceptance criteria, validation command, scope fence, or a defensible recommendation.
+- `needs-decision`: multiple credible actions remain and user intent or product tradeoff decides the path.
+- `blocked`: missing external access, unresolved dependency, absent parent artifact, contradictory evidence, or unsafe recommendation.
+- `already-complete`: status is `complete`; include in the report but do not execute.
 
-The research pass must produce concrete action options. Do not present shallow "maybe do X" suggestions; each option must reflect what you found in the codebase.
+Use existing review-created todo content first. Do not dispatch a researcher just to restate already complete fields.
 
-Present triage output per todo in this format:
+### Step 3: Focused Research Only Where Needed
 
-```markdown
----
-Todo #NNN: [Title]
+For each `needs-research`, `needs-decision`, or suspicious `ready` todo, dispatch the resolved `todo-triage-researcher` agent with the Triage Brief Contract.
 
-Status: [pending/in_progress/blocked/complete]
-Priority: [p1/p2/p3]
-Dependencies: [none/list]
+Payload should be compact:
+- repository path and branch
+- todo file path
+- extracted todo sections or the todo file path for the agent to read
+- accepted review finding source if present
+- parent plan/ticket/architecture refs if present
+- known constraints from project instructions
+- exact missing fields from the readiness ledger
+- request the Triage Brief Contract, not a raw investigation report
 
-Research Summary:
-- Relevant files: [file], [file]
-- Existing pattern: [summary]
-- Validation surface: [tests/checks]
+Use the same dispatch protocol for optional specialist escalation only when it can change the decision:
+- `learnings-researcher` when the todo touches a pattern likely captured in `docs/solutions/`
+- `framework-docs-researcher` only for version-sensitive framework/API behavior
+- route broad post-implementation quality analysis through `/workflows:review`, not ad hoc reviewers
 
-Possible Actions:
-1. [Action name] - [what changes] - [main tradeoff]
-2. [Action name] - [what changes] - [main tradeoff]
-3. [Action name] - [what changes] - [main tradeoff]
+For low-risk todos that are already nearly ready, a narrow orchestrator self-check is acceptable: inspect only the todo and the directly cited files. Do not perform a new broad repo scan.
 
-Recommended Action:
-- [Suggested action and why]
+### Step 4: Orchestrator Quality Gate
 
-Open Decisions:
-1. [Decision question]
-2. [Decision question]
+Before selecting or asking about any action, validate every todo brief against this checklist:
 
-Execution Risks:
-- [Risk]
----
-```
+- Evidence facts cite real paths, line references, artifacts, or explicit missing-evidence blockers.
+- Recommended action is the smallest credible fix for the accepted finding.
+- Alternatives are either meaningfully different or omitted because no real decision exists.
+- Acceptance criteria are testable and trace to the problem statement.
+- Likely files and scope fence are specific enough for an execution agent.
+- Validation command is specific, or the absence of one is justified and blocked/deferred.
+- Dependencies are explicit and ordered.
+- Any security, data migration, e2e, architecture, or public API risk is either covered by prior review evidence, specialist evidence, or marked blocked.
+- The brief does not expand scope beyond the review finding or user story.
+- The brief does not contradict another targeted todo.
 
-### Step 3: Resolve Open Decisions One Question at a Time
+If a brief fails:
+1. Inspect the cited evidence directly when the gap is small.
+2. Ask the same researcher for a repaired brief when the contract is incomplete.
+3. Mark the todo `blocked` when the recommendation cannot be defended.
 
-Ask only one question at a time. Do not batch decisions.
+The orchestrator is accountable for this gate. Do not treat subagent output as authoritative just because it is structured.
 
-Automation mode:
+### Step 5: Resolve Decisions
 
-- If the scope includes `--auto-recommended`, do not ask decision questions.
-- For every open decision, choose the researched Recommended Action.
-- Record the decision as `@lrj-auto` in the todo work log with the evidence-backed reason.
-- Continue directly into execution after all targeted todos are updated.
-- If no Recommended Action can be defended from the research, mark that todo `blocked` with the missing evidence instead of guessing.
+If `--auto-recommended` is present:
+- Select the vetted recommended action only when the quality gate passed.
+- Record `@lrj-auto` as the decision owner in the work log.
+- If the recommended action is low-confidence, missing evidence, or materially scope-expanding, mark the todo `blocked` with the reason.
+
+If `--auto-recommended` is absent:
+- Ask only one decision question at a time.
+- Ask only when a real product, priority, risk, or scope choice remains after research.
+- Do not ask the user to choose between fake options when the smallest credible fix is clear.
 
 Decision prompt format:
 
 ```markdown
 Decision for Todo #NNN:
-[Clear question]
+<clear question>
 
 Research-backed options:
-1. [option A]
-2. [option B]
-3. [option C]
+1. <option A>
+2. <option B>
+3. <option C>
 
-Recommended: [option]
-Why: [brief evidence-based reason]
+Recommended: <option>
+Why: <brief evidence-backed reason>
 ```
 
-Rules:
+If the user gives freeform direction, normalize it into the selected action and confirm in one sentence before continuing.
 
-- Wait for explicit answer before asking the next question.
-- If user gives freeform direction, normalize it and confirm in one sentence.
-- No implementation starts until the full target set has been triaged and all required decisions are resolved.
+### Step 6: Write Selected Actions to Todo Files
 
-### Step 4: Write the Selected Action Back into Every Todo File
-
-Update todo files immediately after each resolved decision so the todo becomes the authoritative execution packet seed.
+Update every target todo immediately after its decision is resolved or blocked.
 
 Expected updates:
-
-1. Add or refresh `## Recommended Action`
-2. Record the chosen action, scope fence, likely files, and validation commands
-3. Append `## Work Log` entry with decision outcome and research summary
+1. Add or refresh `## Recommended Action`.
+2. Record selected action, likely files, scope fence, acceptance criteria additions if needed, and validation command.
+3. Append a dated `## Work Log` entry with:
+   - decision owner (`@user` or `@lrj-auto`)
+   - evidence summary
+   - selected action
+   - blocked reason, if blocked
 4. Keep status accurate:
-   - stays `pending` after triage-only updates
-   - moves to `in_progress` only when the todo is dispatched to execution
-   - moves to `complete` only after independent validation passes
+   - `pending`: selected action recorded, not executing
+   - `in_progress`: actively dispatched under `--execute`
+   - `complete`: independently validated after execution
+   - `blocked`: cannot continue with a concrete blocker
+
+Do not start execution until all targeted non-complete todos have selected actions or explicit blocked reasons written in their files.
 
 Work log template:
 
 ```markdown
 ### YYYY-MM-DD - Triage decisions recorded
 
-**By:** @user
+**By:** @user | @lrj-auto
 
 **Actions:**
-- [Selected action recorded]
-- [Scope fence or dependency decision recorded]
+- <selected action or blocked reason>
+- <scope fence and validation command>
 
-**Learnings:**
-- [Relevant codebase pattern discovered]
-- [Why this direction was chosen]
+**Evidence:**
+- <cited finding or research fact>
 ```
 
-### Step 5: Build a Swarm Plan After All Todos Are Triaged
+### Step 7: Stop Here Unless `--execute` Is Present
 
-Do not execute immediately after the first todo is approved. First finish triage for the full target set, then build a safe execution plan.
+If `--execute` is not present, do not build execution batches and do not dispatch execution-agent. Produce a triage-only report with:
 
-Create:
+- total targeted
+- selected-action count
+- blocked count with reasons
+- already-complete count
+- exact next command if execution is appropriate, such as `/workflows:triage <same-scope> --execute`
 
-1. A dependency graph across all targeted todos
-2. A file-overlap and blast-radius check
-3. Parallel-safe batches where each todo has a dedicated scope
-4. A fallback serialization rule for any items that overlap too much
+Then run the final workflow-next-step advisor.
 
-Only put todos in the same swarm batch when:
+### Step 8: Build Safe Execution Batches
 
-- their dependencies are already complete or outside the target set,
-- their likely file surfaces do not materially overlap,
-- they do not require the same migration, schema, or shared contract change,
-- their validation can run independently.
+Only run this step when `--execute` is present.
 
-If parallel safety is unclear, split the work into smaller or serial batches.
+Build the batch plan from the validated selected actions, not from guesses:
 
-### Step 6: Build a Full Execution Packet per Todo
+1. Exclude `complete` and `blocked` todos.
+2. Build a dependency graph across targeted todos.
+3. Compare likely file surfaces and validation commands.
+4. Put todos in the same batch only when:
+   - dependencies are already complete or outside the target set
+   - likely file surfaces do not materially overlap
+   - they do not require the same migration, schema, shared contract, generated output, or public API change
+   - validation can run independently
+5. Serialize when parallel safety is unclear.
 
-Before launching `execution-agent`, apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`, resolve the concrete subagent identifier, and prepare a full context packet. For the generated Claude plugin the resolved identifier is `compound-engineering:workflow:execution-agent`. Do not send minimal prompts, and do not read or paste the full agent body into the packet; the subagent file is its system prompt.
+The orchestrator owns this batch-safety decision and must explain any risky serialization or blocked parallelism.
 
-Every packet must include:
+### Step 9: Dispatch Execution-Agent with the Canonical Scaffold
 
-- Repository path and branch
-- Exact todo file path and title
-- Goal and acceptance criteria
-- Research summary and selected action
-- Explicitly resolved decisions
-- Scope fence (what not to change)
-- Likely files and tests
-- Validation expectations
-- Reporting contract (what execution-agent must return)
+Before launching `execution-agent`, apply the shared `Named Agent Dispatch` protocol and resolve the concrete subagent identifier. For the generated Claude plugin the resolved identifier is `compound-engineering:workflow:execution-agent`.
 
-Execution packet skeleton:
+Load `commands/workflows/references/execution-agent-prompt.md` using the reference-template loading protocol. Build the execution prompt from that scaffold only. Do not use a custom triage execution skeleton, and do not paste the `execution-agent` body.
 
-```markdown
-Resolved execution-agent subagent metadata verified via local agent repository. Follow that subagent's system prompt exactly.
+Fill every required scaffold section from concrete sources:
+- `## Your Unit`: todo title, selected action, likely files, acceptance criteria, validation command, dependencies, parent refs
+- `## Ticket-local context`: problem statement, findings, recommended action, evidence facts, scope fence
+- `## Why This Unit Exists`: review finding, user-story/plan/ticket refs when available, or todo-derived purpose fallback
+- `## Architectural Context`: parent architecture handoff when available, otherwise the affected component context from the vetted brief plus explicit limits
+- `## Architecture Handoff`: deletion-test, interfaces, seams, adapters, contracts, and review guidance when available; otherwise a bounded "no broader architecture change authorized" contract
+- `## Learnings from Previous Units`: relevant prior execution or solution-doc notes, or "None found in scoped triage"
+- `## Project Conventions`: project instructions plus relevant local config
+- `## TDD Execution Contract`: resolved local or parent TDD/evidence expectations, including e2e contract when applicable
 
-Repository: [path]
-Branch: [branch]
+If a required section cannot be truthfully populated after narrow artifact lookup, mark the todo `blocked` instead of inventing context.
 
-## Your Unit
-Todo file: [path]
-Title: [title]
-Goal: [goal]
+Every execution-agent owns exactly one todo. Never merge multiple todos into one worker prompt.
 
-## Selected Action
-- [final action]
+### Step 10: Orchestration-Side Validation
 
-## Research Summary
-- [existing pattern]
-- [relevant files]
-- [validation surface]
+Never rely only on subagent self-report. After each execution-agent returns, validate independently:
 
-## Decisions (Final)
-- [decision]
-- [decision]
-
-## Architecture Handoff
-Acceptance criteria:
-1. [...]
-2. [...]
-
-Scope fence:
-- [...]
-- [...]
-
-Likely files:
-- [file]
-- [file]
-
-Validation contract:
-- run/update tests relevant to this todo
-- report red/green/post-refactor evidence
-- provide changed files and rationale
-```
-
-### Step 7: Execute in Swarm Mode with Dedicated Scopes
-
-Execute by safe batch, not by one giant parallel blast and not by immediate one-off serial runs.
-
-For each safe batch:
-
-1. Set each batch todo status to `in_progress`
-2. Dispatch one resolved `execution-agent` subagent per todo with its full packet and dedicated scope
-3. Keep the orchestrator focused on batch coordination, validation, and status integrity
-4. Wait for every agent in the batch to complete
-5. Review each execution report separately
-6. Validate each todo independently from the orchestration context
-7. Mark validated todos `complete`; keep failures `in_progress` or `blocked` with exact reasons
-8. Only advance dependent batches after prerequisites are truly complete
-
-Hard rules:
-
-- Every execution-agent owns exactly one todo scope at a time.
-- Do not merge multiple todos into one agent prompt.
-- Do not allow two agents to edit the same unstable surface unless the batch plan explicitly proves safety.
-- If one todo in a batch fails, do not discard successful siblings; validate and close each todo independently.
-
-### Step 8: Orchestration-Side Validation (Mandatory)
-
-Never rely only on subagent self-report. Orchestrator validates.
-
-Validation checklist per todo:
-
-- targeted tests pass for the changed area
-- expected files actually changed
+- expected files changed and unrelated files were not touched
 - scope fence was respected
-- todo acceptance criteria are now true
-- todo status, selected action, and work log are updated
+- acceptance criteria are true or explicitly blocked
+- targeted validation commands ran and passed, or failures are recorded with exact output
+- TDD/e2e evidence expectations were met or justified according to the resolved contract
+- todo status, selected action, and work log are accurate
+
+Validation should be evidence-focused, not a second broad implementation pass. Inspect diffs, cited files, and command output. If validation fails, dispatch a scoped execution-agent repair with the exact failure context or mark the todo blocked after repeated failure.
 
 Completion log template:
 
@@ -278,89 +303,45 @@ Completion log template:
 ### YYYY-MM-DD - Execution completed
 
 **Actions:**
-- [Implemented change summary]
+- <implemented change summary>
 
 **Validation:**
-- `command 1`
-- `command 2`
+- `<command>` - PASS | FAIL
 ```
 
-### Step 9: Final Sweep and Completion Report
+### Step 11: Final Sweep and Report
 
-After all todos are processed:
+After all target todos are triaged and any requested execution batches finish:
 
-1. Check no target todo remains stale without explanation
-2. Report complete, blocked, and in-progress counts
-3. List any follow-up work created by the execution batches
+1. Check no targeted todo remains stale without a selected action, completion evidence, or blocked reason.
+2. Report counts for selected, complete, blocked, in-progress, and already-complete todos.
+3. List validation commands run.
+4. List follow-up work created by execution, if any.
 
 Final report format:
 
 ```markdown
-## Triage + Swarm Execution Complete
+## Triage Complete
 
-**Total Targeted:** [X]
-**Complete:** [Y]
-**Still Open:** [Z]
+**Total Targeted:** <n>
+**Selected / Pending:** <n>
+**Complete:** <n>
+**Blocked:** <n>
+**In Progress:** <n>
+**Already Complete:** <n>
+
+### Selected / Pending
+- <todo-id> <title> - <selected action>
 
 ### Complete
-- [todo-id] [title]
+- <todo-id> <title> - <validation evidence>
 
-### Still Open / Blocked
-- [todo-id] [reason]
+### Blocked
+- <todo-id> <title> - <reason>
 
 ### Validation Run
-- [key command]
-- [key command]
+- `<command>` - <result>
 ```
-
-## Important Implementation Details
-
-### Status Discipline
-
-- `pending`: triaged and documented, but not executing yet
-- `in_progress`: actively executing or retrying
-- `complete`: validated and closed
-- `blocked`: cannot continue; include concrete blocker
-
-### Context Discipline
-
-- Main context owns research, decisions, swarm planning, validation, and status integrity.
-- execution-agent owns code edits for one scoped todo at a time.
-- Do not duplicate the same implementation work in both contexts.
-
-### Decision Discipline
-
-- Research before presenting options.
-- Ask one decision question at a time.
-- Write answers into the todo immediately.
-- Never "assume defaults" if user decision is explicitly required, except when `--auto-recommended` explicitly authorizes the researched recommended action.
-
-### Swarm Planning Quality Bar
-
-Bad swarm plan:
-- "Run all open todos in parallel"
-
-Good swarm plan:
-- groups only dependency-safe, low-overlap todos into the same batch
-- gives each todo its own packet, scope fence, and validation path
-- serializes risky overlaps instead of pretending they are safe
-
-### Do / Don't
-
-- ✅ Do research each todo before presenting options.
-- ✅ Do capture possible actions grounded in the current codebase.
-- ✅ Do update all targeted todo files before starting execution.
-- ✅ Do batch execution in swarm mode only when scopes are truly parallel-safe.
-- ✅ Do validate each completed todo independently.
-- ❌ Don't code during the research and decision phase.
-- ❌ Don't ask multiple decisions in one message.
-- ❌ Don't start execution before the target set is fully triaged.
-- ❌ Don't mark complete before orchestration-side validation.
-- ❌ Don't drop selected actions or research findings from todo logs.
-
-## Completion Boundary
-
-Do not offer done-option menus here. The final `workflow-next-step` advisor owns commit/push, review, compound, or stop recommendations after targeted todos are processed.
 
 ## Final Phase: Workflow Next Step Advisor
 

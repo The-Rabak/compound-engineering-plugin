@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 38 specialized agents, 28 commands, and 27 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 39 specialized agents, 28 commands, and 27 skills.
 
 This Claude plugin install surface contains only Claude-relevant files. Codex plugin metadata and Copilot assets are generated only on explicit target builds/installs from the canonical portable source in `portable/compound-engineering/`.
 
@@ -81,7 +81,7 @@ bun test
 
 | Component | Count |
 |-----------|-------|
-| Agents | 38 |
+| Agents | 39 |
 | Commands | 28 |
 | Skills | 27 |
 | Hooks | 0 |
@@ -117,7 +117,7 @@ Agents are organized into categories for easier discovery.
 | `ticket-flow-auditor` | Review plan-to-ticket and ticket-to-implementation alignment, dependency order, scope fences, and execution drift |
 | `uncle-bob` | Clean-code reviewer focused on naming, cohesion, side effects, boundaries, and tests that keep code changeable |
 
-### Research (6)
+### Research (7)
 
 | Agent | Description |
 |-------|-------------|
@@ -127,6 +127,7 @@ Agents are organized into categories for easier discovery.
 | `issue-intelligence-analyst` | Analyze GitHub issues to surface recurring themes and pain patterns |
 | `learnings-researcher` | Search institutional learnings for relevant past solutions |
 | `repo-research-analyst` | Research repository structure and conventions |
+| `todo-triage-researcher` | Produce compact evidence-backed action briefs for review-created todos |
 
 ### Design (3)
 
@@ -164,7 +165,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/workflows:to-issues` | Convert plans into local vertical-slice ticket artifacts with scoped execution context |
 | `/workflows:work` | Execute execution slices systematically |
 | `/workflows:review` | Run comprehensive code reviews |
-| `/workflows:triage` | Research todos, record chosen actions, then execute safe batches in swarm mode |
+| `/workflows:triage` | Validate todos, record chosen actions, then execute requested safe batches |
 | `/workflows:debug` | Orchestrate reproduction, diagnosis, fix decisions, and design escalation for bugs and failures |
 | `/workflows:compound` | Document solved problems to compound team knowledge |
 | `/workflows:compound-refresh` | Refresh stale learnings and pattern docs in `docs/solutions/` |

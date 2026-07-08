@@ -2,7 +2,7 @@
 
 Portable source-of-truth and OpenCode-first release repository for the `compound-engineering` plugin.
 
-The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **38 specialized agents, 28 commands, and 27 skills** built from one portable definition set and emitted into multiple agent harnesses.
+The project packages a constitution-first, spec-driven workflow system for AI-assisted engineering: **39 specialized agents, 28 commands, and 27 skills** built from one portable definition set and emitted into multiple agent harnesses.
 
 - **OpenCode** -- first-class authoring and daily-driver surface
 - **GitHub Copilot** -- second-class generated output
@@ -66,7 +66,7 @@ The plugin is strongest when a task needs judgment, not just linting.
 | Code quality | `code-simplicity-reviewer`, `performance-oracle`, `security-sentinel`, `uncle-bob` |
 | Data safety | `data-integrity-guardian`, `data-migration-expert`, `schema-drift-detector` |
 | Language depth | `rabak-laravel-reviewer`, `rabak-typescript-reviewer`, `rabak-python-reviewer`, `rabak-rust-reviewer`, `rabak-vue-reviewer`, `rabak-nest-reviewer` |
-| Research and knowledge | `repo-research-analyst`, `framework-docs-researcher`, `learnings-researcher`, `compound-docs` |
+| Research and knowledge | `repo-research-analyst`, `todo-triage-researcher`, `framework-docs-researcher`, `learnings-researcher`, `compound-docs` |
 
 ### 5. One portable source, multiple delivery surfaces
 
@@ -104,7 +104,7 @@ This repo is built for:
 | `/workflows:to-issues` | local ticket set in `docs/tickets/` | turns one large plan into smaller vertical-slice execution packets, builds a conservative dependency graph plus parallel-safe batches, then gates the set with `ticket-flow-auditor` |
 | `/workflows:work` | executed implementation with session state and learnings | drives the Ralph-first build loop by executing either plan units or the next safe batch from a ticket index through scoped subagents |
 | `/workflows:review` | purpose-aware review against code, architecture, tickets, and evidence | checks fit, not just syntax |
-| `/workflows:triage` | researched todo decisions and safe follow-up execution batches | turns review-created todos into approved actions before compounding or follow-up work |
+| `/workflows:triage` | validated todo decisions and safe follow-up execution batches | turns review-created todos into approved or blocked actions before compounding or follow-up work |
 | `/workflows:compound` | reusable solution docs and refreshed learnings | turns one solved problem into future leverage |
 
 ### Recommended happy path
@@ -145,7 +145,7 @@ Use the full chain when you want the plugin to take a feature from vague intent 
 | 6 | `/workflows:to-issues` | `docs/tickets/.../index.md` + ticket files | Use `focused-ticket-priming` to shrink each packet into one execution-ready ticket, then write the dependency graph, conservative execution batches, and `last_completed_batch` cursor into the index before `ticket-flow-auditor` signs off. |
 | 7 | `/workflows:work <ticket-index>` | `docs/execution-sessions/...` | Prefer the ticket index as the execution entrypoint. `/workflows:work` reads the next batch from the index, runs only that safe batch, and advances the index cursor when the batch is complete. |
 | 8 | `/workflows:review` | review findings | Review against code, architecture, ticket artifacts, and TDD evidence. This is where post-implementation ticket drift is checked. |
-| 9 | `/workflows:triage` | `pending` / `in_progress` / `blocked` / `complete` todo state updates or follow-up execution batches | Research review-created todos, choose actions, and execute safe batches when appropriate. |
+| 9 | `/workflows:triage` | `pending` / `in_progress` / `blocked` / `complete` todo state updates or follow-up execution batches | Validate review-created todos, choose evidence-backed actions, and execute safe batches when requested. |
 | 10 | `/workflows:compound` | `docs/solutions/...` | Capture the solved pattern so the next task starts from accumulated knowledge instead of chat history. |
 
 ### Practical usage rules
