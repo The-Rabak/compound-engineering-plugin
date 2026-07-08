@@ -29,6 +29,8 @@ For small, low-risk changes, the compact track is:
 
 The lite mode is for small, low-risk changes and preserves TDD/evidence and scope contracts while reducing questionnaire, research, and ticketization ceremony.
 
+Review and triage token-budget reductions preserve specialist coverage. `/workflows:review` still injects mandatory reviewers including `code-simplicity-reviewer`; lower token usage comes from compact shared packets, deduplicated dispatch, and tighter synthesis boundaries. `/workflows:triage` delegates missing todo research to `todo-triage-researcher` so the orchestrator validates compact briefs instead of redoing broad repository research.
+
 Finalized brainstorms, plans, architecture handoffs, and reviews can now offer optional **local-only visual artifacts** as MDX sidecars under `docs/visual-artifacts/` without replacing the canonical Markdown artifact or adding hosted Plan MCP infrastructure. The renderer loads the BuilderIO Agent-Native plan style guidance, generates the pinned block catalog with `@agent-native/core@0.67.0`, and writes structured Plan primitives such as diagrams, file trees, tabs, checklists, annotated code, diffs, schema/API blocks, and wireframes when the source supports them. It writes `preview.html` by default, and `/visual-artifact <artifact-path>` wraps local check and static preview from only the artifact path; `--serve` requires a reachable local Plan UI on `127.0.0.1:3001` by default.
 
 Planning, deepening, and execution now default to **issue-shaped vertical slices**. The first slice should be a tracer bullet, and later slices widen or harden the feature without regressing into layer-by-layer planning. Those slices now inherit a **feature-home module contract**: business logic should live together under one feature namespace, while truly shared utilities and adapters stay global. When the work is honestly better represented as enablement or a tiny-fix batch, the workflow can switch to explicit `infra-track` or `fix-batch` execution shapes instead of faking verticality.
@@ -59,6 +61,8 @@ By default that means **unit + e2e evidence**, unless a plan records an explicit
 ### 4. Specialist reviewers with real depth
 
 The plugin is strongest when a task needs judgment, not just linting.
+
+`/workflows:review` keeps a mandatory baseline of specialist subagents: `agent-native-reviewer`, `learnings-researcher`, `uncle-bob`, `ticket-flow-auditor`, `e2e-test-strategist`, and `code-simplicity-reviewer`. Local `review_agents` still add stack-specific depth, and the workflow deduplicates the final reviewer list before dispatch.
 
 | Area | Examples |
 |---|---|
@@ -165,6 +169,8 @@ Use the full chain when you want the plugin to take a feature from vague intent 
 - `/workflows:to-issues` is the local-artifact-first ticketization step between deepening and execution, now powered by the `focused-ticket-priming` skill and the reusable `ticket-flow-auditor`
 - `/workflows:work` can execute the next safe batch directly from `docs/tickets/.../index.md`, while still allowing a single ticket file when you need a narrower manual run
 - `/workflows:triage` now sits after `/workflows:review` in the documented delivery loop, before reusable knowledge is compounded
+- `/workflows:triage` now uses `todo-triage-researcher` for compact evidence-backed todo briefs, keeping the orchestrator focused on validation, decisions, and safe execution batching
+- `/workflows:review` preserves mandatory specialist reviewer coverage while reducing main-orchestrator load through compact packets, deduped dispatch, and synthesis-only operating boundaries
 - `grill-with-docs` is now the recommended bridge after brainstorming when domain language or boundaries need pressure-testing before planning
 - `workflow-next-step` now closes each core workflow with chain binding, evidence gates, completed-stage summaries, and next-session command/input handoff
 - `/workflows:brainstorm --lite` and `/workflows:plan --lite` support compact planning for small changes without weakening TDD/evidence or scope traceability

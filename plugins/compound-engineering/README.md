@@ -19,6 +19,8 @@ This Claude plugin install surface contains only Claude-relevant files. Codex pl
 - Full workflow track: `constitution -> brainstorm -> grill-with-docs -> plan -> architecture -> deepen-plan -> to-issues -> work -> review -> triage -> compound`.
 - Lite workflow track: `brainstorm/plan --lite -> work -> review -> triage if review creates todos -> compound if reusable knowledge exists`.
 - The lite mode is for small, low-risk changes and preserves TDD/evidence and scope contracts while reducing intake, research, and ticketization ceremony.
+- `/workflows:review` preserves mandatory specialist coverage, including `code-simplicity-reviewer`; token-budget reductions come from compact review packets, deduplicated dispatch, and synthesis-only orchestration rather than dropped subagents.
+- `/workflows:triage` delegates missing todo research to `todo-triage-researcher`, then validates compact evidence-backed briefs before decisions or requested execution.
 - Every core workflow ends with `workflow-next-step`, which binds the active artifact chain, audits completion evidence, summarizes completed stages, and prints the exact next-session command/input handoff.
 - Finalized brainstorms, plans, architecture handoffs, and reviews can offer optional local-only visual artifacts as MDX sidecars under `docs/visual-artifacts/` without hosted Plan MCP infrastructure. The renderer loads the BuilderIO Agent-Native plan style guidance, generates the pinned block catalog with `@agent-native/core@0.67.0`, and writes structured Plan primitives such as diagrams, file trees, tabs, checklists, annotated code, diffs, schema/API blocks, and wireframes when the source supports them. It writes `preview.html` by default, and `/visual-artifact <artifact-path>` wraps check and static preview from only the artifact path; `--serve` requires a reachable local Plan UI on `127.0.0.1:3001` by default.
 - `/lrj` is a Ralph-style coordinator for existing plans: ticketize, audit/repair the ticket set, then work/review/triage/validate and commit two ticket batches at a time until the ticket index is complete.
@@ -42,8 +44,8 @@ Use this sequence when you want the full compound workflow instead of an ad hoc 
 5. `/deepen-plan` -- harden the plan with research and review.
 6. `/workflows:to-issues` -- generate `docs/tickets/...` with `focused-ticket-priming`, then write the dependency graph and batch cursor into `index.md` before `ticket-flow-auditor` gates the set.
 7. `/workflows:work <ticket-index>` -- execute the next safe batch from the ticket index while preserving parent plan and architecture refs.
-8. `/workflows:review` -- review code, ticket drift, architecture fit, and TDD evidence together.
-9. `/workflows:triage` -- research and resolve review-created todos before follow-up work or compounding.
+8. `/workflows:review` -- review code, ticket drift, architecture fit, TDD evidence, and mandatory specialist coverage together.
+9. `/workflows:triage` -- validate `todo-triage-researcher` briefs and resolve review-created todos before follow-up work or compounding.
 10. `/workflows:compound` -- turn the result into reusable team knowledge.
 
 ### Lite workflow path

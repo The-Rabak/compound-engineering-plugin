@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.20.0] - 2026-07-08
+
 ### Added
 
 - **Workflow next-step advisor** -- Added the `workflow-next-step` skill and wired it as the final phase of every core workflow so completed runs end with a checked workflow-progress list plus the exact next-session command and inputs. The full workflow now recommends `grill-with-docs` after brainstorming to update `CONTEXT.md` and enrich the brainstorm before planning.
@@ -19,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Planning workflow token budget** -- Tightened `/workflows:plan` into a compiler-style orchestrator with a compact subagent delta contract, conditional specialist gates for SpecFlow/e2e, and less duplicated reference logic so planning keeps quality without making the main model re-do every specialist analysis.
 - **Deepen-plan token budget** -- Tightened `/deepen-plan` into a manifest-driven compiler/editor workflow with a compact subagent delta contract, named lightweight specialist routing, source-doc delta extraction, and explicit review-agent boundaries so the main orchestrator synthesizes findings without redoing specialist work.
+- **Review workflow token budget** -- Tightened `/workflows:review` into a specialist-orchestrator workflow that preserves mandatory reviewer coverage, including `code-simplicity-reviewer`, while reducing main-orchestrator load through compact shared packets, deduped dispatch, and synthesis-only boundaries.
 - **Triage workflow token budget** -- Tightened `/workflows:triage` into a validator/compiler workflow: the orchestrator now builds a readiness ledger, delegates missing todo research to compact briefs, rejects weak recommendations, separates `--auto-recommended` from `--execute`, and uses the canonical execution-agent scaffold when execution is requested.
 - **Workflow next-step advisor gates** -- Tightened `workflow-next-step` with explicit active-chain binding, ordered validity/input/visual/graph/stop gates, and completed-stage summaries so every final workflow handoff explains both previous-stage evidence and the next-session route.
 - **Todo status taxonomy** -- Standardized file-based todo statuses on `pending`, `in_progress`, `blocked`, and `complete`, removing the old `ready` and `done` vocabulary from the todo workflow guidance.

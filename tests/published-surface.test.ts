@@ -26,12 +26,17 @@ async function pathExists(...segments: string[]): Promise<boolean> {
 describe("published support surface", () => {
   test("generated metadata and plugin docs match the portable counts and description", async () => {
     const plugin = await loadPortablePlugin(portableRoot)
-    const pluginManifest = await readRepoJson<{ description: string }>("plugins", "compound-engineering", ".claude-plugin", "plugin.json")
-    const marketplace = await readRepoJson<{ plugins: Array<{ description: string }> }>(".claude-plugin", "marketplace.json")
+    const pluginManifest = await readRepoJson<{ description: string; version: string }>("plugins", "compound-engineering", ".claude-plugin", "plugin.json")
+    const marketplace = await readRepoJson<{ plugins: Array<{ description: string; version: string }> }>(".claude-plugin", "marketplace.json")
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
+    const pluginChangelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
 
+    expect(plugin.manifest.version).toBe("4.20.0")
+    expect(pluginManifest.version).toBe(plugin.manifest.version)
+    expect(marketplace.plugins[0]?.version).toBe(plugin.manifest.version)
     expect(pluginManifest.description).toBe(plugin.manifest.description)
     expect(marketplace.plugins[0]?.description).toBe(plugin.manifest.description)
+    expect(pluginChangelog).toContain("## [4.20.0] - 2026-07-08")
     expect(pluginReadme).toContain(
       `Includes ${plugin.agents.length} specialized agents, ${plugin.commands.length} commands, and ${plugin.skills.length} skills.`,
     )
@@ -113,6 +118,8 @@ describe("published support surface", () => {
       expect(readme).toContain(liteTrack)
       expect(readme).toContain("lite mode is for small, low-risk changes")
       expect(readme).toContain("preserves TDD/evidence and scope contracts")
+      expect(readme).toContain("code-simplicity-reviewer")
+      expect(readme).toContain("todo-triage-researcher")
     }
 
     expect(rootReadme).toContain("39 specialized agents, 28 commands, and 27 skills")
