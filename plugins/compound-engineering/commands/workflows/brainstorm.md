@@ -57,7 +57,7 @@ When the user explicitly says `--lite`, "lite", "small", "routine", or otherwise
 
 Run a quick repo scan to understand existing patterns, system topology, and any existing constitution:
 
-Before spawning `repo-research-analyst`, use the platform's file-search tool against the bundled agent directory to look for `repo-research-analyst.md`, then use the file-read tool to load the full template. Only if the bundled template cannot be loaded should you fall back to `ov_load_global_agent "repo-research-analyst"`. Before dispatching, quote the first non-empty line of the loaded template and record the source used. If you cannot quote the template because it was not found or could not be read, stop execution, raise the missing-template issue, and do not dispatch. Never dispatch a named agent by name alone.
+Before spawning `repo-research-analyst`, apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`. Verify the agent metadata/source, resolve the concrete subagent identifier, and pass only the research payload below. Do not read or paste the full agent body into the prompt.
 
 - Task repo-research-analyst("Understand existing patterns, system architecture, and component boundaries related to: <feature_description>. Report: (1) similar features and their structure, (2) services/modules this would touch or neighbor, (3) CLAUDE.md guidance, (4) data flow relevant to this area, (5) whether docs/constitution.md exists and which repo-wide principles or boundaries matter here.")
 

@@ -59,8 +59,9 @@ Dispatch rules:
 
 1. Run up to platform concurrency limits (typically 4 concurrent). Use waves if needed.
 2. Use specialized reviewers where available for architecture, security, performance, and data integrity.
-3. Load local agent templates before named specialist dispatch:
-   - Include `AGENT_TEMPLATE` directly in dispatched prompt.
+3. Resolve local named agents before specialist dispatch:
+   - Verify the agent metadata/source, then dispatch the resolved subagent itself.
+   - Do not include the agent file body in the dispatched prompt; pass only the audit track payload.
 4. Require each track to return:
    - numeric score in `X/Y` and percentage
    - concrete evidence with file/section citations

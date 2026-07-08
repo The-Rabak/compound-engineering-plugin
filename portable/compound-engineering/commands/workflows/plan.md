@@ -10,560 +10,358 @@ platforms:
 
 # Create a plan for a new feature or bug fix
 
-## Introduction
+## Operating Contract
 
-**Note: The current year is 2026.** Use this when dating plans and searching for recent documentation.
+**Current year: 2026.** Use this when dating plans and checking current documentation.
 
-Transform feature descriptions, bug reports, or improvement ideas into well-structured, execution-ready plans that:
-1. **Anchor to WHY** -- every plan traces back to a user story and problem narrative
-2. **Map WHERE** -- architectural context grounds slice decomposition in the system's structure
-3. **Define DONE** -- success criteria tied to user outcomes, not just technical checkboxes
-4. **Honor project guardrails** -- constitution principles, baselines, and approval rules are made explicit
-5. **Make TDD explicit** -- the plan declares the Ralph/default loop, required unit + e2e evidence, and any justified exceptions
-6. **Choose the right execution shape** -- vertical slices are the default, but infra tracks and fix batches are valid when they fit the real work better
-7. **Enable architecture-first execution** -- `/workflows:architecture` turns the plan into a dedicated architecture artifact before `/deepen-plan`, `/workflows:work`, and `/workflows:review` harden or execute it
-8. **Favor simplest viable architecture** -- default to the least-complex design that satisfies the user story and success criteria; only add complexity when research-backed and explicitly justified
-9. **Preserve specified scope** -- apply `commands/workflows/references/minimal-effective-planning.md` so executable work traces to explicit requests, confirmed decisions, or necessary inferences
-10. **Support lite mode** -- when the user asks for `--lite` or another compact path, reduce ceremony while keeping the same WHY, scope, TDD/evidence, execution-shape, and review handoff contract
+You are the planning orchestrator. Your job is to compile a high-quality implementation plan from user intent, repository facts, linked artifacts, and focused specialist outputs.
 
-Plans consume the project constitution from `/workflows:constitution` when available, plus lynchpin artifacts from `/workflows:brainstorm` when available, or construct feature context fresh when running standalone. Either way, the plan document carries forward the WHY, WHERE, DONE, GUARDRAIL, TDD, and **execution shape** contract that all downstream phases depend on. After the plan is written, the next explicit step is `/workflows:architecture`, not direct deepening.
+Do the work of an orchestrator:
+- establish or inherit the WHY anchor
+- gather only the context needed to plan safely
+- dispatch focused agents when they add value
+- synthesize findings into one coherent plan
+- catch contradictions, missing required fields, and critical gaps
+- write the final plan file
+
+Do not duplicate specialist work:
+- do not re-run deep SpecFlow analysis if `spec-flow-analyzer` was dispatched
+- do not re-design the detailed e2e strategy if `e2e-test-strategist` was dispatched
+- do not broaden architecture beyond what the plan needs; `/workflows:architecture` owns the dedicated architecture artifact
+- do not append raw research dumps or agent reports to the plan
+- do not code
+
+Default posture: minimal effective planning. Produce the smallest execution-ready plan that fully satisfies the user request, confirmed decisions, project guardrails, and evidence requirements.
 
 ## Feature Description
 
 <feature_description> #$ARGUMENTS </feature_description>
 
-**If the feature description above is empty, ask the user:** "What would you like to plan? Please describe the feature, bug fix, or improvement you have in mind."
+If the feature description is empty, ask the user what feature, bug fix, or improvement they want planned. Do not proceed without a clear planning target.
 
-Do not proceed until you have a clear feature description from the user.
+Set `lite_mode=true` only when the user explicitly asks for `--lite`, "lite", "small", "routine", or equivalent compact planning.
 
-Set `lite_mode=true` when the user explicitly asks for `--lite`, "lite", "small", "routine", or equivalent compact planning. Lite mode reduces ceremony, not evidence quality or traceability.
+#### Lite Mode Contract
 
-### 0. Idea Refinement & WHY Anchoring
+Detect explicit lite intent from `--lite`, "lite", "small", "routine", or equivalent user wording. Lite mode reduces ceremony, not evidence quality or traceability.
 
-This step establishes the plan's WHY anchor -- whether from a brainstorm, a spec file, or fresh dialogue. Every path must produce or inherit: **problem narrative**, **user story**, **architectural context**, and **success criteria**. When `docs/constitution.md` exists, every path must also inherit or explicitly waive the relevant project guardrails.
+When `lite_mode=true`:
+- Skip the structured project-input questionnaire unless the user mentions tickets, docs, Figma, or spec files.
+- Skip external research unless the topic is high-risk, unfamiliar, or lacks local patterns.
+- Use compact SpecFlow/e2e self-checks for low-risk work before specialist dispatch.
+- Produce one or a few execution packets by default.
+- Recommend direct `/workflows:work <plan>` for small, low-risk plans after the final advisor runs.
 
-#### Constitution Baseline (Runs Before Path A/B/C)
+## Required References
 
-If `docs/constitution.md` exists:
+Use these references as contracts. Load them only when their section is needed; do not paste their full text into prompts.
 
-1. Read it completely before planning.
-2. Extract:
+- `commands/workflows/references/minimal-effective-planning.md`
+- `commands/workflows/references/orchestration-protocol.md`
+- `commands/workflows/references/execution-shape.md`
+- `commands/workflows/references/tdd-evidence-contract.md`
+- `commands/workflows/references/e2e-testing-contract.md`
+- `commands/workflows/references/vertical-slice-architecture.md` when `execution_shape.mode=vertical-slices`
+
+When dispatching a named agent, apply `Named Agent Dispatch` from `orchestration-protocol.md`: verify the bundled agent source and metadata, dispatch the resolved agent identifier, and pass only workflow-specific payload plus resolved context. Do not paste the agent file body into the prompt.
+
+## Subagent Output Contract
+
+Every planning-time subagent must return compact, plan-ready output in this shape:
+
+```markdown
+## Verdict
+[1-2 sentences]
+
+## Critical Findings
+- [Only blockers, contradictions, or high-risk misses. Say "None" when absent.]
+
+## Plan Deltas
+- **Section:** [plan section]
+  **Change:** [specific text or decision to incorporate]
+  **Reason:** [success criterion, user story need, risk, or source fact]
+  **Source:** [file path, URL, artifact path, or "agent judgment"]
+
+## Deferred / Non-goals
+- [Useful but out-of-scope ideas]
+
+## Open Questions
+- [Questions that block a truthful plan. Say "None" when absent.]
+```
+
+The orchestrator may reject a delta, but must record why in the synthesis notes before writing the plan.
+
+## Workflow
+
+### 0. Establish Baselines
+
+Read project baselines before planning:
+
+1. If `docs/constitution.md` exists, read it and extract:
    - constitution version
-   - relevant core principles
-   - applicable engineering baselines
-   - approval and exception rules
-3. Treat these as non-negotiables unless the plan records an explicit waiver.
-4. If the feature appears to conflict with the constitution, ask the user whether this should be:
-   - a plan waiver for this feature
-   - a constitution amendment to be handled by `/workflows:constitution`
-
-#### TDD Baseline (Runs Before Path A/B/C)
-
-If `compound-engineering.local.md` exists:
-
-1. Read the YAML frontmatter before planning.
-2. Extract the visible local `tdd` contract:
+   - relevant principles and baselines
+   - approval or exception rules
+   - waiver needs
+2. If `compound-engineering.local.md` exists, read its YAML frontmatter and extract the visible `tdd` defaults:
    - `tdd.precedence`
    - `tdd.mode`
    - `tdd.loop`
    - `tdd.evidence.unit`
    - `tdd.evidence.e2e`
    - `tdd.exceptions`
-   - `tdd_enabled` (compatibility mirror only)
-3. Treat these as repo-local defaults, not hidden implementation details.
+   - `tdd_enabled` as compatibility mirror only
+3. Resolve the plan's TDD/evidence contract using `tdd-evidence-contract.md`.
+4. Apply `minimal-effective-planning.md` before creating execution packets.
 
-Every plan must then write its own `tdd:` frontmatter block plus a `## TDD & Evidence Contract` section.
-
-- **Precedence rule:** Plan-level `tdd` values override `compound-engineering.local.md` for that plan.
-- **Fallback rule:** Any plan field set to `inherit` falls back to the local config.
-- **No-local-config fallback:** If there is no local config, default to Ralph-driven `red-green-refactor` with both unit and e2e evidence required.
-- **Exception rule:** Any deviation from the resolved default loop or evidence requirements must be explicit and justified in `tdd.exceptions` and in the plan body.
-- **Shared source of truth:** Reuse `commands/workflows/references/tdd-evidence-contract.md` for contract resolution, the `## TDD & Evidence Contract` section shape, Ralph evidence semantics, and exception handling.
-
-#### Execution Shape Baseline (Runs Before Path A/B/C)
-
-Use `commands/workflows/references/execution-shape.md` as the single source for choosing and documenting the execution shape.
-When the chosen mode is `vertical-slices`, also apply `commands/workflows/references/vertical-slice-architecture.md` as the source of truth for feature-home naming, shared/global placement, and context-tier language.
-
-- **Default mode:** `vertical-slices`
-- **Allowed overrides:** `infra-track`, `fix-batch`
-- **Override rule:** Any non-default mode must include a short rationale in frontmatter and in the plan body
-- **Anti-coercion rule:** Do not force work into slices if that would create fake end-to-end structure
-
-#### Simplicity Baseline (Runs Before Path A/B/C)
-
-- **Default posture:** choose the simplest plan that can honestly meet the user story and success criteria
-- **No speculative architecture:** avoid pre-emptive abstractions, framework migrations, or broad foundation work unless required now
-- **Complexity gate:** if adding complexity, add a short "Complexity Justification" note with:
-  - why simpler options are insufficient
-  - what risk/requirement this complexity addresses
-  - why deferring it would be harmful
-- **Defer by default:** if complexity is useful but not required for current success criteria, place it in Future Considerations instead of core execution packets
+Plan-level `tdd` values override `compound-engineering.local.md` for this plan. Any field set to `inherit` falls back to local config, and when no local config exists the default is Ralph-driven red-green-refactor with unit + e2e evidence required. Any relaxation must use `replacement_evidence`.
 
 #### Specified Scope Contract (Runs Before Issue Planning)
 
-Apply `commands/workflows/references/minimal-effective-planning.md` before decomposing issues or execution packets. Every plan must classify material scope:
-
+Every plan must classify material scope before execution packet decomposition:
 - **Explicitly included:** work the user directly requested.
 - **Confirmed by brainstorm/grill-me:** decisions validated through brainstorm, grill-me, or equivalent user confirmation.
 - **Inferred as necessary:** work required for success criteria, TDD/evidence, constitution rules, runtime stack, or existing architecture constraints.
 - **Deferred / non-goals:** useful ideas that should not enter this execution batch.
+- **Complexity Justification path:** if non-trivial complexity is included, explain why the simpler option is insufficient and why deferring it would harm current success criteria.
 
-Every execution packet must trace to explicit, confirmed, or necessary scope. Reject or rework orphan packets that do not trace to one of those categories, even when they look technically useful. Optional complexity can still be included, but only through the Complexity Justification path: explain why the simpler option is insufficient, which current requirement or risk needs it, and why deferring it would harm the plan.
+Every execution packet must trace to explicit, confirmed, or necessary scope. Reject or rework orphan packets before the plan is considered execution-ready.
 
-#### Lite Mode Contract
+If the requested work conflicts with the constitution, ask whether this should be a plan waiver or a constitution amendment. Do not invent a waiver.
 
-Detect explicit lite intent from `--lite`, "lite", "small", "routine", or equivalent user wording. Lite mode is a planning mode inside `/workflows:plan`, not a separate command.
+### 1. Establish the WHY Anchor
 
-When `lite_mode=true`:
+Every plan must have:
+- Problem Narrative
+- User Story
+- Architectural Context
+- Success Criteria
 
-- Skip the structured project-input questionnaire unless the user mentions tickets, docs, Figma, or spec files.
-- Skip external research unless the topic is high-risk, unfamiliar, or lacks local patterns.
-- Use compact SpecFlow/e2e self-checks for low-risk work instead of broad specialist fan-out, while still recording justified evidence expectations.
-- Produce one or a few execution packets rather than a full ticketized backlog by default.
-- Recommend direct `/workflows:work <plan>` for small changes after the plan is written.
-- Keep `/workflows:architecture`, `/deepen-plan`, and `/workflows:to-issues` available when risk, ambiguity, coordination, or file ownership warrants them.
+Choose exactly one source path.
 
-Lite mode still emits problem narrative, user story, architectural context, success criteria, TDD/evidence contract, execution shape, and scope fences. Compact prose is fine; missing traceability is not.
+#### Path A: Spec or Plan File Provided
 
-#### Path A: Spec/Plan File Provided
+If the arguments contain a `.md` path:
+1. Read the file.
+2. Announce the source path.
+3. Extract title, problem, approach, acceptance criteria, existing tasks, open questions, and any frontmatter refs.
+4. If `brainstorm_ref` exists, read that brainstorm and inherit its lynchpin sections.
+5. Preserve well-defined sections and enrich only the gaps needed for this workflow's required contract.
 
-**Check if arguments contain a plan or spec file:**
+#### Path B: Matching Brainstorm Found
 
-If the feature description (`#$ARGUMENTS`) is or contains a path to a `.md` file (e.g., `docs/plans/some-plan.md`, `spec.md`, `~/notes/feature-plan.md`):
+If no file path is provided, check `docs/brainstorms/` for a matching recent brainstorm.
 
-1. Read the file
-2. Announce: "Found existing plan/spec: `[file path]`. Using as foundation."
-3. Extract: title, problem statement, proposed approach, acceptance criteria, execution shape (if any), and any existing execution units
-4. **Check for brainstorm reference** -- look for a `brainstorm_ref` field in frontmatter, or search `docs/brainstorms/` for a matching topic. If found, read and extract lynchpin artifacts (see Path B).
-5. **Extract or construct WHY artifacts from the spec:**
-   - If the spec has a Problem Narrative / User Story / Architectural Context -- use them directly
-   - If the spec only has a "Problem Statement" -- synthesize a user story from it:
-     - Who has this problem? (infer from context or ask)
-     - What do they need? (from the spec's proposed solution)
-     - Why does it matter? (from the spec's motivation)
-   - If the spec lacks architectural context -- note it for research phase (Step 1 will fill it in)
-6. **Skip free-form idea refinement** -- the spec defines WHAT to build
-7. Proceed to Step 0.5 to gather any additional project inputs, then to research
+Use a brainstorm only when topic/title/frontmatter clearly matches the request. If several match, ask the user which one to use.
 
-In Step 2 (Issue Planning), **build upon the existing plan structure** -- preserve its sections, fill gaps, add the execution-shape contract and execution-readiness fields to any legacy execution units that lack them, and enrich with research findings. Do NOT discard or rewrite sections that are already well-defined.
+When a brainstorm is selected:
+1. Read it.
+2. Carry forward its Problem Narrative, User Story, Architectural Context, Success Criteria, Chosen Approach, Key Decisions, and Open Questions.
+3. Resolve blocking open questions before planning.
+4. Do not re-decide settled brainstorm decisions unless research exposes a contradiction.
 
-#### Path B: Brainstorm Document Found
+#### Path C: Standalone Planning
 
-**If arguments are NOT a file path, check for brainstorm output:**
+If no source artifact exists:
+1. Ask only the questions needed to clarify purpose, constraints, and success criteria.
+2. Prefer one concise question at a time.
+3. Stop when the feature is clear or the user says to proceed.
+4. Synthesize the WHY anchor and ask for confirmation before research when the inferred WHY is not obvious.
 
-Before asking questions, look for recent brainstorm documents in `docs/brainstorms/` that match this feature:
+For straightforward requests with explicit purpose and success criteria, proceed without extended dialogue.
 
-```bash
-ls -la docs/brainstorms/*.md 2>/dev/null | head -10
-```
+### 1.5 Gather Project Inputs
 
-**Relevance criteria:** A brainstorm is relevant if:
-- The topic (from filename or YAML frontmatter) semantically matches the feature description
-- Created within the last 14 days
-- If multiple candidates match, use the most recent one
+In normal mode, ask for external project inputs only when the user mentions or likely has tickets, docs, Figma designs, specs, or requirement files. In lite mode, skip this unless explicitly mentioned.
 
-**If a relevant brainstorm exists:**
-1. Read the brainstorm document
-2. **Parse handoff frontmatter** -- check for `handoff.problem_narrative`, `handoff.user_story`, `handoff.architectural_context`, `handoff.success_criteria`
-3. Announce: "Found brainstorm from [date]: [topic]. Consuming lynchpin artifacts."
-4. **Extract and surface all lynchpin sections:**
-   - **Problem Narrative** -- the synthesized WHY (carry forward verbatim into plan)
-   - **User Story** -- the north star (carry forward, plan slices must trace to this)
-   - **Architectural Context** -- the WHERE map (feeds `{{ARCHITECTURAL_CONTEXT}}` in work.md)
-   - **Success Criteria** -- the DONE definition (plan acceptance criteria must include these)
-   - **Stakeholder Impact** -- who is affected (informs stakeholder analysis)
-   - **Chosen Approach** and **Key Decisions** -- the WHAT (informs slice decomposition)
-   - **Open Questions** -- must be resolved before planning proceeds
-5. **If any handoff fields are `false` or sections are empty**, flag them: "Brainstorm is missing [X]. I'll construct this during planning."
-6. **Resolve open questions** -- if the brainstorm has unresolved questions, use **AskUserQuestion tool** to resolve each one before proceeding
-7. **Skip free-form idea refinement** -- the brainstorm already established WHY and WHAT
-8. Use brainstorm decisions as input to the research phase
+Supported inputs:
+- project management ticket URLs
+- wiki/documentation URLs
+- Figma URLs
+- local `.md` plan/spec paths
 
-**If multiple brainstorms could match:**
-Use **AskUserQuestion tool** to ask which brainstorm to use, or whether to proceed without one.
+For each provided input, fetch or read it with the narrowest available tool. Use helper subagents only when there are multiple inputs or access/extraction is non-trivial. Helper prompts must use the Subagent Output Contract.
 
-#### Path C: No Brainstorm (Standalone Planning)
+If a URL cannot be accessed, ask the user to paste the relevant content.
 
-**If no brainstorm found (or not relevant), construct WHY artifacts from scratch:**
-
-**Phase C.1: Idea Refinement Dialogue**
-
-Refine the idea through collaborative dialogue using the **AskUserQuestion tool**:
-
-- Ask questions one at a time to understand the idea fully
-- Prefer multiple choice questions when natural options exist
-- Focus on understanding: purpose, constraints and success criteria
-- Continue until the idea is clear OR user says "proceed"
-
-**Gather signals for research decision.** During refinement, note:
-
-- **User's familiarity**: Do they know the codebase patterns? Are they pointing to examples?
-- **User's intent**: Speed vs thoroughness? Exploration vs execution?
-- **Topic risk**: Security, payments, external APIs warrant more caution
-- **Uncertainty level**: Is the approach clear or open-ended?
-
-**Skip option:** If the feature description is already detailed, offer:
-"Your description is detailed. Should I proceed with research, or would you like to refine it further?"
-
-**Phase C.2: Synthesize WHY Artifacts (mandatory before research)**
-
-After idea refinement, before proceeding to research, synthesize the plan's WHY anchor. This is lighter than a full brainstorm but still establishes the foundation that all downstream phases need:
-
-**Problem Narrative** (2-4 sentences):
-Synthesize: who has the problem, what triggers it, what the impact is. Not a restatement of the feature request -- a narrative about why this matters.
-
-**User Story:**
-```
-As a [persona],
-I need to [action]
-so that [outcome],
-because currently [pain point]
-which causes [impact].
-```
-
-If the feature has multiple personas or use cases, construct the primary user story plus brief secondary stories.
-
-**Architectural Context** (rough -- research will refine):
-- **Likely lives in:** [best guess of service/module/layer]
-- **Likely interacts with:** [neighboring systems]
-- **Entry point:** [UI/API/CLI/event]
-
-This is a hypothesis -- the research phase (Step 1) will validate or correct it.
-
-**Success Criteria** (3-5 measurable outcomes):
-Tied to the user story's "so that" clause, not just technical correctness. How will a real user know this works?
-
-Use **AskUserQuestion tool** to present the synthesized WHY artifacts and ask: "Here's my understanding of WHY we're building this. Does this capture it correctly, or should I adjust anything?"
-
-Revise based on feedback before proceeding.
-
-### 0.5 Gather Project Inputs
-
-Use the **AskUserQuestion tool** to collect structured project inputs. In normal mode, ask these 4 questions in sequence.
-
-In lite mode, skip this questionnaire unless the feature description or user message mentions tickets, docs, Figma, spec files, or another source artifact. If source artifacts are mentioned, ask only the relevant follow-up questions instead of the full intake sequence.
-
-**Question 1:** "Do you have any project management tickets related to this feature?"
-- Options: `["None", "Enter URLs"]`
-- If "Enter URLs": Ask user to paste ticket URLs (comma-separated)
-
-**Question 2:** "Do you have any wiki or documentation pages related to this feature?"
-- Options: `["None", "Enter URLs"]`
-- If "Enter URLs": Ask user to paste documentation URLs (comma-separated)
-
-**Question 3:** "Do you have any Figma designs related to this feature?"
-- Options: `["None", "Enter URLs"]`
-- If "Enter URLs": Ask user to paste Figma design URLs (comma-separated)
-
-**Question 4:** "Do you have any existing plan, spec, or requirements documents (.md files) to build from?"
-- Options: `["None", "Enter file paths"]`
-- If "Enter file paths": Ask user to paste file paths (comma-separated, relative or absolute)
-
-**Processing inputs:**
-
-For any non-empty inputs, launch **parallel subagents** to fetch and summarize each document:
-
-- For helper subagents in this step (`fetch-and-summarize`, `read-and-extract`), define the full extraction contract in the prompt itself. Do not rely on implicit behavior, hidden defaults, or platform-specific assumptions.
-
-- Task fetch-and-summarize(ticket_urls) → Extract ticket title, description, acceptance criteria, status
-- Task fetch-and-summarize(doc_urls) → Extract key decisions, requirements, technical context
-- Task fetch-and-summarize(figma_urls) → Extract design intent, component structure, interaction patterns
-- Task read-and-extract(plan_file_paths) → Read each `.md` file, extract structure (title, problem statement, approach, tasks, acceptance criteria, open questions). Identify which sections are well-defined vs need enrichment.
-
-**Handle `MANUAL_INPUT_NEEDED`:** If a subagent cannot access a URL (authentication required, private resource), use the **AskUserQuestion tool** to ask: "I couldn't access [URL]. Could you paste the relevant content from this document?"
-
-**Consolidate into `project_context` block:**
-
-```markdown
-## Project Context (from structured inputs)
-
-### Project Tickets
-- [TICKET-123](url): Summary of ticket...
-
-### Documentation
-- [Doc Title](url): Key decisions and requirements...
-
-### Figma Designs
-- [Design Name](url): Design intent and component overview...
-
-### Existing Plans / Specs
-- [filename.md](path): Structure summary, well-defined sections, gaps to fill...
-```
-
-**Store source URLs/paths in plan frontmatter** under `source_docs:`:
+Store source refs in plan frontmatter:
 
 ```yaml
 source_docs:
-  tickets:
-    - https://tracker.example.com/TICKET-123
-  docs:
-    - https://wiki.example.com/pages/doc-id
-  figma:
-    - https://figma.com/file/abc123
-  plans:
-    - docs/specs/existing-feature-spec.md
+  tickets: []
+  docs: []
+  figma: []
+  plans: []
 ```
 
-If all inputs are "None" or lite mode skips this questionnaire, proceed.
+### 1.6 Local Research
 
-## Main Tasks
+Local research is the default because it prevents generic plans. Keep it focused.
 
-### 1. Local Research (Default - Parallel)
+In lite mode for low-risk work, do a compact local self-check instead of named-agent fan-out:
+- inspect the smallest relevant files/docs
+- identify established local patterns
+- note whether anything is high-risk, unfamiliar, or patternless
 
-<thinking>
-First, I need to understand the project's conventions, existing patterns, and any documented learnings. This is fast and local - it informs whether external research is needed.
-</thinking>
+Escalate from self-check to named local agents when local context is weak, scope is cross-cutting, or architecture/evidence could change.
 
-Run these agents **in parallel** to gather local context by default.
+Default named local agents:
+- `repo-research-analyst`
+- `learnings-researcher`
 
-In lite mode for clear, low-risk work, replace named-agent fan-out with a compact local self-check: inspect the smallest relevant files, identify established local patterns, and note whether anything makes the work high-risk, unfamiliar, or patternless. Escalate back to the default parallel research path when the self-check finds uncertainty that could change scope, evidence, or architecture.
+Payload for both agents:
+- feature description
+- WHY anchor
+- known source docs
+- constitution/TDD constraints if present
+- request the Subagent Output Contract
 
-Before dispatching any named agent below, apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md`.
+Expected local findings:
+- concrete file paths and patterns to follow
+- relevant `docs/solutions/` learnings
+- repo-specific commands, conventions, and constraints
+- contradictions between docs and observed practice
 
-- Task repo-research-analyst(feature_description)
-- Task learnings-researcher(feature_description)
+### 1.7 External Research Decision
 
-**What to look for:**
-- **Repo research:** existing patterns, CLAUDE.md guidance, technology familiarity, pattern consistency
-- **Learnings:** documented solutions in `docs/solutions/` that might apply (gotchas, patterns, lessons learned)
+Run external research only when it can change the plan.
 
-These findings inform the next step.
+Always research:
+- security, privacy, auth, payments, data loss, migrations, external APIs, compliance, novel infrastructure
 
-### 1.5. Research Decision
+Usually skip:
+- clear low-risk local changes with strong in-repo patterns
+- lite-mode routine work
+- topics already covered by source docs or local learnings
 
-Based on signals from Step 0 and findings from Step 1, decide on external research.
+When needed, dispatch focused research agents:
+- `best-practices-researcher`
+- `framework-docs-researcher`
 
-**High-risk topics → always research.** Security, payments, external APIs, data privacy. The cost of missing something is too high. This takes precedence over speed signals.
+Payload:
+- unresolved decision/risk only, not the whole plan by default
+- project versions/constraints when known
+- WHY anchor and success criteria
+- request the Subagent Output Contract
 
-**Strong local context → skip external research.** Codebase has good patterns, CLAUDE.md has guidance, user knows what they want. External research adds little value.
+### 1.8 Synthesize Findings
 
-**Lite mode low-risk local work → skip external research.** If `lite_mode=true`, the topic is not high-risk, and local patterns are clear, do not launch external research.
+Before drafting the plan, merge all inputs into a short synthesis table:
 
-**Uncertainty or unfamiliar territory → research.** User is exploring, codebase has no examples, new technology. External perspective is valuable.
+```markdown
+## Planning Synthesis Notes
+- **Accepted deltas:** [agent/source -> plan section -> reason]
+- **Rejected/deferred deltas:** [agent/source -> reason]
+- **Critical findings resolved:** [finding -> resolution]
+- **Open blockers:** [must be empty before final plan unless explicitly marked blocked]
+```
 
-**Announce the decision and proceed.** Brief explanation, then continue. User can redirect if needed.
+This table is for orchestration. Include it in the final plan only when it materially helps downstream execution; otherwise use it to guide the draft and omit it.
 
-Examples:
-- "Your codebase has solid patterns for this. Proceeding without external research."
-- "This involves payment processing, so I'll research current best practices first."
-
-### 1.5b. External Research (Conditional)
-
-**Only run if Step 1.5 indicates external research is valuable.**
-
-Run these agents in parallel:
-
-Before dispatching any named research agent below, apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md`.
-
-- Task best-practices-researcher(feature_description)
-- Task framework-docs-researcher(feature_description)
-
-### 1.6. Consolidate Research & Validate WHY Artifacts
-
-After all research steps complete, consolidate findings and validate/refine the WHY artifacts:
-
-**Research findings consolidation:**
-
-- Document relevant file paths from repo research (e.g., `app/Services/ExampleService.php:42`)
-- **Include relevant institutional learnings** from `docs/solutions/` (key insights, gotchas to avoid)
-- **Include project context** from structured inputs (project tickets, documentation, Figma designs)
-- **Include constitution context** from `docs/constitution.md` when present (relevant principles, required approvals, waiver needs)
-- Note external documentation URLs and best practices (if external research was done)
-- List related issues or PRs discovered
-- Capture CLAUDE.md conventions
-
-**Validate and refine WHY artifacts against research:**
-
-Now that we have concrete codebase knowledge, refine the WHY artifacts established in Step 0:
-
-1. **Architectural Context** -- the repo research likely revealed the actual module structure, neighboring services, and data flow patterns. Update the architectural context from hypothesis to grounded fact:
-   - Confirm or correct "Lives in" with actual file paths and module structure
-   - Confirm or correct "Interacts with" based on discovered dependencies
-   - Add data flow specifics from codebase patterns
-   - Note any conventions from CLAUDE.md that constrain architecture
-
-2. **Success Criteria** -- check if research uncovered edge cases, existing test patterns, or quality gates that should be added to success criteria
-
-3. **User Story** -- rarely changes from research, but if learnings reveal the problem is different than assumed, flag it: "Research suggests the user story may need adjustment because [finding]."
-
-**Research implications for approach:**
-
-Explicitly state how research findings confirm, challenge, or refine the planned approach relative to the user story. Examples:
-- "Codebase already has a similar pattern in `app/Services/AuthService.php` -- we should follow it for consistency, which aligns with the user story because..."
-- "Learnings doc warns about [gotcha] -- this affects our approach because..."
-- "No existing patterns found for this -- higher risk, may need more slices for validation."
-- "Constitution requires [baseline] -- the plan must make that visible in acceptance criteria or approvals."
-
-**Optional validation:** Briefly summarize the refined WHY artifacts and key research findings, then ask if anything looks off or missing before proceeding to planning.
+Orchestrator conflict rules:
+- source artifacts and explicit user decisions outrank generic research
+- constitution and approved waivers outrank convenience
+- local repo patterns outrank generic best practices unless stale or unsafe
+- specialist findings outrank orchestrator self-checks in that specialist's domain
+- scope-expanding ideas go to Future Considerations or Deferred / Non-goals unless required now
 
 ### 2. Issue Planning & Structure
 
-<thinking>
-Think like a product manager -- what would make this issue clear, actionable, and traceable to user outcomes? Every section should connect back to the WHY.
-</thinking>
+Use `execution-shape.md` as the source of truth.
 
-**Title & Categorization:**
+Default to `vertical-slices` unless that would fake end-to-end value.
 
-- [ ] Draft clear, searchable issue title using conventional format (e.g., `feat: Add user authentication`, `fix: Cart total calculation`)
-- [ ] Determine issue type: enhancement, bug, refactor
-- [ ] Convert title to filename: add today's date prefix, strip prefix colon, kebab-case, add `-plan` suffix
-  - Example: `feat: Add User Authentication` → `2026-01-21-feat-add-user-authentication-plan.md`
-  - Keep it descriptive (3-5 words after prefix) so plans are findable by context
+Allowed modes:
+- `vertical-slices`
+- `infra-track`
+- `fix-batch`
 
-**Stakeholder Analysis (grounded in WHY artifacts):**
+Every plan must include:
+- `execution_shape` frontmatter
+- `## Execution Shape`
+- exactly one packet section matching the mode:
+  - `## Execution Slices`
+  - `## Infrastructure Work Packets`
+  - `## Fix Batch Items`
 
-- [ ] Identify stakeholders from the user story and brainstorm's stakeholder impact (if available)
-- [ ] For each stakeholder group, state how this plan addresses their needs:
-  - End users: How does this solve the problem stated in the user story?
-  - Developers: How does this fit the architectural context? What patterns does it establish?
-  - Operations: What are the deployment/monitoring implications?
-- [ ] Flag any stakeholder concerns not addressed by the current approach
+For `vertical-slices`, also apply `vertical-slice-architecture.md` and require feature-home names.
 
-**Content Planning:**
+Every execution packet must trace to one of:
+- explicitly requested work
+- confirmed brainstorm/grill-me decision
+- necessary inference for success criteria, TDD/evidence, constitution, runtime stack, or existing architecture
 
-- [ ] Use the adaptive template spine first; add optional sections only when they change decisions
-- [ ] Keep architecture minimal by default; include only components required to meet current success criteria
-- [ ] Record omitted optional sections only when their absence needs explicit callout
-- [ ] Gather supporting materials (error logs, screenshots, design mockups)
-- [ ] Prepare code examples or reproduction steps if applicable, name the mock filenames in the lists
+Reject or rework orphan packets before writing the plan.
 
-**Execution Shape Selection (traced to user story):**
+### 3. Specialist Gates
 
-Use `commands/workflows/references/execution-shape.md` as the source of truth for selecting and documenting the plan's execution shape.
-When the mode is `vertical-slices`, also use `commands/workflows/references/vertical-slice-architecture.md`.
+Specialist gates exist to catch gaps. They do not make the orchestrator a second specialist.
 
-Default to **`vertical-slices`**:
-- User Story → Phase/Track (optional grouping) → Slice → Files
-- Start with the thinnest tracer bullet
-- Slice vertically across layers when needed
-- Name the feature home each slice primarily changes
-- Treat phases as wrappers, not executable units
-- Forbid horizontal slice titles unless they still produce a demoable outcome
+#### SpecFlow Gate
 
-Switch only when that default would be fake:
-- **`infra-track`** for enabling/foundation work with no honest user-visible tracer bullet yet
-- **`fix-batch`** for a batch of small mostly independent fixes
+Run a compact self-check first:
+- do planned packets cover the user story?
+- are acceptance criteria testable?
+- are there obvious missing unhappy paths?
+- would any added flow be scope creep?
 
-Every plan must record:
-- `execution_shape.mode`
-- `execution_shape.rationale` (required when mode is not `vertical-slices`)
-- A matching `## Execution Shape` section in the body
+Dispatch `spec-flow-analyzer` only when:
+- user flows are ambiguous or multi-role
+- state transitions/retries/cancellation/resume matter
+- acceptance criteria are thin or disputed
+- a missed flow could change execution packets
 
-**Execution Readiness:**
+When dispatched, incorporate only its critical findings and plan deltas. Do not redo its matrix.
 
-For plans that will be executed via `/workflows:work`, the plan must include the packet section required by the selected mode:
-- `## Execution Slices`
-- `## Infrastructure Work Packets`
-- `## Fix Batch Items`
+#### E2E Gate
 
-Each packet must include the fields defined in `commands/workflows/references/execution-shape.md`. Plans without a declared shape and packet structure will be flagged for refinement before execution begins.
-For `vertical-slices`, every packet must also name the feature home and stay honest about which supporting code remains shared/global.
-Every execution packet must trace to explicit, confirmed, or necessary scope from the `## Specified Scope Contract`. Reject or rework orphan packets before the plan is considered execution-ready.
+Always establish the runtime stack:
+- local
+- QA
+- prod
+- whether there is a runtime surface for real e2e
 
-**TDD & Evidence Contract (mandatory):**
+Run a compact e2e self-check first:
+- what real app surface can be driven?
+- which success criteria need e2e proof?
+- is a no-runtime-surface exception genuinely justified?
 
-- [ ] Use `commands/workflows/references/tdd-evidence-contract.md` as the single source for contract resolution, the `## TDD & Evidence Contract` section shape, Ralph evidence semantics, and approved exceptions
-- [ ] Use `commands/workflows/references/e2e-testing-contract.md` as the single source for what real e2e is. The default unit + e2e evidence requirement means **real** e2e: drive the running app over real transport against real infra, no fakes, no hardcoded passes. Any absence of e2e must be a justified N/A exception, never a silent omission
-- [ ] Add a `tdd:` frontmatter block to every plan
-- [ ] Add a `## TDD & Evidence Contract` section that states the resolved loop and evidence in plain language
-- [ ] Default to Ralph-driven `red-green-refactor` with unit + e2e evidence
-- [ ] If the plan weakens that default (`mode: standard`, `unit: optional`, `e2e: optional`, or similar), record a justified exception with `scope`, `reason`, and `replacement_evidence`
-- [ ] Make it obvious whether each `tdd` field is inherited or plan-specific so downstream phases do not guess
+Dispatch `e2e-test-strategist` in DESIGN mode only when:
+- runtime surface is unclear
+- real infra/harness requirements are unclear
+- failure modes could change the test plan
+- e2e is being relaxed or replaced
+- the feature touches high-risk seams
 
-### 3. SpecFlow Analysis (grounded in user story)
+When dispatched, insert its plan-ready `## Suggested E2E Suite` deltas. Do not independently redesign the suite.
 
-After planning the issue structure, run SpecFlow Analyzer to validate the feature specification **against the user story and success criteria**:
-
-In lite mode for low-risk work, first run a compact orchestrator self-check against the same questions below. Dispatch `spec-flow-analyzer` only if the self-check finds ambiguous user flows, missing acceptance criteria, or edge cases that could change execution packets.
-
-Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md` to `spec-flow-analyzer`. Bundled template lookup still comes first, OpenViking/global context is last-resort only, and dispatch is forbidden unless you can quote the first non-empty line of the loaded template.
-
-- Task spec-flow-analyzer(feature_description, user_story, success_criteria, research_findings)
-
-The SpecFlow Analyzer should evaluate:
-- Do the planned slices cover all aspects of the user story?
-- Are there user flows implied by the user story that the plan doesn't address?
-- Do edge cases threaten any of the success criteria?
-- Are there gaps between what the user needs (story) and what the plan delivers (slices)?
-
-**SpecFlow Analyzer Output:**
-
-- [ ] Review SpecFlow analysis results
-- [ ] Incorporate any identified gaps or edge cases into the issue
-- [ ] Update acceptance criteria based on SpecFlow findings
-- [ ] **Flag any flows that don't trace back to the user story** -- these may be scope creep or may reveal a gap in the user story itself
-
-### 3.5. E2E Suite Design (grounded in runtime stack + user story)
-
-E2E reveals the cracks at the seams. Before writing the template, design the suggested e2e suite so the plan ships with a real, brutal e2e strategy rather than an afterthought.
-
-First, establish the **runtime stack** the suite will drive against. Capture how the app actually runs in **local**, **QA**, and **prod**: entry points, services/datastores, how to start it, and transport (HTTP/RPC/CLI/UI/event). This becomes the `## Runtime Stack & Environments` plan section and the substrate every e2e scenario targets. If the feature has genuinely no runtime surface to drive (pure library, config/asset repo), note that here -- it must become a justified N/A exception per the e2e contract, never a silent skip.
-
-In lite mode for low-risk work, use a compact e2e design self-check before specialist dispatch: identify the runtime surface, the smallest real scenario that proves the success criteria, and any justified no-surface exception. Dispatch `e2e-test-strategist` only when the runtime surface, seams, failure modes, or evidence replacement are unclear.
-
-When specialist dispatch is needed, dispatch `e2e-test-strategist` in **DESIGN mode**. Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md`: bundled template lookup first, OpenViking/global context last-resort only, and do not dispatch unless you can quote the first non-empty line of the loaded template.
-
-- Task e2e-test-strategist(mode=DESIGN, user_story, success_criteria, runtime_stack, research_findings, e2e_contract=commands/workflows/references/e2e-testing-contract.md)
-
-The strategist should return concrete scenarios traced to each success criterion, the seams each exercises, the harness/real-infra each needs, the environment(s) each runs in, explicit failure-mode scenarios, and the honest RED condition for the tracer bullet. Insert its output as the `## Suggested E2E Suite` section.
-
-- [ ] Record the runtime stack for local / QA / prod (or a justified no-surface note)
-- [ ] Include the suggested e2e suite, with every scenario traced to a success criterion and tagged with its environment
-- [ ] Confirm the suite drives the **real** app (no fakes, no hardcoded passes) and fails RED until the app satisfies it
+For simple low-risk plans, the orchestrator may write a compact suggested e2e suite directly from the runtime stack and success criteria, while preserving the `e2e-testing-contract.md` rules.
 
 ### 4. Build One Adaptive Plan Template
 
-**Important for `/workflows:work` compatibility:** Every plan shape must still declare `execution_shape` and include the matching packet section from `commands/workflows/references/execution-shape.md`.
-
-**WHY-by-reference rule:** The plan still carries the canonical WHY anchor (`Problem Narrative`, `User Story`, `Architectural Context`, `Success Criteria`), while downstream execution/review/ticket artifacts reference the source path (`brainstorm_ref` or `plan_ref`) plus concise local intent instead of copied WHY prose.
-
 Use one adaptive template. Start with the decision-bearing spine, then include optional sections only when they materially change scope, sequencing, risks, validation, or approvals.
 
-#### Decision-bearing spine (always emit)
+Write the plan to:
 
-- Frontmatter with `handoff`, `tdd`, `execution_shape`, and `runtime_stack`
-- `## Problem Narrative`
-- `## User Story`
-- `## Architectural Context`
-- `## Runtime Stack & Environments`
-- `## Success Criteria`
-- `## Specified Scope Contract`
-- `## TDD & Evidence Contract`
-- `## Suggested E2E Suite`
-- `## Execution Shape`
-- `## Constitution Alignment`
-- `## Implementation`
-- Exactly one execution packet section matching `execution_shape.mode`
-- `## References`
+```text
+docs/plans/YYYY-MM-DD-<type>-<descriptive-name>-plan.md
+```
 
-#### Optional sections catalog (include only when decision-bearing)
+Use today's date. Keep the filename descriptive and kebab-case.
 
-For every optional section below, use this rule:
-- **Include only when this section changes a decision**
-- **If not needed, omit it entirely (omit if N/A)**
+Ensure `docs/plans/` exists. Ensure `.gitignore` contains `docs/plans/` and `docs/brainstorms/` if `.gitignore` exists or must be created. Do not add `docs/solutions/` to `.gitignore`.
 
-- `## Stakeholder Impact` (when stakeholder trade-offs affect sequencing or approvals)
-- `## Technical Considerations` (when architecture/security/performance constraints change implementation choices)
-- `## Alternative Approaches Considered` (when rejected options explain why the chosen path is safer or simpler)
-- `## Dependencies & Risks` (when external blockers or risk controls affect ordering or go/no-go)
-- `## Success Metrics` (when post-release measurement changes acceptance or rollout strategy)
-- `## Future Considerations` (when valuable ideas are intentionally deferred to protect current scope)
-- `## Complexity Justification` (**required** when adding non-trivial complexity beyond the simplicity baseline)
+#### Required Frontmatter
 
-Never add optional sections as empty placeholders.
-
-#### Adaptive template structure
-
-````markdown
+```yaml
 ---
 title: [Issue Title]
 type: [feat|fix|refactor]
 status: active
 date: YYYY-MM-DD
-constitution_version: [version from docs/constitution.md, or null]
+constitution_version: [version or null]
 constitution_waivers: []
-brainstorm_ref: [path to brainstorm doc, or null]
+brainstorm_ref: [path or null]
+tickets_ref: null
 source_docs:
   tickets: []
   docs: []
@@ -576,342 +374,99 @@ handoff:
   success_criteria: true
 tdd:
   precedence: plan_overrides_local
-  mode: inherit # inherit | ralph | standard
-  loop: inherit # inherit | red-green-refactor | implementation-first
+  mode: inherit
+  loop: inherit
   evidence:
-    unit: inherit # inherit | required | optional
-    e2e: inherit # inherit | required | optional
-  exceptions: [] # [{ scope, reason, replacement_evidence }]
+    unit: inherit
+    e2e: inherit
+  exceptions: []
 execution_shape:
-  mode: vertical-slices # vertical-slices | infra-track | fix-batch
+  mode: vertical-slices
   rationale: ""
 runtime_stack:
-  local: "" # how the app runs locally: entry point, services/datastores, start command, transport
-  qa: "" # how the app runs in QA, or "inherit" / "none"
-  prod: "" # how the app runs in prod, or "inherit" / "none"
-  e2e_surface: true # false only for genuine no-runtime-surface repos (requires a justified tdd.exceptions N/A)
+  local: ""
+  qa: ""
+  prod: ""
+  e2e_surface: true
 ---
+```
 
-# [Issue Title]
+#### Required Body Sections
 
-## Problem Narrative
-[2-4 sentences: who has the problem, what triggers it, and the impact.]
+Emit this decision-bearing spine:
 
-## User Story
-As a [persona],
-I need to [action]
-so that [outcome],
-because currently [pain point]
-which causes [impact].
+- `## Problem Narrative`
+- `## User Story`
+- `## Architectural Context`
+- `## Runtime Stack & Environments`
+- `## Success Criteria`
+- `## Specified Scope Contract`
+- `## TDD & Evidence Contract`
+- `## Suggested E2E Suite`
+- `## Execution Shape`
+- `## Constitution Alignment`
+- `## Implementation`
+- exactly one execution packet section matching `execution_shape.mode`
+- `## References`
 
-## Architectural Context
-- **Lives in:** [service/module/layer with file paths]
-- **Feature home:** [primary namespace/directory]
-- **Interacts with:** [neighboring systems/modules]
-- **Entry point:** [UI/API/CLI/event]
-- **Data:** [only when needed to make decisions]
-- **Dependencies:** [only when they affect order/scope]
+#### Optional sections catalog (include only when decision-bearing)
 
-## Runtime Stack & Environments
-The real running app that e2e drives against. Fill each environment or mark "inherit"/"none".
-- **Local:** [entry point, services/datastores, start command, transport]
-- **QA:** [how the app runs in QA, or inherit/none]
-- **Prod:** [how the app runs in prod, or inherit/none]
-- **E2E surface:** [yes — drive the real app here | no — record a justified N/A in `tdd.exceptions`]
+For every optional section below: Include only when this section changes a decision.
 
-## Success Criteria
-- [ ] [Measurable user outcome tied to the story]
-- [ ] [Observable behavior proving the problem is solved]
+- `## Stakeholder Impact`
+- `## Technical Considerations`
+- `## Alternative Approaches Considered`
+- `## Dependencies & Risks`
+- `## Success Metrics`
+- `## Future Considerations`
+- `## Complexity Justification`
 
-## Specified Scope Contract
-- **Explicitly included:** [What the user directly requested]
-- **Confirmed by brainstorm/grill-me:** [Validated decisions and chosen approach, or "None"]
-- **Inferred as necessary:** [Only work required for success criteria, TDD/evidence, constitution, runtime stack, or existing architecture]
-- **Deferred / non-goals:** [Useful ideas intentionally kept out of execution packets]
-- **Complexity Justification path:** [If adding non-trivial complexity, explain why simpler options fail and why deferral would harm current success criteria; otherwise say "None"]
-
-## TDD & Evidence Contract
-Use the exact section shape from `commands/workflows/references/tdd-evidence-contract.md` with resolved values for this plan. Make every deviation explicit with `replacement_evidence`.
-
-## Suggested E2E Suite
-From `e2e-test-strategist` (DESIGN mode), enforcing `commands/workflows/references/e2e-testing-contract.md`. Real app, real infra, no fakes, no hardcoded passes; each scenario fails RED until the app satisfies it. If there is no runtime surface, replace this with the justified N/A note.
-- **Scenario:** [outcome it proves] — **Serves:** [success criterion] — **Env:** [local|qa|prod] — **Seams:** [...] — **Real infra/harness:** [...] — **RED condition:** [what fails before the app is built]
-- **Failure-mode scenarios:** [concurrency / crash-and-recover / drift / cold boot / cleanup as relevant]
-
-## Execution Shape
-- **Mode:** vertical-slices
-- **Why:** [Why this mode matches the real work]
-
-## Constitution Alignment
-- **Relevant principles:** [Project rules that apply]
-- **Required approvals:** [Any required approvals]
-- **Waivers:** [None, or approved exceptions]
-
-## Implementation
-[Brief approach summary focused on current scope]
-
-## Execution Slices
-Use this section only when `execution_shape.mode` is `vertical-slices`. If mode is `infra-track` or `fix-batch`, replace with the matching packet section from `commands/workflows/references/execution-shape.md`.
-
-##### Slice 1.1: [Tracer Bullet Slice Title]
-**Slice type:** tracer-bullet
-**Serves:** [Which success criterion this slice proves]
-**Demo scenario:** [Smallest end-to-end observable behavior]
-**Feature home:** `path/to/feature-home/`
-**Files:** `path/to/file1.ext`, `path/to/file2.ext`
-**Depends on:** None
-**Dependency type:** real | stub-available | parallel-safe
-
-###### What to build
-[Thin vertical cut]
-
-###### Scope
-- **Owns:** [...]
-- **Non-goals:** [...]
-- **Scope fence:** [...]
-
-###### Acceptance criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-###### Evidence
-- **Test command:** `<project-appropriate test command>`
-- **Evidence focus:** [What this proves]
-
-<!-- Optional sections from the catalog go here only when they change decisions; otherwise omit if N/A -->
-
-## References
-- Related issue: #[issue_number]
-- Documentation: [relevant_docs_url]
-````
+Never emit empty optional sections.
 
 #### Representative routine plan (compact and scannable)
 
-This example is intentionally short because no optional sections change decisions. It is valid as-is.
+For routine plans, keep the same required spine but write compact sections and one or a few packets. Do not add optional sections when they do not change decisions.
 
-```markdown
-# fix: normalize webhook retry logging
+#### Packet Fields
 
-## Problem Narrative
-Retry attempts are logged with inconsistent fields, which makes support triage slow during incidents.
+Use the exact required fields from `execution-shape.md`.
 
-## User Story
-As an on-call engineer, I need retry logs to use one schema so that I can filter failures quickly during incidents.
+For `vertical-slices`, each slice must include at minimum:
+- Slice type
+- Serves
+- Demo scenario
+- Feature home
+- Files
+- Depends on
+- Dependency type
+- Scope with owns/non-goals/scope fence
+- Acceptance criteria
+- Evidence with test command and evidence focus
 
-## Success Criteria
-- [ ] Every retry log includes `attempt`, `delay_ms`, and `job_id`
-- [ ] Support can filter failed retries by `job_id` in one query
+For `infra-track` and `fix-batch`, use the matching packet requirements from `execution-shape.md`.
 
-## Specified Scope Contract
-- **Explicitly included:** normalize retry log fields.
-- **Confirmed by brainstorm/grill-me:** none.
-- **Inferred as necessary:** update focused tests for the logging schema.
-- **Deferred / non-goals:** broader observability redesign.
-- **Complexity Justification path:** none.
+### 5. Final Validation
 
-## Execution Shape
-- **Mode:** vertical-slices
-- **Why:** One tracer bullet can prove end-to-end logging normalization.
+Before finishing, validate:
 
-## Execution Slices
-##### Slice 1.1: normalize retry logger fields
-**Slice type:** tracer-bullet
-**Serves:** success criterion 1 and 2
-...
-```
+- all four `handoff` fields are true
+- `tdd` frontmatter and `## TDD & Evidence Contract` agree
+- any TDD/e2e relaxation has `scope`, `reason`, and `replacement_evidence`
+- `runtime_stack` and `## Runtime Stack & Environments` agree
+- `## Suggested E2E Suite` traces to success criteria or records a justified no-surface exception
+- `execution_shape` frontmatter and body agree
+- every packet traces to explicit, confirmed, or necessary scope
+- non-default execution shape has a rationale
+- critical subagent findings were incorporated, rejected with reason, or left as blockers
+- no raw subagent report was pasted into the plan
+- architecture is the simplest viable option for the current user story
+- complexity beyond the baseline has a current, evidence-backed justification
 
-### 5. Issue Creation & Formatting
-
-<thinking>
-Apply best practices for clarity and actionability, making the issue easy to scan and understand
-</thinking>
-
-**Content Formatting:**
-
-- [ ] Use clear, descriptive headings with proper hierarchy (##, ###)
-- [ ] Include code examples in triple backticks with language syntax highlighting
-- [ ] Add screenshots/mockups if UI-related (drag & drop or use image hosting)
-- [ ] Use task lists (- [ ]) for trackable items that can be checked off
-- [ ] Add collapsible sections for lengthy logs or optional details using `<details>` tags
-- [ ] Apply appropriate emoji for visual scanning (🐛 bug, ✨ feature, 📚 docs, ♻️ refactor)
-
-**Cross-Referencing:**
-
-- [ ] Link to related issues/PRs using #number format
-- [ ] Reference specific commits with SHA hashes when relevant
-- [ ] Link to code using permalink features (branch + commit SHA for permanent links)
-- [ ] Mention relevant team members with @username if needed
-- [ ] Add links to external resources with descriptive text
-
-**Code & Examples:**
-
-````markdown
-# Good example with syntax highlighting and line references
-
-
-```php
-// app/Services/UserService.php:42
-public function processUser(User $user): array
-{
-    // Implementation here
-}
-```
-
-# Collapsible error logs
-
-<details>
-<summary>Full error stacktrace</summary>
-
-`Error details here...`
-
-</details>
-````
-
-**AI-Era Considerations:**
-
-- [ ] Account for accelerated development with AI pair programming
-- [ ] Include prompts or instructions that worked well during research
-- [ ] Note which AI tools were used for initial exploration (Claude, Copilot, etc.)
-- [ ] Emphasize comprehensive testing given rapid implementation
-- [ ] Document any AI-generated code that needs human review
-
-### 6. Final Review & Submission
-
-**Pre-submission Checklist:**
-
-**WHY Integrity:**
-
-- [ ] Problem Narrative accurately captures who has the problem and why it matters
-- [ ] User Story is complete (persona, action, outcome, pain point, impact)
-- [ ] Architectural Context is grounded in actual repo research (not hypothetical)
-- [ ] Success Criteria are tied to user outcomes, not just technical checkboxes
-- [ ] If `docs/constitution.md` exists, Constitution Alignment names the applicable rules, approvals, and any waivers explicitly
-- [ ] Every execution slice states which user story aspect / success criterion it serves
-- [ ] `handoff` frontmatter fields are all `true`
-- [ ] `tdd` frontmatter is present and the precedence rule is explicit
-- [ ] `## TDD & Evidence Contract` names the effective loop, required evidence, and any justified exceptions
-- [ ] `execution_shape` frontmatter is present and matches the body section
-- [ ] Non-default execution shapes include an explicit rationale
-
-**Content Quality:**
-
-- [ ] Title is searchable and descriptive
-- [ ] Labels accurately categorize the issue
-- [ ] All included sections are complete; omitted optional sections are intentionally omitted
-- [ ] Links and references are working
-- [ ] Acceptance criteria are measurable
-- [ ] Architecture is the simplest viable option for the current user story and success criteria
-- [ ] Any added complexity is explicitly justified; non-essential complexity is deferred to Future Considerations
-- [ ] Add names of files in pseudo code examples and todo lists
-- [ ] Add an ERD mermaid diagram if applicable for new model changes
-
-**Execution Readiness (for `/workflows:work`):**
-
-- [ ] The selected execution shape matches the real work instead of forcing fake verticality
-- [ ] The plan includes the packet section required by the selected mode
-- [ ] Every packet includes the required fields from `commands/workflows/references/execution-shape.md`
-- [ ] If mode is `vertical-slices`, every slice names its feature home and stays explicit about what remains shared/global
-- [ ] If mode is `vertical-slices`, the first slice is a tracer bullet, not a broad foundation phase
-- [ ] If mode is `vertical-slices`, no slice is a disguised horizontal layer bucket unless it still delivers a demoable outcome
-- [ ] Every execution packet must trace to explicit, confirmed, or necessary scope from `## Specified Scope Contract`
-- [ ] Reject or rework orphan packets that do not trace to the specified-scope categories
-- [ ] Packet scope is explicit enough that an executor does not need to infer missing boundaries from adjacent packets
-- [ ] Packet success criteria are testable (not vague)
-- [ ] Dependencies are explicit wherever ordering matters
-- [ ] Architectural context is specific enough to fill `{{ARCHITECTURAL_CONTEXT}}` in execution agent prompts
-- [ ] The plan declares unit + e2e evidence by default, or records a justified exception with replacement evidence
-- [ ] `## Runtime Stack & Environments` is filled for local / QA / prod (or marked inherit/none with a justified no-surface note)
-- [ ] `## Suggested E2E Suite` is present, every scenario traces to a success criterion and names its environment, and the suite drives the real app (no fakes, no hardcoded passes) per `commands/workflows/references/e2e-testing-contract.md`
-- [ ] Any absence of e2e is a justified N/A exception in `tdd.exceptions`, never a silent omission
-- [ ] Validation/test commands collectively satisfy the resolved TDD contract
-
-## Directory Setup & Gitignore
-
-Before writing the plan file, ensure the output directory and gitignore rules exist:
-
-```bash
-# Create docs/plans/ directory if it doesn't exist
-mkdir -p docs/plans
-
-# Ensure docs/plans/ and docs/brainstorms/ are in .gitignore (but NOT docs/solutions/)
-if [ -f .gitignore ]; then
-  grep -qxF 'docs/plans/' .gitignore || echo 'docs/plans/' >> .gitignore
-  grep -qxF 'docs/brainstorms/' .gitignore || echo 'docs/brainstorms/' >> .gitignore
-else
-  printf 'docs/plans/\ndocs/brainstorms/\n' > .gitignore
-fi
-```
-
-**IMPORTANT:** `docs/solutions/` must NOT be added to .gitignore -- it contains committed institutional knowledge.
-
-## Output Format
-
-**Filename:** Use the date and kebab-case filename from Step 2 Title & Categorization.
-
-```
-docs/plans/YYYY-MM-DD-<type>-<descriptive-name>-plan.md
-```
-
-Examples:
-- ✅ `docs/plans/2026-01-15-feat-user-authentication-flow-plan.md`
-- ✅ `docs/plans/2026-02-03-fix-checkout-race-condition-plan.md`
-- ✅ `docs/plans/2026-03-10-refactor-api-client-extraction-plan.md`
-- ❌ `docs/plans/2026-01-15-feat-thing-plan.md` (not descriptive - what "thing"?)
-- ❌ `docs/plans/2026-01-15-feat-new-feature-plan.md` (too vague - what feature?)
-- ❌ `docs/plans/2026-01-15-feat: user auth-plan.md` (invalid characters - colon and space)
-- ❌ `docs/plans/feat-user-auth-plan.md` (missing date prefix)
+If validation fails and can be repaired without new user input, repair it. If it requires user input, stop with the blocker and run the final advisor with the current state.
 
 ## Post-Generation Boundary
 
-Do not offer post-generation option menus, issue creation handoffs, direct work starts, remote work starts, review/refine choices, or local visual artifact choices here. The final `workflow-next-step` advisor owns downstream routing after the plan file is written.
-
-## Downstream Phase Integration
-
-The plan document is a structured contract consumed by all downstream phases. Here's how each phase uses it:
-
-**`/workflows:architecture`** reads:
-- Problem Narrative, User Story, Success Criteria, and Architectural Context -- the WHY/WHERE contract it must preserve
-- Execution shape plus execution packets -- identifies the deepening candidates and boundaries that need structural clarification
-- `commands/workflows/references/vertical-slice-architecture.md` -- supplies the feature-home, shared/global, and context-tier contract
-- Constitution Alignment / waivers / brainstorm decisions -- keeps architecture decisions inside approved project guardrails
-- **Must write**: a dedicated artifact in `docs/architecture/` plus an `architecture_ref` back into the plan
-
-**`/deepen-plan`** reads:
-- Execution shape plus execution packets -- enriches each with parallel research and splits, merges, or reshapes packets when the current mode is weak
-- Success criteria -- validates they are testable and complete
-- Architectural Context -- uses it to ground research in the right part of the system
-- `tdd` frontmatter and `## TDD & Evidence Contract` -- preserves the effective Ralph/default loop, evidence requirements, and any justified exceptions
-- `runtime_stack` frontmatter + `## Runtime Stack & Environments` + `## Suggested E2E Suite` -- feeds `e2e-test-strategist` HARDEN mode to find uncovered seams/failure modes and sharpen the suite without weakening the e2e contract
-- `architecture_ref` or the latest matching `docs/architecture/` artifact -- uses deepening candidates, feature homes, shared/global decisions, context tiers, deletion-test decisions, interface test surfaces, seams, adapters, and contracts to guide hardening
-- **Must preserve**: Problem Narrative, User Story, and handoff contract unchanged
-
-**`/workflows:to-issues`** reads:
-- plan WHY artifacts and execution packets -- these become the canonical source and base work units
-- `architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract -- supplies feature homes, shared/global boundaries, context tiers, and drift checks for ticket shaping
-- `tdd` frontmatter + `## TDD & Evidence Contract` -- preserves evidence expectations inside each ticket packet
-- **Packaging rule:** tickets keep WHY linkage by path (`brainstorm_ref` when present, otherwise `plan_ref`) plus concise local intent, not full copied WHY blocks
-- **Must write**: a local ticket set in `docs/tickets/` plus `tickets_ref` or a labeled related-artifact link back into the plan
-
-**`/workflows:work`** reads:
-- **Canonical WHY source refs** (`brainstorm_ref`/`plan_ref`) + concise unit purpose lines -- the orchestrator uses these to validate task outcomes make sense in context, not just pass tests
-- **Architectural Context** -- feeds directly into `{{ARCHITECTURAL_CONTEXT}}` in each execution agent's prompt loaded from the canonical execution-agent template. This is WHY grounded arch context matters -- every subagent gets system-level awareness
-- **Implementation phases & tasks** -- the execution chunk structure (Feature home, Files, Depends on, Success criteria, Test command)
-- **Success Criteria** -- the orchestrator checks final outcomes against these, not just individual task passes
-- **`constitution_version` / `constitution_waivers` / Constitution Alignment** -- the execution phase enforces repo-wide guardrails and knows which exceptions were approved
-- **`brainstorm_ref`** -- if present, the orchestrator can read the original brainstorm for additional context
-- **`commands/workflows/references/vertical-slice-architecture.md` + architecture handoff** -- keep business logic in the feature home while shared/global abstractions stay shared when DRY/SOLID requires it
-
-**`/workflows:review`** reads:
-- **Canonical WHY source refs** (`brainstorm_ref`/`plan_ref`) + concise review focus line -- the frame for evaluating whether the implementation solves the right problem
-- **Success-criteria focus labels** -- the measurable outcomes that the review should verify
-- **Architectural Context** -- used to evaluate whether the implementation respects system boundaries and integration points
-- **`architecture_ref` / `docs/architecture/` artifact / explicit architecture handoff contract** -- supplies the architecture intent, feature homes, shared/global boundary decisions, context tiers, deletion-test outcomes, interfaces, seams, adapters, and contracts that reviewers must verify or flag as drift
-- **`tdd` frontmatter + `## TDD & Evidence Contract`** -- review must verify the declared evidence exists and that any deviation from Ralph/unit+e2e is explicitly justified
-- **`runtime_stack` + `## Suggested E2E Suite`** -- the mandatory `e2e-test-strategist` AUDIT reviewer uses these to verify e2e drives the real app per `commands/workflows/references/e2e-testing-contract.md` and to flag fakes, hardcoded passes, or tests softened to green
-- **`execution_shape` + execution packets** -- review uses the chosen mode to judge whether the work was decomposed honestly and executed completely
-- **Constitution Alignment and waivers** -- used to distinguish approved exceptions from blocking constitution violations
-- **Stakeholder Impact** (when present) -- informs stakeholder-perspective review
-- **Named reviewer ownership** -- `/workflows:review` owns named review-agent coordination, template loading, and WHY-context injection for reviewer prompts
+Do not offer post-generation menus, direct work starts, remote work starts, review/refine choices, issue creation choices, or local visual artifact choices. The final `workflow-next-step` advisor owns downstream routing after the plan is written.
 
 ## Final Phase: Workflow Next Step Advisor
 
@@ -924,6 +479,6 @@ Run it in advisory mode only:
 - inspect relevant artifacts without mutating them
 - output the full core workflow checklist and the exact next-session command with required inputs
 
-This must be the last phase of the workflow. If planning stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.
+This must be the last phase. If planning stopped before completion, still run the advisor with the current state so it can mark blockers and recommend the recovery step.
 
-NEVER CODE! Just research and write the plan.
+NEVER CODE. Research, synthesize, and write the plan only.

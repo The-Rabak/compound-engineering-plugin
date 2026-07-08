@@ -48,7 +48,7 @@ describe("ticket-scoped work execution", () => {
     expect(workPrompt).toContain("execute the next unresolved batch as written")
     expect(workPrompt).toContain("Prefer ticket-defined unit directly")
     expect(workPrompt).toContain("Named Agent Dispatch")
-    expect(workPrompt).toContain("Task(execution-agent, prompt=scoped_prompt)")
+    expect(workPrompt).toContain("Task(compound-engineering:workflow:execution-agent, prompt=scoped_prompt)")
     expect(workPrompt).toContain("{{PARENT_REFS}}")
     expect(workPrompt).toContain("{{TICKET_LOCAL_CONTEXT}}")
     expect(workPrompt).toContain("## WHY Linkage")

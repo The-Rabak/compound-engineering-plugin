@@ -7,20 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.20.0] - 2026-07-08
+
 ### Added
 
 - **Workflow next-step advisor** -- Added the `workflow-next-step` skill and wired it as the final phase of every core workflow so completed runs end with a checked workflow-progress list plus the exact next-session command and inputs. The full workflow now recommends `grill-with-docs` after brainstorming to update `CONTEXT.md` and enrich the brainstorm before planning.
-- **Local visual artifact renderer** -- Added the local visual artifact renderer agent, `local-visual-artifact-renderer`, for converting finalized brainstorm, plan, architecture, and review artifacts into source-loyal local Agent-Native MDX sidecars without hosted Plan MCP, database writes, publish/share flows, or source artifact replacement. The published surface now supports local-only visual artifacts and includes 36 specialized agents.
+- **Local visual artifact renderer** -- Added the local visual artifact renderer agent, `local-visual-artifact-renderer`, for converting finalized brainstorm, plan, architecture, and review artifacts into source-loyal local Agent-Native MDX sidecars without hosted Plan MCP, database writes, publish/share flows, or source artifact replacement. The published surface now supports local-only visual artifacts.
+- **Inline workflow reviewers** -- Added `inline-spec-compliance-reviewer` and `inline-code-quality-reviewer` as Sonnet-routed workflow agents for `/workflows:work --review-mode inline|both`.
 - **Path-only visual artifact rendering** -- Added the path-only `/visual-artifact` wrapper so users can pass just `docs/visual-artifacts/<workflow>/<slug>` and get local check plus static preview with `--dir`, `--kind`, `--out`, and pinned `@agent-native/core@0.67.0` inferred.
+- **Todo triage researcher** -- Added `todo-triage-researcher`, a lightweight research agent that produces compact evidence-backed action briefs for review-created todos so `/workflows:triage` can validate and synthesize without broad main-model repo research. The published surface now includes 39 specialized agents.
 
 ### Changed
 
+- **Planning workflow token budget** -- Tightened `/workflows:plan` into a compiler-style orchestrator with a compact subagent delta contract, conditional specialist gates for SpecFlow/e2e, and less duplicated reference logic so planning keeps quality without making the main model re-do every specialist analysis.
+- **Deepen-plan token budget** -- Tightened `/deepen-plan` into a manifest-driven compiler/editor workflow with a compact subagent delta contract, named lightweight specialist routing, source-doc delta extraction, and explicit review-agent boundaries so the main orchestrator synthesizes findings without redoing specialist work.
+- **Review workflow token budget** -- Tightened `/workflows:review` into a specialist-orchestrator workflow that preserves mandatory reviewer coverage, including `code-simplicity-reviewer`, while reducing main-orchestrator load through compact shared packets, deduped dispatch, and synthesis-only boundaries.
+- **Triage workflow token budget** -- Tightened `/workflows:triage` into a validator/compiler workflow: the orchestrator now builds a readiness ledger, delegates missing todo research to compact briefs, rejects weak recommendations, separates `--auto-recommended` from `--execute`, and uses the canonical execution-agent scaffold when execution is requested.
 - **Workflow next-step advisor gates** -- Tightened `workflow-next-step` with explicit active-chain binding, ordered validity/input/visual/graph/stop gates, and completed-stage summaries so every final workflow handoff explains both previous-stage evidence and the next-session route.
 - **Todo status taxonomy** -- Standardized file-based todo statuses on `pending`, `in_progress`, `blocked`, and `complete`, removing the old `ready` and `done` vocabulary from the todo workflow guidance.
 - **Agent-Native visual style guidance** -- Upgraded `local-visual-artifact-renderer` with a local Agent-Native plan style and primitive reference adapted from the pinned BuilderIO package. The renderer now loads that reference, generates the live `plan blocks` catalog from `@agent-native/core@0.67.0`, and treats flat Markdown-with-background output as a style failure for non-trivial artifacts.
 - **Default local visual preview** -- The `local-visual-artifact-renderer` now treats `preview.html` as the default local handoff, running `plan local check` followed by pinned `plan local preview --out <artifact-dir>/preview.html` when local command execution is available.
 - **Local visual artifact serving** -- Hardened `/visual-artifact --serve` so the wrapper keeps the default local Plan UI port at exactly `3001`, distinguishes the Plan UI `--app-url` from the Agent-Native bridge `--port`, and refuses to create dead `.plan-url` files when no local Plan UI is reachable.
 - **Right-sized planning and lite workflow mode** -- `/workflows:brainstorm --lite` and `/workflows:plan --lite` now describe a compact path for small, low-risk changes while preserving WHY, success criteria, TDD/evidence, execution shape, and scope fences. The documented full workflow now runs through `/workflows:review` -> `/workflows:triage` -> `/workflows:compound`.
+- **Claude workflow model routing** -- `/workflows:work` now declares `claude-sonnet-5`, while `/lrj`, `/workflows:to-issues`, `/workflows:review`, and `/workflows:triage` remain Opus-led for critical orchestration. Workflow subagent prompts now dispatch resolved Claude plugin subagent identifiers without pasting agent file bodies into payloads.
 
 ## [4.17.0] - 2026-06-14
 
@@ -89,7 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **`/workflows:work`** -- Ticket execution, retries, and regression repairs now dispatch through the named `execution-agent`, with the full bundled agent template plus injected execution packet context loaded on every run.
+- **`/workflows:work`** -- Ticket execution, retries, and regression repairs now dispatch through the named `execution-agent` with an injected execution packet context scaffold.
 - **Execution prompt contract** -- `execution-agent-prompt.md` now serves as the injected context scaffold for the named `execution-agent` instead of acting like a standalone worker prompt.
 
 ## [4.12.0] - 2026-05-24

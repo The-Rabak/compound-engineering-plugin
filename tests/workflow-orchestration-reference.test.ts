@@ -46,7 +46,9 @@ describe("workflow orchestration references", () => {
     expect(orchestration).toContain("## Reference Template Loading")
     expect(orchestration).toContain("## Named Agent Dispatch")
     expect(orchestration).toContain("Never dispatch a named agent by name alone")
-    expect(orchestration).toContain("Do not summarize or abbreviate the template")
+    expect(orchestration).toContain("compound-engineering:<category>:<agent-name>")
+    expect(orchestration).toContain("read only the metadata/header needed to verify")
+    expect(orchestration).toContain("Do not paste the agent file body into the delegated prompt")
 
     expect(tdd).toContain("## Contract Resolution")
     expect(tdd).toContain("## Plan Section Shape")
@@ -428,6 +430,82 @@ describe("workflow orchestration references", () => {
     )
   })
 
+  test("review keeps simplicity reviewer mandatory while deduplicating configured reviewers", async () => {
+    const portableReview = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "review.md",
+    )
+    const generatedReview = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "review.md",
+    )
+    const portableSetup = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "setup",
+      "SKILL.md",
+    )
+    const generatedSetup = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "skills",
+      "setup",
+      "SKILL.md",
+    )
+    const mandatoryReviewers =
+      "`agent-native-reviewer`, `learnings-researcher`, `uncle-bob`, `ticket-flow-auditor`, `e2e-test-strategist`, and `code-simplicity-reviewer`"
+
+    for (const prompt of [portableReview, generatedReview]) {
+      expect(prompt).toContain(mandatoryReviewers)
+      expect(prompt).toContain("Dispatch each resolved reviewer at most once")
+      expect(prompt).toContain("does not replace the mandatory specialist reviewer")
+      expect(prompt).toContain("Apply the protocol above to `code-simplicity-reviewer`")
+      expect(prompt).not.toContain("if it is not configured, do not dispatch it separately")
+    }
+
+    for (const setup of [portableSetup, generatedSetup]) {
+      expect(setup).toContain(mandatoryReviewers)
+      expect(setup).toContain("deduplicates configured and mandatory reviewers before dispatch")
+    }
+  })
+
+  test("triage delegates focused todo research through the todo triage researcher contract", async () => {
+    const portableTriage = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "triage.md",
+    )
+    const generatedTriage = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "commands",
+      "workflows",
+      "triage.md",
+    )
+
+    for (const prompt of [portableTriage, generatedTriage]) {
+      expect(prompt).toContain("## Triage Brief Contract")
+      expect(prompt).toContain("Every focused triage research result must return exactly this compact, todo-ready shape")
+      expect(prompt).toContain("## Todo Triage Brief")
+      expect(prompt).toContain("## Evidence Facts")
+      expect(prompt).toContain("## Recommended Action")
+      expect(prompt).toContain("## Execution Fields")
+      expect(prompt).toContain("## Decision Needed")
+      expect(prompt).toContain("dispatch the resolved `todo-triage-researcher` agent with the Triage Brief Contract")
+      expect(prompt).toContain("request the Triage Brief Contract, not a raw investigation report")
+      expect(prompt).toContain("do not redo broad repository research after a focused triage researcher returns a complete brief")
+    }
+  })
+
   test("shared TDD reference drives plan, execution, and review evidence contracts", async () => {
     const planPrompt = await readRepoFile(
       "portable",
@@ -556,6 +634,26 @@ describe("workflow orchestration references", () => {
     expect(deepenPrompt).toContain("Default mode: targeted deepening")
     expect(deepenPrompt).toContain("Only launch research/review agents for unresolved questions")
     expect(deepenPrompt).toContain("Exhaustive fan-out is opt-in")
+    expect(deepenPrompt).toContain("## Operating Contract")
+    expect(deepenPrompt).toContain("## Subagent Output Contract")
+    expect(deepenPrompt).toContain("## Deepening Manifest")
+    expect(deepenPrompt).toContain("Preferred specialists:")
+    expect(deepenPrompt).toContain("learnings-researcher")
+    expect(deepenPrompt).toContain("framework-docs-researcher")
+    expect(deepenPrompt).toContain("best-practices-researcher")
+    expect(deepenPrompt).toContain("spec-flow-analyzer")
+    expect(deepenPrompt).toContain("e2e-test-strategist")
+    expect(deepenPrompt).toContain("document-review")
+    expect(deepenPrompt).toContain("Do not dynamically discover all available review agents")
+    expect(deepenPrompt).toContain("Do not dispatch broad code-review agents from `/deepen-plan`")
+    expect(deepenPrompt).toContain("Never feed full source-document contents to all later agents")
+    expect(deepenPrompt).not.toContain("Discover ALL available skills")
+    expect(deepenPrompt).not.toContain("For each discovered skill")
+    expect(deepenPrompt).not.toContain("Return the FULL content")
+    expect(deepenPrompt).not.toContain("Task general-purpose")
+    expect(deepenPrompt).not.toContain("Task Explore")
+    expect(deepenPrompt).not.toContain("Discover available agents")
+    expect(deepenPrompt).not.toContain("read each discovered agent")
     expect(deepenPrompt).not.toContain("Do NOT filter agents by \"relevance\" - run them ALL")
     expect(deepenPrompt).not.toContain("### WHY Integrity Check")
     expect(deepenPrompt).not.toContain("### Key Improvements")

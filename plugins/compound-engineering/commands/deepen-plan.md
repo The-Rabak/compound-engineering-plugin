@@ -1,661 +1,242 @@
 ---
 name: deepen-plan
-description: Enhance a plan with parallel research agents grounded in user story, architectural context, and success criteria to add depth without losing purpose
+description: Enhance a plan with parallel research agents grounded in user story, architectural context, and success criteria without duplicating specialist work
 argument-hint: "[path to plan file]"
 ---
 
-# Deepen Plan - Power Enhancement Mode
+# Deepen Plan - Targeted Hardening Mode
 
 ## Introduction
 
-**Note: The current year is 2026.** Use this when searching for recent documentation and best practices.
+**Note: The current year is 2026.** Use this only when checking current documentation, framework versions, deprecations, or external best practices.
 
-This command takes an existing plan (from `/workflows:plan`) and, when available, the architecture improvement artifact from `/workflows:architecture`. If no artifact exists yet, it must assemble an **explicit architecture handoff contract** from the plan instead of treating architecture as hidden context. Every enhancement is **grounded in the plan's WHY artifacts** -- the problem narrative, user story, architectural context, success criteria, the explicit architecture contract, and the plan's TDD/evidence contract -- so that deepening adds purpose-aligned depth, not generic complexity.
+This command takes an existing plan from `/workflows:plan` and hardens only the unresolved questions, risks, execution-packet gaps, source-doc discrepancies, architecture handoff gaps, and e2e weaknesses that could affect execution quality.
 
 Default mode: targeted deepening. Research only unresolved questions, risks, or decisions that the plan explicitly leaves open, then fold findings directly into the relevant section.
 
 Exhaustive fan-out is opt-in. Only run broad "cover everything" sweeps when the user explicitly requests exhaustive depth.
 
-The result is a deeply grounded, production-ready plan that remains tightly coupled to WHY we're building it while honoring the deletion-test, interface, seam, and adapter decisions captured in the architecture artifact or explicit architecture handoff contract. Deepening may add detail, remove unnecessary detail, or defer optional complexity when that yields a clearer and more executable plan.
+The orchestrator is a compiler and editor, not a second specialist. It extracts the plan contract, creates a deepening manifest, dispatches narrow specialists when they add value, resolves contradictions, accepts or rejects deltas, and writes the final plan. It must not redo specialist analysis, paste raw reports, discover every available skill, dispatch broad review agents, or expand scope just because a recommendation is technically sound.
 
 ## Plan File
 
 <plan_path> #$ARGUMENTS </plan_path>
 
-**If the plan path above is empty:**
+If the plan path above is empty:
 1. Check for recent plans: `ls -la docs/plans/`
 2. Ask the user: "Which plan would you like to deepen? Please provide the path (e.g., `docs/plans/2026-01-15-feat-my-feature-plan.md`)."
 
 Do not proceed until you have a valid plan file path.
 
-## Main Tasks
+## Required References
 
-### 1. Parse and Analyze Plan Structure
+Use these references as contracts. Load only the references needed for the current plan; do not paste their full text into subagent prompts.
 
-<thinking>
-First, read and parse the plan to extract the WHY artifacts (problem narrative, user story, architectural context, success criteria) and identify each major section that can be enhanced with research. The WHY artifacts are the lens through which all deepening is filtered.
-</thinking>
+- `commands/workflows/references/orchestration-protocol.md`
+- `commands/workflows/references/minimal-effective-planning.md`
+- `commands/workflows/references/execution-shape.md`
+- `commands/workflows/references/tdd-evidence-contract.md`
+- `commands/workflows/references/e2e-testing-contract.md` when the plan has a runtime surface or a suggested e2e suite
+- `commands/workflows/references/vertical-slice-architecture.md` when `execution_shape.mode=vertical-slices`
 
-**Read the plan file and extract WHY artifacts first:**
+When dispatching a named agent, apply `Named Agent Dispatch` from `orchestration-protocol.md`: verify the bundled agent source and metadata, dispatch the resolved agent identifier, and pass only workflow-specific payload plus resolved context. Do not paste the agent file body into the prompt.
 
-- [ ] **Problem Narrative** -- the synthesized WHY (who has the problem, what triggers it, impact)
-- [ ] **User Story** -- the north star (As a [persona], I need to [action] so that [outcome])
-- [ ] **Architectural Context** -- the WHERE map (lives in, interacts with, entry point, data, dependencies)
-- [ ] **Success Criteria** -- the DONE definition (measurable outcomes tied to user story)
-- [ ] **`handoff` frontmatter** -- check all fields are `true`; if any are `false` or missing, flag: "Plan is missing [X]. Deepening may add technically correct but purpose-misaligned enhancements. Consider running `/workflows:plan` to fill gaps first."
-- [ ] **`tdd` frontmatter + `## TDD & Evidence Contract`** -- extract precedence, mode, loop, unit/e2e evidence expectations, and any exceptions
-- [ ] Use `commands/workflows/references/tdd-evidence-contract.md` to resolve the effective TDD contract: plan values override local defaults, `inherit` falls back, and no-local-config falls back to Ralph-driven `red-green-refactor` with unit + e2e evidence required
-- [ ] If the plan weakens Ralph/unit+e2e without a justification, flag it and add a justified exception before continuing
-- [ ] If the plan is missing the `tdd` block or the `## TDD & Evidence Contract` section, add them using the resolved local/fallback defaults before deepening other sections
-- [ ] **`runtime_stack` frontmatter + `## Runtime Stack & Environments` + `## Suggested E2E Suite`** -- extract the local/QA/prod runtime stack and the existing e2e suite; these feed the e2e hardening pass (Step 5.5). If a runtime surface exists but these sections are missing, flag it and add them using `commands/workflows/references/e2e-testing-contract.md` defaults before deepening
+## Operating Contract
 
-**Check for brainstorm reference:**
+The orchestrator owns:
+- extracting WHY, architecture, TDD/evidence, runtime/e2e, and execution-shape context
+- building a short deepening manifest of risks and gaps
+- selecting the smallest useful specialist set
+- merging plan-ready deltas into one coherent plan
+- catching contradictions, missing required fields, critical mistakes, and scope drift
+- writing the updated plan file
 
-- [ ] Read `brainstorm_ref` from plan frontmatter
-- [ ] If a brainstorm path exists, read it and extract additional context:
-  - Stakeholder Impact (who is affected and how)
-  - Key Decisions and rationale
-  - Approaches Considered and why they were rejected
-  - Resolved Questions (context that informed decisions)
-- [ ] This additional context helps research agents make purpose-aligned recommendations
+The orchestrator does not own:
+- deep framework documentation research when `framework-docs-researcher` is dispatched
+- external best-practice synthesis when `best-practices-researcher` is dispatched
+- institutional learning search when `learnings-researcher` is dispatched
+- flow-matrix analysis when `spec-flow-analyzer` is dispatched
+- e2e suite hardening when `e2e-test-strategist` is dispatched
+- code review or implementation review; named review agents belong to `/workflows:review`, except explicit pre-code artifact checks documented in this command
+- ticket packaging; `/workflows:to-issues` and `focused-ticket-priming` own ticket-local context
+- coding
 
-**Check for architecture artifact or explicit handoff contract:**
+Only launch research/review agents for unresolved questions. Use the word "review" here to mean artifact-focused plan review only; do not dispatch broad code-review agents from this workflow.
 
-- [ ] Read `architecture_ref` from plan frontmatter
-- [ ] If an architecture path exists, read it and extract:
-  - Feature Homes and Ownership
-  - Shared / Global Decisions
-  - Deepening Candidates
-  - Context Tiers
-  - Deletion Test decisions
-  - Interfaces as test surfaces
-  - Seams, Adapters, and Contracts
-  - Drift Checks
-  - Recommendations for `/deepen-plan`, `/workflows:work`, and `/workflows:review`
-- [ ] If no `architecture_ref` exists, check `docs/architecture/*.md` for a recent artifact that matches the plan topic
-- [ ] If no architecture artifact exists, build an explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and any `## Related Artifacts` section
-- [ ] Record whether deepening used a real artifact or a plan-derived handoff contract so `/workflows:work` and `/workflows:review` inherit the same structural guidance
-- [ ] If no architecture artifact exists, continue but flag: "No architecture artifact found. Consider running `/workflows:architecture` before deepening so structural decisions are explicit."
+## Subagent Output Contract
 
-**Then extract plan structure:**
-
-- [ ] Overview/Proposed Solution sections
-- [ ] Technical Approach/Architecture
-- [ ] `execution_shape` frontmatter + `## Execution Shape` section
-- [ ] Execution packets / phase wrappers (noting which user story aspect each packet serves)
-- [ ] Code examples and file references
-- [ ] Acceptance criteria
-- [ ] Any UI/UX components mentioned
-- [ ] Technologies/frameworks mentioned (Laravel, Vue.js, Nuxt, Python, TypeScript, etc.)
-- [ ] Domain areas (data models, APIs, UI, security, performance, etc.)
-
-**Create a section manifest with WHY linkage:**
-```
-Section 1: [Title] - [Brief description of what to research] - Serves: [user story aspect / success criterion]
-Section 2: [Title] - [Brief description of what to research] - Serves: [user story aspect / success criterion]
-...
-```
-
-The "Serves" column ensures every deepening activity traces back to WHY we're building this.
-
-### 1.1 Validate Execution Readiness
-
-<thinking>
-Check if the plan has sufficiently structured execution packets for the subagent orchestration model in `/workflows:work`. Use `commands/workflows/references/execution-shape.md` as the source of truth. Plans need packets that are independently executable, testable, and traceable back to the user story without forcing fake verticality.
-</thinking>
-
-**Resolve execution shape first:**
-
-- [ ] Read `execution_shape.mode`; if missing, default it to `vertical-slices`
-- [ ] Read `execution_shape.rationale`; require it when the mode is not `vertical-slices`
-- [ ] Ensure the body includes a matching `## Execution Shape` section
-- [ ] If the mode is `vertical-slices`, also apply `commands/workflows/references/vertical-slice-architecture.md` for feature-home and shared/global boundary checks
-- [ ] If the chosen mode looks wrong for the real work, add a `### WHY Reassessment` note instead of silently changing it
-
-**Scan each execution packet using the required fields from `commands/workflows/references/execution-shape.md`:**
-
-- [ ] **`vertical-slices`:** slice type, serves, demo scenario, feature home, scope + scope fence, files, depends on, dependency type, success criteria, test command
-- [ ] **`infra-track`:** capability enabled, consumers / downstream work unlocked, scope, files, depends on, risk / rollback, validation command, success criteria
-- [ ] **`fix-batch`:** problem, repro / expected outcome, files, depends on, validation command, success criteria
-- [ ] **TDD alignment:** packet-level validation commands collectively satisfy the resolved unit/e2e evidence contract, or the plan records a justified exception with replacement evidence
-
-**Validate WHY tracing:**
-
-- [ ] **Each packet has a purpose line** (`Serves`, `Consumers`, or equivalent) tying it to user story value or explicit downstream unlocks
-- [ ] **Success criteria trace to plan-level success criteria** -- packet criteria should be decomposed from the plan's success criteria, not invented independently
-- [ ] **No orphan packets** -- every packet should trace to at least one success criterion or explicit enabling outcome
-- [ ] **Phase wrappers stay optional** -- if the plan uses phases or tracks, confirm they are grouping containers only and do not replace packet-level tracing
-
-**Expected packet format:**
+Every deepening-time helper or named specialist must return compact, plan-ready output in this shape:
 
 ```markdown
-##### Slice N.1: [Slice Title]
-**Slice type:** tracer-bullet | expansion | hardening
-**Serves:** [Which aspect of the user story / which success criterion this slice delivers]
-**Demo scenario:** [Smallest end-to-end behavior this slice proves]
-**Feature home:** `path/to/feature-home/`
-**Files:** `path/to/file1.php`, `path/to/file2.php`
-**Depends on:** Slice N-1.2 (or "None")
-**Dependency type:** real | stub-available | parallel-safe
+## Verdict
+[1-2 sentences on whether this area needs a plan change.]
 
-###### Scope
-- **Owns:** [What this slice changes]
-- **Non-goals:** [What intentionally waits]
-- **Scope fence:** [Boundary that keeps the slice thin]
+## Critical Findings
+- [Only blockers, contradictions, source-doc mismatches, or high-risk misses. Say "None" when absent.]
 
-###### Acceptance criteria
-- [ ] Criterion 1
-- [ ] Criterion 2
+## Plan Deltas
+- **Section:** [plan section]
+  **Change:** [specific text or decision to incorporate]
+  **Reason:** [success criterion, user story need, architecture handoff, source fact, or risk]
+  **Source:** [file path, URL, artifact path, agent name, or "agent judgment"]
 
-###### Evidence
-- **Test command:** `command to run`
+## Deferred / Non-goals
+- [Useful but out-of-scope ideas.]
+
+## Open Questions
+- [Questions that block truthful deepening. Say "None" when absent.]
 ```
 
-**Scoring:**
+Reject raw research dumps. If a helper returns broad notes, distill them into this contract before synthesis.
 
-Count how many execution packets have the full structure. Report:
+## Workflow
 
-```
-Execution Readiness: X/Y packets have complete structure (Z%)
-```
+### 1. Load The Current Plan Contract
 
-**Actions based on score:**
-
-| Score | Action |
-|-------|--------|
-| 80-100% | Plan is execution-ready. Proceed with deepening. |
-| 50-79% | Flag incomplete packets. During deepening, add missing fields. |
-| 0-49% | Plan needs significant restructuring. Add an "Execution Readiness" enhancement pass that decomposes vague phases/tasks into the packet shape required by the selected mode. **Note:** `/workflows:work` will refuse to execute plans that lack a coherent execution shape unless the user explicitly approves a mode change or legacy adaptation. |
-
-**For packets missing structure, the deepening process should:**
-
-1. Pick or confirm the execution shape that best matches the real work
-2. Break vague phases or legacy tasks into specific packets for that mode
-3. Identify the smallest honest outcome each packet proves or unlocks
-4. Identify which files each packet will create or modify
-5. Write concrete success criteria (not vague goals)
-6. Determine the validation command (look at existing test patterns in the codebase)
-7. Make it explicit whether the validation command contributes unit evidence, e2e evidence, or both
-8. Map dependencies between packets
-9. Add a suggested commit message per packet (conventional format: `feat(scope): description`)
-
-### 1.2 Execution Shape Complexity Check
-
-<thinking>
-Check if any packets are too large, too vague, or shaped incorrectly for reliable subagent execution. Cross-layer work is allowed in `vertical-slices`; the failure mode is not "touches backend and frontend" but "tries to deliver multiple outcomes or no honest outcome at all."
-</thinking>
-
-**For each packet, check complexity against the selected mode:**
-
-| Metric | Threshold | Action |
-|--------|-----------|--------|
-| Outcomes or unlocks | > 1 meaningful outcome | Flag for splitting |
-| Files touched | > 6 files | Flag for review; confirm the packet is still thin |
-| Success criteria | > 5 criteria | Flag for splitting |
-| Scope fence | Missing or vague | Flag for clarification |
-| Shape fit | `vertical-slices` used for horizontal-only work, or `infra-track` / `fix-batch` used to hide a real feature slice | Reassess mode |
-| Risk controls | `Blast radius: high` with no rollback path | Add safety fields before execution |
-
-**Important:** A packet that touches backend + frontend is **not automatically too large**. If the same thin slice needs a migration, service method, API handler, and tiny UI change to prove one observable behavior, keep it intact.
-
-**If any slices exceed thresholds:**
-
-Report:
-```
-Execution Shape Warning: X packets may be too large or incorrectly shaped for reliable subagent execution.
-
-Slice 2.1: "User can complete first login tracer bullet" -- 2 demo scenarios, 7 success criteria
-  Suggestion: Split into "User submits credentials and receives success state" and "User sees first authenticated dashboard shell"
-
-Packet 3.2: "Create auth schema foundation" -- no demo scenario, horizontal-only outcome
-  Suggestion: Either rewrite as "User can submit credentials and persist the first auth record" or switch this track to `infra-track` if it is truly enablement-only
-```
-
-Suggest splits that create self-contained packets with clear ownership and non-overlapping file sets where possible. **When splitting, ensure each new packet retains its tracing to the user story or enabling outcome.**
-
-**This validation ensures the plan is ready for `/workflows:work`'s subagent orchestration model**, where each packet is delegated to a focused subagent with clear scope, proof, and termination criteria.
-
-### 1.5 Re-fetch Source Documents (if available)
-
-Check the plan's YAML frontmatter for `source_docs:`. If present, re-fetch the original documents for deeper analysis:
-
-**For each source doc URL in `source_docs.tickets`, `source_docs.docs`, `source_docs.figma`:**
-
-Launch parallel subagents to re-read the full documents (not just summaries this time):
-
-```
-Task general-purpose: "Re-read this source document in full detail for plan deepening.
-
-URL: [url]
-Type: [tickets|docs|figma]
-
-Fetch the complete document content using this strategy:
-1. Try ToolSearch to find any relevant MCP tools available
-2. If MCP tools found, use them to fetch the document
-3. If no MCP tools, try WebFetch on the URL
-4. Last resort: output 'MANUAL_INPUT_NEEDED: Could not access [url]. Ask user to paste content.'
-
-Focus on extracting:
-- Detailed acceptance criteria and edge cases
-- Technical constraints not captured in the summary
-- Dependencies and integration points
-- Any updates since the plan was created (check timestamps)
-- Any user story or problem context that was missed or summarized too aggressively in the plan
-
-Return the FULL content, not a summary. This will be used to ground the plan in source-of-truth documents."
-```
-
-Feed the full document contents to all subsequent deepening agents as additional context, alongside the WHY artifacts extracted in Step 1.
-
-### 2. Discover and Apply Available Skills
-
-<thinking>
-Dynamically discover all available skills and match them to plan sections. Don't assume what skills exist - discover them at runtime.
-</thinking>
-
-**Step 1: Discover ALL available skills from ALL sources**
-
-```bash
-# 1. Project-local skills (highest priority - project-specific)
-ls [project skill dir]
-
-# 2. User's platform-global skills (for example ~/.claude/skills or ~/.config/opencode/skills)
-ls [platform global skills dir]
-
-# 3. Installed plugin/package skills if the harness exposes them
-ls [installed plugin skill dirs]
-
-# 4. Broad fallback: search every discovered plugin/package location for skills
-find [platform plugin roots] -type d -name "skills" 2>/dev/null
-
-# 5. If the harness exposes plugin metadata, inspect it to find additional local skill locations
-cat [installed plugin metadata file]
-```
-
-**Important:** Check EVERY source. Don't assume compound-engineering is the only plugin. Use skills from ANY installed plugin that's relevant.
-
-**Step 2: For each discovered skill, read its SKILL.md to understand what it does**
-
-```bash
-# For each skill directory found, read its documentation
-cat [skill-path]/SKILL.md
-```
-
-**Step 3: Match skills to plan content**
-
-For each skill discovered:
-- Read its SKILL.md description
-- Check if any unresolved question, risk, or decision in the plan matches the skill's domain
-- If there's a match, spawn a sub-agent to apply that skill's knowledge to that unresolved area only
-
-**Step 4: Spawn targeted skill sub-agents**
-
-Only launch skill sub-agents that directly help close an open question or risk tied to the user story/success criteria.
-
-For each matched skill:
-```
-Task general-purpose: "You have the [skill-name] skill available at [skill-path].
-
-YOUR JOB: Use this skill on the plan.
-
-1. Read the skill: cat [skill-path]/SKILL.md
-2. Follow the skill's instructions exactly
-3. Apply the skill to this content:
-
-[relevant plan section or full plan]
-
-WHY CONTEXT (use this to ground the skill's recommendations):
-- Problem: [problem narrative]
-- User Story: [user story]
-- Success Criteria: [success criteria]
-
-4. Return distilled recommendations that directly resolve the open question/risk in scope. Filter out anything that doesn't serve the user story or success criteria.
-
-The skill tells you what to do - follow it. Execute the skill completely."
-```
-
-Always use the discovered `[skill-path]` and read `SKILL.md` from that exact location. Do not hardcode Claude-specific paths when spawning skill subagents.
-
-**Launch skill sub-agents in parallel when useful:**
-- 1 sub-agent per matched unresolved area
-- Keep dispatch focused on what's still unclear or risky in the plan
-- Default to the smallest set of sub-agents needed to sharpen execution readiness
-
-**Each sub-agent:**
-1. Reads its skill's SKILL.md
-2. Follows the skill's workflow/instructions
-3. Applies the skill to the plan
-4. Returns focused recommendations tied to the unresolved question/risk
-
-**Example spawns:**
-```
-Task general-purpose: "Use the laravel-conventions skill at [discovered skill path]. Read SKILL.md and apply it to: [Laravel sections of plan]"
-
-Task general-purpose: "Use the frontend-design skill at [discovered skill path]. Read SKILL.md and apply it to: [UI sections of plan]"
-
-Task general-purpose: "Use the agent-native-architecture skill at [discovered skill path]. Read SKILL.md and apply it to: [agent/tool sections of plan]"
-
-Task general-purpose: "Use the security-patterns skill at [discovered skill path]. Read SKILL.md and apply it to: [full plan]"
-```
-
-Exhaustive fan-out is opt-in and should only run when the user explicitly asks for maximum breadth.
-
-### 3. Discover and Apply Learnings/Solutions
-
-<thinking>
-Check for documented learnings from /workflows:compound. These are solved problems stored as markdown files. Spawn a sub-agent for each learning to check if it's relevant.
-</thinking>
-
-**LEARNINGS LOCATION - Check these exact folders:**
-
-```
-docs/solutions/           <-- PRIMARY: Project-level learnings (created by /workflows:compound)
-├── performance-issues/
-│   └── *.md
-├── debugging-patterns/
-│   └── *.md
-├── configuration-fixes/
-│   └── *.md
-├── integration-issues/
-│   └── *.md
-├── deployment-issues/
-│   └── *.md
-└── [other-categories]/
-    └── *.md
-```
-
-**Step 1: Find ALL learning markdown files**
-
-Run these commands to get every learning file:
-
-```bash
-# PRIMARY LOCATION - Project learnings
-find docs/solutions -name "*.md" -type f 2>/dev/null
-
-# If docs/solutions doesn't exist, check alternate locations:
-find .claude/docs -name "*.md" -type f 2>/dev/null
-find ~/.claude/docs -name "*.md" -type f 2>/dev/null
-```
-
-**Step 2: Read frontmatter of each learning to filter**
-
-Each learning file has YAML frontmatter with metadata. Read the first ~20 lines of each file to get:
-
-```yaml
----
-title: "N+1 Query Fix for Briefs"
-category: performance-issues
-tags: [eloquent, n-plus-one, eager-loading, with]
-module: Briefs
-symptom: "Slow page load, multiple queries in logs"
-root_cause: "Missing eager loading with() on relationship"
----
-```
-
-**For each .md file, quickly scan its frontmatter:**
-
-```bash
-# Read first 20 lines of each learning (frontmatter + summary)
-head -20 docs/solutions/**/*.md
-```
-
-**Step 3: Filter - only spawn sub-agents for LIKELY relevant learnings**
-
-Compare each learning's frontmatter against the plan (both technical content AND WHY artifacts):
-- `tags:` - Do any tags match technologies/patterns in the plan?
-- `category:` - Is this category relevant? (e.g., skip deployment-issues if plan is UI-only)
-- `module:` - Does the plan touch this module?
-- `symptom:` / `root_cause:` - Could this problem occur with the plan?
-- **WHY match** - Does the learning's domain relate to the user story or architectural context? (e.g., a caching learning is relevant if the user story involves performance even if the plan doesn't explicitly mention caching yet)
-
-**SKIP learnings that are clearly not applicable:**
-- Plan is frontend-only → skip `database-migrations/` learnings
-- Plan is Python → skip `laravel-specific/` learnings
-- Plan has no auth → skip `authentication-issues/` learnings
-
-**SPAWN sub-agents for learnings that MIGHT apply:**
-- Any tag overlap with plan technologies
-- Same category as plan domain
-- Similar patterns or concerns
-
-**Step 4: Spawn sub-agents for filtered learnings**
-
-For each learning that passes the filter:
-
-```
-Task general-purpose: "
-LEARNING FILE: [full path to .md file]
-
-1. Read this learning file completely
-2. This learning documents a previously solved problem
-
-Check if this learning applies to this plan:
-
-USER STORY: [user story]
-SUCCESS CRITERIA: [success criteria]
-
-PLAN:
----
-[full plan content]
----
-
-If relevant:
-- Explain specifically how it applies
-- Quote the key insight or solution
-- Note which success criterion or user story aspect it protects
-- Suggest where/how to incorporate it
-
-If NOT relevant after deeper analysis:
-- Say 'Not applicable: [reason]'
-"
-```
-
-**Example filtering:**
-```
-# Found 15 learning files, plan is about "Laravel API caching"
-
-# SPAWN (likely relevant):
-docs/solutions/performance-issues/n-plus-one-queries.md      # tags: [eloquent] ✓
-docs/solutions/performance-issues/redis-cache-stampede.md    # tags: [caching, redis] ✓
-docs/solutions/configuration-fixes/redis-connection-pool.md  # tags: [redis] ✓
-
-# SKIP (clearly not applicable):
-docs/solutions/deployment-issues/heroku-memory-quota.md      # not about caching
-docs/solutions/frontend-issues/vue-reactivity-issue.md       # plan is API, not frontend
-docs/solutions/authentication-issues/jwt-expiry.md           # plan has no auth
-```
-
-**Spawn sub-agents in PARALLEL for all filtered learnings.**
-
-**These learnings are institutional knowledge - applying them prevents repeating past mistakes.**
-
-### 4. Launch Per-Section Research Agents
-
-<thinking>
-Only launch research agents where the plan still has unresolved questions, unclear tradeoffs, or unmitigated risks. Ground each agent in the plan's WHY artifacts so research stays purpose-aligned.
-</thinking>
-
-Only launch research/review agents for unresolved questions.
-
-**For each unresolved area, launch focused research with WHY context:**
-
-```
-Task Explore: "Research best practices, patterns, and real-world examples for: [section topic].
-
-CONTEXT -- WHY we're building this:
-- Problem: [problem narrative summary]
-- User Story: [user story]
-- This section serves: [which success criterion / user story aspect]
-- Architectural context: [relevant arch context for this section]
-
-Find:
-- Industry standards and conventions relevant to this user's problem
-- Performance considerations that could affect the stated success criteria
-- Common pitfalls that could threaten the user story outcome
-- Documentation and tutorials for this architectural context
-Return concrete, actionable recommendations that resolve this unresolved area. Filter out recommendations that don't serve the user story or success criteria."
-```
-
-**Also use Context7 MCP for framework documentation:**
-
-For any technologies/frameworks mentioned in the plan, query Context7:
-```
-mcp__plugin_compound-engineering_context7__resolve-library-id: Find library ID for [framework]
-mcp__plugin_compound-engineering_context7__query-docs: Query documentation for specific patterns
-```
-
-**Use WebSearch for current best practices:**
-
-Search for recent (2024-2026) articles, blog posts, and documentation only for unresolved topics.
-
-### 5. Discover and Run Targeted Review Agents
-
-<thinking>
-Discover available agents, then select only the agents needed to resolve open risks/decisions in the plan. Keep breadth explicit and intentional.
-</thinking>
-
-**Step 1: Discover available agents**
-
-Use the same discovery sources as before (project-local, platform-global, installed plugins, local plugins). Read each discovered agent's description.
-
-**Step 2: Select agents by unresolved risk/decision**
-
-Create a short mapping:
-- unresolved question/risk
-- why it matters to user story or success criteria
-- best-fit agent(s)
-
-Skip agents that do not materially improve the current unresolved areas.
-
-**Step 3: Launch selected agents with WHY context**
-
-Before dispatching any named agent discovered in this step, apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md`. Pass the WHY context block from this workflow together with the loaded template.
-
-```
-Task [agent-name]: "Review this plan using your expertise for this unresolved area: [question/risk].
-
-WHY CONTEXT (use this to evaluate whether the plan solves the right problem):
-- Problem Narrative: [problem narrative]
-- User Story: [user story]
-- Success Criteria: [success criteria list]
-- Architectural Context: [arch context summary]
-
-Focus on this unresolved area and return concrete recommendations that improve execution confidence without unnecessary scope growth. Plan content: [full plan content]"
-```
-
-**Exhaustive mode (opt-in only):**
-- If and only if the user explicitly asks for exhaustive breadth, run a broad fan-out across all discovered review/research agents.
-- Label that run as `exhaustive` in your notes so downstream readers know breadth was intentionally expanded.
-
-### 5.5 Harden the E2E Suite (e2e-test-strategist HARDEN mode)
-
-<thinking>
-E2E reveals the cracks at the seams. Deepening is where the suggested e2e suite gets stress-tested for uncovered seams, missing failure modes, weak assertions, and fake risks -- before any code is written. This never weakens the e2e contract; it only sharpens it.
-</thinking>
-
-If the plan has a runtime surface (`runtime_stack.e2e_surface` is not `false`), dispatch `e2e-test-strategist` in **HARDEN mode**. Apply the shared `Named Agent Dispatch` protocol in `commands/workflows/references/orchestration-protocol.md` (bundled template first, OpenViking/global last-resort, quote the first non-empty line before dispatching).
-
-- Task e2e-test-strategist(mode=HARDEN, suggested_e2e_suite, runtime_stack, user_story, success_criteria, open_risks, e2e_contract=commands/workflows/references/e2e-testing-contract.md)
-
-The strategist should:
-- find uncovered seams and missing failure-mode scenarios (concurrency, crash-and-recover, drift, backlog, cold boot, cleanup),
-- flag weak/proxy assertions, sleep-based waits, and any fake risk,
-- confirm each scenario names its environment and drives the real app,
-- tighten harness design toward real-app drive, read-only observation, and multi-condition convergence.
-
-**Fold its output into the `## Suggested E2E Suite` section.** Like all deepening, this must not weaken the TDD/e2e contract -- if it surfaces a tension with a WHY section, record a `### WHY Reassessment` note instead of editing the original. If the plan declares no runtime surface, verify the justified N/A exception exists in `tdd.exceptions` rather than inventing a suite.
-
-### 6. Synthesize Targeted Findings
-
-<thinking>
-Wait for the selected targeted agents to complete, then synthesize findings through the lens of the plan's WHY artifacts. Prioritize enhancements that serve the user story and success criteria.
-</thinking>
-
-**Collect outputs from the selected sources:**
-
-1. **Skill-based sub-agents** - Recommendations tied to unresolved areas
-2. **Learnings/Solutions sub-agents** - Relevant documented learnings from /workflows:compound
-3. **Research agents** - Best practices, documentation, real-world examples for open risks/decisions
-4. **Review agents** - Focused feedback from selected reviewers
-5. **Context7 queries** - Framework documentation and patterns
-6. **Web searches** - Current best practices and articles for unresolved topics
-
-**For each agent's findings, extract and classify by WHY alignment:**
-
-- [ ] **Directly serves user story** -- enhancements that improve delivery of the stated user outcome (HIGH priority)
-- [ ] **Protects success criteria** -- edge cases, security issues, performance concerns that could prevent success criteria from being met (HIGH priority)
-- [ ] **Strengthens architecture** -- improvements aligned with the architectural context that make the implementation more robust (MEDIUM priority)
-- [ ] **General best practices** -- technically sound improvements that don't directly trace to user story but improve overall quality (LOWER priority)
-- [ ] **Scope warning** -- recommendations that would expand scope beyond the user story; flag these explicitly: "This enhancement is valuable but extends beyond the current user story. Consider adding to Future Considerations."
-
-**For each finding also extract:**
-
-- [ ] Concrete recommendations (actionable items)
-- [ ] Code patterns and examples (copy-paste ready)
-- [ ] Anti-patterns to avoid (warnings)
-- [ ] Performance considerations (metrics, benchmarks)
-- [ ] Security considerations (vulnerabilities, mitigations)
-- [ ] Edge cases discovered (handling strategies)
-- [ ] Documentation links (references)
-- [ ] Skill-specific patterns (from matched skills)
-- [ ] Relevant learnings (past solutions that apply - prevent repeating mistakes)
-
-**Deduplicate, prioritize, and trace:**
-- Merge similar recommendations from multiple agents
-- Prioritize by WHY alignment (user story > success criteria > architecture > general)
-- Flag conflicting advice for human review
-- Group by plan section
-- **For each recommendation, note which success criterion it serves or which risk it mitigates**
-
-**Simplicity distillation pass (orchestrator responsibility):**
-- Preserve targeted deepening by default; avoid broad fan-out unless explicitly requested
-- Prefer the least-complex change that satisfies the user story and success criteria
-- Remove or defer recommendations that are speculative, redundant, or not required now
-- Add complexity only when backed by concrete evidence from research, codebase constraints, or risk mitigation needs
-- If complexity is retained, include a brief justification tied to a specific success criterion or risk
-
-### 7. Enhance Plan Sections
-
-<thinking>
-Merge research findings back into the plan, adding depth where useful and reducing noise where needed. Critically: preserve all WHY sections untouched and ensure enhancements strengthen rather than dilute the connection to user story and success criteria.
-</thinking>
-
-**RULE: Never modify these WHY sections** (they are the contract from planning):
+Read the plan and extract only the contract needed for deepening:
 - Problem Narrative
 - User Story
 - Architectural Context
 - Success Criteria
-- Execution shape contract and packet tracing lines
-- Handoff frontmatter
+- `handoff` frontmatter
+- `source_docs`, `brainstorm_ref`, `architecture_ref`, `tickets_ref`
+- `execution_shape` frontmatter and `## Execution Shape`
+- execution packets for the selected mode
+- `tdd` frontmatter and `## TDD & Evidence Contract`
+- `runtime_stack`, `## Runtime Stack & Environments`, and `## Suggested E2E Suite` when present
+- explicit open questions, risks, TODOs, and uncertainty markers
 
-If research suggests changes to these, add a `### WHY Reassessment` note at the end of the plan for the user to review manually. Do not edit the originals.
+If any `handoff` field is false or missing, flag it before deepening: "Plan is missing [X]. Deepening may add technically correct but purpose-misaligned changes. Consider running `/workflows:plan` to repair the plan first." Continue only when the missing field is not required for the requested hardening.
 
-**RULE: Do not silently weaken the TDD or e2e contract.**
-- Preserve the plan's `tdd` frontmatter and `## TDD & Evidence Contract`
-- You may clarify commands, add missing precedence notes, or add missing justifications
-- Any relaxation from Ralph/unit+e2e must appear as an explicit justified exception with replacement evidence
-- Hardening the `## Suggested E2E Suite` may only add coverage and rigor (real-app drive, no fakes, poll-not-sleep, no hardcoded passes per `commands/workflows/references/e2e-testing-contract.md`); it must never remove scenarios or soften assertions to make execution easier
+Read `brainstorm_ref` only when it exists and the plan needs missing stakeholder impact, rejected approaches, resolved-question context, or WHY clarification. Do not summarize the entire brainstorm; extract only facts that affect the manifest.
 
-**RULE: Simplicity over accretion.**
-- You may redact or simplify non-essential implementation detail that does not materially serve the user story or success criteria.
-- Keep packet structure and tracing intact while trimming unnecessary architectural ceremony.
-- If simplification removes previously proposed complexity, capture the reason in an optional compact change note when useful.
+Read `architecture_ref` when present and extract: Feature Homes and Ownership, shared/global decisions, deepening candidates, context tiers, deletion-test decisions, interfaces as test surfaces, seams, adapters, contracts, drift checks, and downstream recommendations. If no architecture artifact exists, build a compact explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and Related Artifacts. Record whether the handoff is real or plan-derived.
 
-**Enhancement format for each section:**
+### 2. Resolve Required Contracts
+
+Use `commands/workflows/references/tdd-evidence-contract.md` to resolve the effective TDD contract: plan values override local defaults, `inherit` falls back, and no local config falls back to Ralph-driven `red-green-refactor` with unit + e2e evidence required.
+
+Do not silently weaken the TDD or e2e contract. If the plan weakens Ralph, unit evidence, or e2e evidence without a justified exception and replacement evidence, add the justified exception or stop and surface the blocker.
+
+Resolve execution shape first using `commands/workflows/references/execution-shape.md`:
+- validate against the selected mode, not vertical slices unconditionally
+- for `vertical-slices`, apply `commands/workflows/references/vertical-slice-architecture.md`
+- if the mode looks wrong, add a `### WHY Reassessment` note instead of silently rewriting intent
+- keep packet tracing lines intact
+
+For each packet, check only the selected mode's required fields:
+- `vertical-slices`: slice type, serves, demo scenario, feature home, scope, scope fence, files, depends on, dependency type, success criteria, test command
+- `infra-track`: capability enabled, consumers / downstream work unlocked, scope, files, depends on, risk / rollback, validation command, success criteria
+- `fix-batch`: problem, repro / expected outcome, files, depends on, validation command, success criteria
+
+Report:
+
+```text
+Execution Readiness: X/Y packets have complete structure (Z%)
+```
+
+If readiness is below 80%, add missing fields only when the plan or linked artifacts give enough evidence. If reconstructing packet boundaries would require guessing, mark that as a blocker for `/workflows:plan`, `/workflows:architecture`, or human repair.
+
+Flag packet complexity only when it affects execution safety: more than one meaningful outcome, missing scope fence, unresolved shared mutable state, unclear dependency type, high blast radius without rollback, or validation evidence that cannot satisfy the resolved TDD/e2e contract.
+
+### 3. Build The Deepening Manifest
+
+Create a short private manifest before dispatching specialists:
+
+```markdown
+## Deepening Manifest
+- **Area:** [execution packet, e2e suite, architecture handoff, source doc, framework decision, prior learning, flow gap]
+  **Why it matters:** [success criterion, user story need, architecture decision, or execution risk]
+  **Evidence available:** [plan section, architecture artifact, source doc ref, repo pattern]
+  **Needed specialist:** [none | learnings-researcher | framework-docs-researcher | best-practices-researcher | spec-flow-analyzer | e2e-test-strategist | document-review | source-doc helper]
+  **Payload scope:** [exact section or risk, not the whole plan unless required]
+```
+
+Default to no specialist when the plan and local artifacts already answer the question. Exhaustive breadth requires explicit user request and must be labeled `exhaustive` in the synthesis notes.
+
+### 4. Dispatch Only Narrow Specialists
+
+Use the smallest set that can close the manifest. Every dispatch must request the Subagent Output Contract and include only:
+- compact WHY context
+- relevant architecture handoff excerpt
+- resolved TDD/evidence expectations when relevant
+- the exact unresolved area
+- the relevant plan section or packet
+- source paths or URLs needed for that area
+
+Preferred specialists:
+- `learnings-researcher`: one run for relevant `docs/solutions/` knowledge. Do not hand-roll a full learning-file sweep in the orchestrator.
+- `framework-docs-researcher`: version-specific official docs, APIs, migrations, or framework behavior.
+- `best-practices-researcher`: current external guidance only when local patterns and source docs cannot settle the decision.
+- `spec-flow-analyzer`: ambiguous multi-role flows, state transitions, retries, cancellation, resume, or thin acceptance criteria.
+- `e2e-test-strategist` in HARDEN mode: when `runtime_stack.e2e_surface` is not `false` or the plan has a `## Suggested E2E Suite`.
+- `document-review` in plan mode: only when the plan or architecture handoff is internally contradictory, missing required handoff fields, or likely to become a durable reference that needs artifact-level tightening.
+
+Source documents:
+- If `source_docs` exist, re-fetch or re-read only documents that can change the deepening manifest.
+- Helpers must return source-fact deltas, acceptance criteria, changed timestamps, discrepancies, and citations using the Subagent Output Contract.
+- Never feed full source-document contents to all later agents unless the user explicitly asks for exhaustive source reanalysis.
+
+Review-agent boundary:
+- Do not dynamically discover all available review agents.
+- Do not dispatch broad code-review agents from `/deepen-plan`; `/workflows:review` owns that phase.
+- If pre-code architecture or plan criticism is needed and no listed specialist fits, use `document-review` or stop with an explicit open question.
+
+### 5. Synthesize Findings
+
+Build a short synthesis ledger before editing:
+
+```markdown
+## Deepening Synthesis Notes
+- **Accepted deltas:** [source -> plan section -> reason]
+- **Rejected/deferred deltas:** [source -> reason]
+- **Critical findings resolved:** [finding -> resolution]
+- **Open blockers:** [must be empty before final plan unless explicitly marked blocked]
+```
+
+Conflict rules:
+- source artifacts and explicit user decisions outrank generic research
+- constitution and approved waivers outrank convenience
+- architecture artifact decisions outrank plan-derived guesses
+- local repo patterns outrank generic best practices unless stale, unsafe, or contradicted by current docs
+- specialist findings outrank orchestrator self-checks in that specialist's domain
+- scope-expanding ideas go to Deferred / Non-goals or Future Considerations unless required for current success criteria
+
+Simplicity pass:
+- preserve targeted deepening by default
+- prefer the least-complex change that satisfies the user story, success criteria, architecture handoff, and evidence contract
+- remove or defer speculative, redundant, or "nice to have" recommendations
+- include complexity only when backed by source facts, repo constraints, or concrete risk mitigation
+
+### 6. Update The Plan
+
+Never modify these original contract sections:
+- Problem Narrative
+- User Story
+- Architectural Context
+- Success Criteria
+- execution-shape contract and packet tracing lines
+- handoff frontmatter
+
+If research suggests those sections are wrong, add a `### WHY Reassessment` note at the end instead of rewriting them.
+
+Preserve the plan's `tdd` frontmatter and `## TDD & Evidence Contract`. You may clarify precedence, validation commands, missing justifications, and replacement evidence, but any relaxation from Ralph/unit+e2e must be explicit and justified.
+
+Harden `## Suggested E2E Suite` only by adding coverage and rigor: real-app drive, real transport, real infra, no fakes, poll-not-sleep, no hardcoded passes, live-value assertions, environment tags, and relevant failure modes. Do not remove scenarios or soften assertions to make execution easier. If no runtime surface exists, verify the justified N/A exception instead of inventing a suite.
 
 Integrate findings inline into the relevant plan section. Do not append raw sub-agent dumps.
 
 ```markdown
 ## [Original Section Title]
 
-[Original content preserved -- including any execution-shape and packet tracing lines]
+[Original content preserved -- including execution-shape and packet tracing lines]
 
 - [Deepening update: concrete recommendation tied to a success criterion or risk]
 - [Constraint/tradeoff clarified and where it applies]
 - [Evidence/reference link only when it materially supports the update]
 ```
 
-Optional compact change note (include only when it materially helps reviewers understand what changed):
+Optional compact change note, only when it helps downstream readers:
 
 ```markdown
 ### Optional compact change note
@@ -663,43 +244,28 @@ Optional compact change note (include only when it materially helps reviewers un
 - Why these updates matter: [1-2 concise bullets tied to success criteria/risks]
 ```
 
-### 8. Update Plan File
-
-**Write the enhanced plan:**
-- Preserve original filename
-- Add `-deepened` suffix if user prefers a new file
-- Update any timestamps or metadata
-
-## Output Format
-
-Update the plan file in place (or if user requests a separate file, append `-deepened` after `-plan`, e.g., `2026-01-15-feat-auth-plan-deepened.md`).
+Update the plan file in place. If the user asks for a separate file, append `-deepened` after `-plan`, e.g. `2026-01-15-feat-auth-plan-deepened.md`.
 
 ## Quality Checks
 
 Before finalizing:
 
-**Content integrity:**
-- [ ] All original content preserved
-- [ ] Findings are integrated inline in the relevant sections (no raw append dumps)
-- [ ] Code examples are syntactically correct
-- [ ] Links are valid and relevant
-- [ ] No contradictions between sections
-- [ ] Optional compact change note included only when it improves clarity
-- [ ] Execution packets have execution-ready structure for the selected mode
-- [ ] TDD contract is explicit, precedence is documented, and unit/e2e evidence stays aligned with packet validation commands unless an exception says otherwise
-- [ ] Simplification pass completed: non-essential complexity removed or deferred, and necessary complexity explicitly justified
+Content integrity:
+- [ ] Findings are integrated inline in the relevant sections with no raw append dumps
+- [ ] The synthesis ledger accepted, rejected, or blocked every critical specialist delta
+- [ ] Links and citations are relevant and not decorative
+- [ ] No contradictions remain between plan, architecture handoff, TDD/evidence, runtime/e2e, and execution packets
+- [ ] Execution packets have complete required fields for the selected mode or blockers are explicit
+- [ ] Simplification pass removed/deferred unnecessary complexity
 
-**WHY integrity:**
+WHY and evidence integrity:
 - [ ] Problem Narrative, User Story, Success Criteria, and Architectural Context are unmodified from the original plan
-- [ ] Handoff frontmatter is intact and still accurate
+- [ ] `handoff` frontmatter remains intact and accurate
 - [ ] `execution_shape` frontmatter and `## Execution Shape` still agree
-- [ ] Every packet still has its tracing line
-- [ ] No new packets were added without a tracing line connecting them to the user story or enabling outcome
-- [ ] Enhancements tagged with which success criterion they serve
-- [ ] Scope-expanding recommendations are explicitly marked rather than silently added to packets
-- [ ] If WHY reassessment was needed, it's in a clearly marked section at the end (not inline edits)
-- [ ] `tdd` frontmatter and `## TDD & Evidence Contract` still agree on precedence, effective loop, evidence, and exceptions
-- [ ] `## Suggested E2E Suite` was hardened (or a justified no-surface N/A confirmed), still drives the real app with no fakes/hardcoded passes, and no scenario was removed or softened
+- [ ] Every packet still traces to the user story, success criteria, or explicit enabling outcome
+- [ ] Scope-expanding recommendations are deferred instead of silently added to packets
+- [ ] `tdd` frontmatter and `## TDD & Evidence Contract` still agree on precedence, loop, evidence, and justified exceptions
+- [ ] `## Suggested E2E Suite` was hardened or a justified no-surface N/A was confirmed
 
 ## Post-Enhancement Boundary
 
@@ -720,25 +286,27 @@ This must be the last phase of the workflow. If deepening stopped before complet
 
 ## Example Enhancement
 
-**Before (from /workflows:plan):**
+Before:
+
 ```markdown
 ## Technical Approach
 
 Use React Query for data fetching with optimistic updates.
 ```
 
-**After (from /workflows:deepen-plan):**
+After:
+
 ```markdown
 ## Technical Approach
 
 Use React Query for data fetching with optimistic updates.
-- Set `staleTime`/`cacheTime` explicitly to match freshness requirements (serves: reduce unnecessary refetching in success criterion #2).
-- Standardize `queryKey` factories to prevent stale invalidation paths (risk mitigated: hidden cache misses).
-- Add targeted retry/error-boundary behavior for transient network failures in query-dependent screens.
+- Set `staleTime` and `cacheTime` to match the freshness requirement in success criterion #2.
+- Standardize `queryKey` factories to prevent stale invalidation paths.
+- Add targeted retry and error-boundary behavior for transient network failures.
 
 ### Optional compact change note
 - Updated section: Technical Approach
-- Why: tightened cache behavior and failure handling for the plan's responsiveness/reliability criteria
+- Why: tightened cache behavior and failure handling for the plan's responsiveness and reliability criteria.
 ```
 
 NEVER CODE! Just research and enhance the plan.

@@ -102,6 +102,8 @@ exists.
 
 - Start with a one-line verdict: does the e2e tell the truth about this feature? (DESIGN/HARDEN:
   is the proposed suite real and complete enough to?)
+- When the caller provides an output contract, use that contract exactly. Return only the critical
+  findings and plan-ready deltas needed by the current phase; do not restate the full e2e contract.
 - For AUDIT: list findings by severity with classification + file:line + the concrete reason + the
   smallest credible fix. Mark anything that fakes, softens, or fails to drive the real app as P1.
 - For DESIGN/HARDEN: deliver the suite/notes in plan-ready markdown, each scenario traced to a

@@ -26,12 +26,17 @@ async function pathExists(...segments: string[]): Promise<boolean> {
 describe("published support surface", () => {
   test("generated metadata and plugin docs match the portable counts and description", async () => {
     const plugin = await loadPortablePlugin(portableRoot)
-    const pluginManifest = await readRepoJson<{ description: string }>("plugins", "compound-engineering", ".claude-plugin", "plugin.json")
-    const marketplace = await readRepoJson<{ plugins: Array<{ description: string }> }>(".claude-plugin", "marketplace.json")
+    const pluginManifest = await readRepoJson<{ description: string; version: string }>("plugins", "compound-engineering", ".claude-plugin", "plugin.json")
+    const marketplace = await readRepoJson<{ plugins: Array<{ description: string; version: string }> }>(".claude-plugin", "marketplace.json")
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
+    const pluginChangelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
 
+    expect(plugin.manifest.version).toBe("4.20.0")
+    expect(pluginManifest.version).toBe(plugin.manifest.version)
+    expect(marketplace.plugins[0]?.version).toBe(plugin.manifest.version)
     expect(pluginManifest.description).toBe(plugin.manifest.description)
     expect(marketplace.plugins[0]?.description).toBe(plugin.manifest.description)
+    expect(pluginChangelog).toContain("## [4.20.0] - 2026-07-08")
     expect(pluginReadme).toContain(
       `Includes ${plugin.agents.length} specialized agents, ${plugin.commands.length} commands, and ${plugin.skills.length} skills.`,
     )
@@ -66,9 +71,9 @@ describe("published support surface", () => {
     expect(pluginChangelog).toContain("`/workflows:plan --lite`")
   })
 
-  test("high-grade workflow commands declare the Claude Opus API model", async () => {
+  test("critical orchestration workflow commands declare the Claude Opus API model", async () => {
     const plugin = await loadPortablePlugin(portableRoot)
-    const commandNames = ["lrj", "workflows:to-issues", "workflows:work", "workflows:review", "workflows:triage"]
+    const commandNames = ["lrj", "workflows:to-issues", "workflows:review", "workflows:triage"]
 
     for (const commandName of commandNames) {
       const command = plugin.commands.find((candidate) => candidate.name === commandName)
@@ -79,6 +84,24 @@ describe("published support surface", () => {
         : ["plugins", "compound-engineering", "commands", `${commandName}.md`]
       const generatedCommand = await readRepoFile(...generatedPath)
       expect(generatedCommand).toContain("model: claude-opus-4-8")
+    }
+  })
+
+  test("workflows work declares the Claude Sonnet API model", async () => {
+    const plugin = await loadPortablePlugin(portableRoot)
+    const command = plugin.commands.find((candidate) => candidate.name === "workflows:work")
+
+    expect(command?.model).toBe("claude-sonnet-5")
+
+    const generatedCommand = await readRepoFile("plugins", "compound-engineering", "commands", "workflows", "work.md")
+    expect(generatedCommand).toContain("model: claude-sonnet-5")
+
+    for (const agentName of ["inline-spec-compliance-reviewer", "inline-code-quality-reviewer"]) {
+      const agent = plugin.agents.find((candidate) => candidate.name === agentName)
+      expect(agent?.model).toBe("claude-sonnet-5")
+
+      const generatedAgent = await readRepoFile("plugins", "compound-engineering", "agents", "workflow", `${agentName}.md`)
+      expect(generatedAgent).toContain("model: claude-sonnet-5")
     }
   })
 
@@ -95,9 +118,11 @@ describe("published support surface", () => {
       expect(readme).toContain(liteTrack)
       expect(readme).toContain("lite mode is for small, low-risk changes")
       expect(readme).toContain("preserves TDD/evidence and scope contracts")
+      expect(readme).toContain("code-simplicity-reviewer")
+      expect(readme).toContain("todo-triage-researcher")
     }
 
-    expect(rootReadme).toContain("36 specialized agents, 28 commands, and 27 skills")
+    expect(rootReadme).toContain("39 specialized agents, 28 commands, and 27 skills")
     expect(rootReadme).not.toContain("34 specialized agents, 28 commands, and 26 skills")
   })
 
@@ -204,7 +229,7 @@ describe("published support surface", () => {
     expect(agent?.codexModel).toBe("gpt-5.5")
     expect(agent?.copilotModel).toBe("gpt-5.5")
     expect(agent?.opencodeModel).toBe("openrouter/z-ai/glm-5.2")
-    expect(plugin.agents.length).toBe(36)
+    expect(plugin.agents.length).toBe(39)
 
     for (const content of [portableAgent, generatedAgent]) {
       expect(content).toContain("source artifact is authoritative")
@@ -265,9 +290,54 @@ describe("published support surface", () => {
     expect(pluginReadme).toContain("| `local-visual-artifact-renderer` |")
     expect(pluginReadme).toContain("BuilderIO Agent-Native plan style guidance")
     expect(pluginReadme).toContain("structured Plan primitives")
-    expect(pluginReadme).toContain("| Agents | 36 |")
+    expect(pluginReadme).toContain("| Agents | 39 |")
     expect(changelog).toContain("local visual artifact renderer")
     expect(changelog).toContain("Agent-Native visual style guidance")
+  })
+
+  test("publishes the todo triage researcher agent across portable and generated surfaces", async () => {
+    const plugin = await loadPortablePlugin(portableRoot)
+    const agent = plugin.agents.find((candidate) => candidate.name === "todo-triage-researcher")
+    const portableAgent = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "agents",
+      "research",
+      "todo-triage-researcher.md",
+    )
+    const generatedAgent = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "agents",
+      "research",
+      "todo-triage-researcher.md",
+    )
+    const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
+
+    expect(agent).toBeDefined()
+    expect(agent?.sourcePath.endsWith(path.join("agents", "research", "todo-triage-researcher.md"))).toBeTrue()
+    expect(agent?.model).toBe("claude-haiku-4-5-20251001")
+    expect(agent?.codexModel).toBe("gpt-5.4-mini")
+    expect(agent?.copilotModel).toBe("gpt-5.4-mini")
+    expect(agent?.opencodeModel).toBe("openrouter/minimax/minimax-m2.7")
+    expect(agent?.body).toContain("## Todo Triage Brief")
+    expect(agent?.body).toContain("## Evidence Facts")
+    expect(agent?.body).toContain("## Recommended Action")
+    expect(agent?.body).toContain("## Execution Fields")
+    expect(agent?.body).toContain("## Decision Needed")
+
+    for (const content of [portableAgent, generatedAgent]) {
+      expect(content).toContain("name: todo-triage-researcher")
+      expect(content).toContain("Produces compact, evidence-backed action briefs")
+      expect(content).toContain("Return exactly the report contract below")
+      expect(content).toContain("## Todo Triage Brief")
+      expect(content).toContain("## Evidence Facts")
+      expect(content).toContain("## Recommended Action")
+      expect(content).toContain("## Execution Fields")
+      expect(content).toContain("## Decision Needed")
+    }
+
+    expect(pluginReadme).toContain("| `todo-triage-researcher` | Produce compact evidence-backed action briefs for review-created todos |")
   })
 
   test("local visual artifact guardrails stay local-only across the published surface", async () => {
@@ -401,7 +471,7 @@ describe("published support surface", () => {
 
     for (const docsSurface of [rootReadme, pluginReadme, changelog]) {
       expect(docsSurface).toContain("local-only visual artifacts")
-      expect(docsSurface).toContain("36 specialized agents")
+      expect(docsSurface).toContain("39 specialized agents")
     }
   })
 })

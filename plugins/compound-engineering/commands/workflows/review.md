@@ -1,17 +1,17 @@
 ---
 name: "workflows:review"
-description: Perform exhaustive code reviews grounded in the user story. Filters technical findings through WHY context to protect purpose while improving quality.
+description: Coordinate specialist code reviews grounded in the user story. Prunes, deduplicates, and filters candidate findings through WHY context to protect purpose while improving quality.
 argument-hint: "[branch name, file path, ticket index + execution session, or empty for current branch] [--batches N-M]"
 model: claude-opus-4-8
 ---
 
 # Review Command
 
-<command_purpose> Perform exhaustive code reviews using multi-agent analysis, ultra-thinking, and Git worktrees for deep local inspection. Ground every finding in the plan's WHY context (problem narrative, user story, success criteria) so technical improvements never drift from user purpose. </command_purpose>
+<command_purpose> Coordinate specialist code-review agents, then synthesize their candidate findings through WHY context, architecture/ticket/evidence contracts, deduplication, and an overengineering reduction lens. The orchestrator is a judgment and artifact compiler, not another broad reviewer. </command_purpose>
 
 ## Introduction
 
-<role>Senior Code Review Architect and WHY Guardian. Your dual mandate: (1) surface every technical issue that matters, and (2) protect the user story from well-meaning technical drift. You will be bombarded with findings from technically-minded subagents — your job is to distill them through the lens of "does this serve the user's actual need?" A technically superior suggestion that doesn't deliver the user story is a regression, not an improvement.</role>
+<role>Senior Code Review Orchestrator and WHY Guardian. Your mandate is to collect specialist candidate findings, reject noise, resolve contradictions, preserve the user story, and produce the final review artifacts. You must not redo specialist analysis that was delegated to subagents. A technically superior suggestion that does not serve the user story, violates the architecture handoff, or expands scope without need is a regression, not an improvement.</role>
 
 ## Prerequisites
 
@@ -172,22 +172,23 @@ This context is passed to EVERY review agent below. It is not optional.
 
 If a `docs/execution-sessions/work-*/STATE.md` file exists for this branch, read the completed execution unit session files before dispatching review agents and build a terse evidence ledger.
 
-Apply `commands/workflows/references/tdd-evidence-contract.md` as the source of truth for the Ralph evidence block and review-gate classifications. Verify the plan's approved exception contract instead of improvising replacement evidence rules.
+Apply these references as source-of-truth contracts; do not reconstruct their full rules from memory:
+- `commands/workflows/references/tdd-evidence-contract.md`
+- `commands/workflows/references/e2e-testing-contract.md`
 
-Classify gate failures explicitly:
-- **Missing behavior coverage** — treat as a spec blocker.
-- **Missing cleanup after refactor** — treat as a quality failure, escalating to blocker when behavior may have changed without a rerun.
+Classify TDD gate failures explicitly:
+- **Missing behavior coverage** -- weak or missing `Red`/`Green`, or evidence that does not prove the requested behavior.
+- **Missing cleanup after refactor** -- weak or missing `Post-Refactor Green`, or no rerun evidence after cleanup/refactor was claimed.
 
-Also apply `commands/workflows/references/e2e-testing-contract.md` to the e2e evidence. Classify e2e gate failures using the contract's review-gate classifications, and treat these as **merge-blocking** (same bar as Missing behavior coverage — review requires proof, not claims):
-- **Fake-in-e2e** — a stub/mock/fake/synthetic-data/in-memory simulation in an e2e path without a justified, scoped exception.
-- **Mock transport / not-really-e2e** — drives an in-process router or test seam instead of the deployed app over real transport.
-- **Empty/hardcoded pass** — an assertion that does not derive from a live value, a `Passed` with no preceding check, or a scenario that asserts nothing.
-- **Sleep-instead-of-poll** — a fixed `sleep()` standing in for polling a real condition.
-- **Test-softened-to-pass** — an assertion weakened, a threshold lowered, a scenario narrowed, or a failure caught-and-passed to force green instead of fixing the app.
-- **Missing failure-mode coverage** — only the happy path is exercised; relevant failure modes are absent.
-- **Unjustified missing e2e** — e2e is absent with no justified N/A exception recorded. (A justified no-runtime-surface N/A is acceptable; silent omission is not.)
+The orchestrator owns only the ledger:
+- resolved evidence contract and approved exceptions
+- unit/session files inspected
+- observed `Red`, `Green`, and `Post-Refactor Green` evidence
+- e2e evidence locations, missing-evidence notes, and obvious contract failures
 
 Keep the gate output terse and evidence-based. If the gate fails, carry that failure into the final summary even if no reviewer agent finds anything else.
+
+The mandatory `e2e-test-strategist` owns the detailed e2e audit. Pass it the ledger, runtime stack, suggested e2e suite, changed test files, and e2e/TDD contract paths. If the ledger already exposes a contract failure, carry it into final synthesis even if no reviewer repeats it.
 
 #### Protected Artifacts
 
@@ -210,31 +211,61 @@ If no settings file exists, invoke the `setup` skill to create one. Then read th
 
 `review_agents` only decides **which** named review agents `/workflows:review` coordinates. It does **not** authorize direct reviewer dispatch from other workflows or ad hoc prompts. If any other workflow or skill needs named review-agent analysis, route that request through `/workflows:review` instead of spawning the reviewers directly, except for `/workflows:to-issues`, which may run `ticket-flow-auditor` as its explicit ticket-set completion gate before code exists.
 
-Regardless of `review_agents`, `/workflows:review` still adds the mandatory reviewers `agent-native-reviewer`, `learnings-researcher`, `uncle-bob`, `ticket-flow-auditor`, and `e2e-test-strategist`. `/workflows:architecture` likewise always runs `architecture-strategist` and `uncle-bob`.
+Regardless of `review_agents`, `/workflows:review` still adds the mandatory reviewers `agent-native-reviewer`, `learnings-researcher`, `uncle-bob`, `ticket-flow-auditor`, `e2e-test-strategist`, and `code-simplicity-reviewer`. `/workflows:architecture` likewise always runs `architecture-strategist` and `uncle-bob`.
+
+Before dispatch, build one ordered, deduplicated reviewer list:
+1. configured `review_agents`
+2. mandatory reviewers above
+3. conditional reviewers whose triggers match
+
+Dispatch each resolved reviewer at most once. If `code-simplicity-reviewer` is configured, the mandatory reviewer entry is satisfied by the configured reviewer list and must not be dispatched a second time. The orchestrator still applies a lightweight overengineering reduction lens during synthesis, but that lens does not replace the mandatory specialist reviewer.
 
 #### Parallel Agents to review the branch changes:
 
 <parallel_tasks>
 
-Run all configured review agents in parallel using Task tool. For each agent in the `review_agents` list:
+Run all configured, mandatory, and conditional review agents in parallel using Task tool. For each agent in the deduplicated reviewer list:
 
 Apply the shared `Named Agent Dispatch` protocol from `commands/workflows/references/orchestration-protocol.md` before every named reviewer dispatch.
 
-- Start with the bundled agent directory and load the local template when it exists.
-- Fall back to OpenViking/global context only when no bundled template can be loaded.
-- Quote the first non-empty line of the loaded template and record which source you used before dispatching.
-- Include the loaded template's rules in the delegated prompt without paraphrasing away mandatory constraints.
+- Start with the bundled agent directory and verify the local agent metadata when it exists.
+- Fall back to OpenViking/global context only when no bundled agent can be resolved.
+- Quote the resolved source path plus the `name` and `model` metadata before dispatching.
+- Resolve the concrete subagent identifier and dispatch the subagent itself. Do not paste the agent file body into the delegated prompt.
 - If any configured or mandatory reviewer cannot be loaded and quoted, report that the review is incomplete and stop rather than substituting a different reviewer or silently reducing coverage.
 - Never dispatch a named agent by name alone.
 
-```
-Task {agent-name}(branch diff content + review context from settings body + WHY context block)
-```
-
-**Every agent prompt MUST include the WHY linkage block and architecture handoff block** from the step above. This ensures agents evaluate fitness-for-purpose, not just technical quality. After loading the template, dispatch each reviewer with a prompt like:
+Build a compact shared review packet before dispatch. Prefer changed-file lists, relevant artifact paths, evidence ledger entries, and scoped diff hunks over pasting the full branch diff into every agent prompt. Include the full diff only when the agent cannot make an evidence-backed judgment from the compact packet and repo inspection.
 
 ```
-Review this branch diff for security issues.
+Task {resolved-agent-id}(shared review packet + reviewer-specific focus)
+```
+
+**Every agent prompt MUST include the WHY linkage block and architecture handoff block** from the step above. This ensures agents evaluate fitness-for-purpose, not just technical quality. For reviewers that identify code or evidence issues, require the candidate-finding output contract below:
+
+```
+## Candidate Findings
+- **ID:** <agent-short-name>-<n>
+  **Severity:** P1 | P2 | P3
+  **Classification:** protects-user-story | constitution-violation | drift-risk | quality-improvement | scope-expansion
+  **Evidence:** <file:line, diff hunk, artifact path, or "missing evidence">
+  **User-story impact:** <how this affects the recorded success criteria, or "none/general quality">
+  **Architecture/ticket impact:** <feature-home, shared/global, dependency, scope-fence, or "none"; note if it Introduces feature-home drift or shared/global drift>
+  **Smallest credible fix:** <one concrete fix, not a rewrite plan>
+  **Confidence:** high | medium | low
+
+## Non-Issues / Deferred
+- <technically valid but out-of-scope, speculative, low-confidence, or overengineered suggestions>
+```
+
+Reject raw research dumps. If an agent returns broad notes, distill them into this contract before synthesis. A candidate finding is not automatically a todo.
+
+Exception: `learnings-researcher` should return compact institutional learning matches using its own report shape. During synthesis, link relevant learnings to accepted findings as "Known Pattern" evidence; do not force learning matches to become candidate findings by themselves.
+
+Dispatch each reviewer with a prompt like:
+
+```
+Review this change for your assigned focus area.
 
 WHY CONTEXT FOR REVIEWERS:
 - Canonical WHY Source: [brainstorm_ref path when available, otherwise plan path]
@@ -245,23 +276,19 @@ WHY CONTEXT FOR REVIEWERS:
 - Ticket Set: [ticket index path or "none"]
 - Architecture Handoff: [deletion test, interfaces, seams/adapters/contracts, review checks]
 
-When reporting findings, note whether each finding:
-(a) THREATENS the user story or success criteria (highest priority)
-(b) Is a general security concern independent of the user story
-(c) Would require changes that ALTER the user's intended outcome (flag as DRIFT RISK)
-(d) Introduces feature-home drift or shared/global drift against the architecture handoff
-(e) Introduces ticket drift, dependency drift, or undocumented scope expansion against the ticket set
+For code/evidence findings, return only the candidate-finding contract above. Classify each finding against user-story impact, drift/scope risk, architecture handoff impact, and ticket-scope impact.
 
-Branch diff:
-[diff content]
+Review packet:
+[WHY context, architecture handoff, review context, changed files, scoped diff hunks or full diff only when needed, evidence ledger, relevant artifact paths]
 ```
 
-Additionally, always run these regardless of settings. These mandatory reviewers cannot be disabled by `review_agents`:
-- Apply the protocol above to `agent-native-reviewer`, then dispatch it with branch diff content + WHY context - Verify new features are agent-accessible
-- Apply the protocol above to `learnings-researcher`, then dispatch it with branch diff content + WHY context - Search docs/solutions/ for past issues related to this PR's modules and patterns
-- Apply the protocol above to `uncle-bob`, then dispatch it with branch diff content + WHY context - Pressure-test naming, cohesion, feature-home boundaries, shared/global extractions, side effects, and long-term changeability
-- Apply the protocol above to `ticket-flow-auditor`, then dispatch it with branch diff content + WHY context + ticket artifacts - Verify plan/ticket/implementation alignment, scope fences, dependency honesty, and execution drift
-- Apply the protocol above to `e2e-test-strategist`, then dispatch it in **AUDIT mode** with branch diff content + WHY context + the plan's `runtime_stack` / `## Suggested E2E Suite` + the TDD/e2e contracts - Brutally verify e2e was actually implemented AND validated against `commands/workflows/references/e2e-testing-contract.md`: real app over real transport against real infra, no fakes, polled not slept, assertions from live values, failure modes covered. Hunt for tests softened to pass (mocked-in missing pieces, weakened assertions, lowered thresholds, hardcoded `Passed`) and flag them. Give a justified N/A verdict only when the plan declares no runtime surface
+Always run these regardless of settings. These mandatory reviewers cannot be disabled by `review_agents`:
+- Apply the protocol above to `agent-native-reviewer`, then dispatch it with the shared review packet -- verify new or changed user-facing actions have agent-accessible parity.
+- Apply the protocol above to `learnings-researcher`, then dispatch it with changed modules, keywords, WHY context, and relevant paths -- search docs/solutions/ for past issues related to this PR's modules and patterns.
+- Apply the protocol above to `uncle-bob`, then dispatch it with the shared review packet -- pressure-test naming, cohesion, feature-home boundaries, shared/global extractions, side effects, and long-term changeability.
+- Apply the protocol above to `ticket-flow-auditor`, then dispatch it with the shared review packet plus ticket artifacts -- verify plan/ticket/implementation alignment, scope fences, dependency honesty, and execution drift.
+- Apply the protocol above to `e2e-test-strategist`, then dispatch it in **AUDIT mode** with the evidence ledger, changed test/runtime files, WHY context, the plan's `runtime_stack` / `## Suggested E2E Suite`, and the TDD/e2e contract paths -- verify e2e was actually implemented and validated. The agent owns detailed e2e contract enforcement.
+- Apply the protocol above to `code-simplicity-reviewer`, then dispatch it with the shared review packet -- verify complexity, wrong abstractions, duplication, dead weight, and readability regressions are caught by the specialist reviewer.
 
 </parallel_tasks>
 
@@ -275,9 +302,9 @@ Apply the same template-loading rule to every named conditional agent below. Nev
 
 **MIGRATIONS: If PR contains database migrations or data backfills:**
 
-- Apply the protocol above to `data-integrity-guardian`, then dispatch it with branch diff content - Reviews migration safety, constraint naming, and migration conventions
-- Apply the protocol above to `data-migration-expert`, then dispatch it with branch diff content - Validates ID mappings match production, checks for swapped values, verifies rollback safety
-- Apply the protocol above to `deployment-verification-agent`, then dispatch it with branch diff content - Creates Go/No-Go deployment checklist with SQL verification queries
+- Apply the protocol above to `data-integrity-guardian`, then dispatch it with migration/backfill files, scoped diff hunks, and WHY context - Reviews migration safety, constraint naming, and migration conventions
+- Apply the protocol above to `data-migration-expert`, then dispatch it with migration/backfill files, scoped diff hunks, and WHY context - Validates ID mappings match production, checks for swapped values, verifies rollback safety
+- Apply the protocol above to `deployment-verification-agent`, then dispatch it with migration/backfill files, scoped diff hunks, and WHY context - Creates Go/No-Go deployment checklist with SQL verification queries
 
 
 **When to run:**
@@ -293,127 +320,43 @@ Apply the same template-loading rule to every named conditional agent below. Nev
 
 </conditional_agents>
 
-### 4. Ultra-Thinking Deep Dive Phases
+### 4. Orchestrator Operating Boundaries
 
-<ultrathink_instruction> For each phase below, spend maximum cognitive effort. Think step by step. Consider all angles. Question assumptions. And bring all reviews in a synthesis to the user.</ultrathink_instruction>
+The orchestrator must not run a second broad code review after specialists return. Its synthesis work is limited to:
+- normalizing candidate findings into one shape
+- detecting duplicate, overlapping, unsupported, contradictory, or low-confidence findings
+- preserving WHY context, success criteria, architecture handoff, ticket scope fences, and evidence contracts
+- applying common sense and an overengineering reduction lens
+- catching obvious critical omissions, mistaken severity, protected-artifact violations, and specialist errors
+- deciding which accepted findings deserve todo files
 
-<deliverable>
-Complete system context map with component interactions
-</deliverable>
-
-#### Phase 3: Stakeholder Perspective Analysis
-
-<thinking_prompt> ULTRA-THINK: Put yourself in each stakeholder's shoes. Use the WHY context to ground each perspective in the ACTUAL problem being solved, not generic questions. </thinking_prompt>
-
-<stakeholder_perspectives>
-
-1. **The User from the User Story** <questions>
-
-   Using the actual user story extracted above:
-   - Can this user achieve the stated outcome with the code as implemented?
-   - Are the success criteria from the plan actually met by this code?
-   - What could prevent the user from getting the value they were promised?
-   - Are error states handled in a way that helps THIS user recover? </questions>
-
-2. **Developer Perspective** <questions>
-
-   - How easy is this to understand and modify?
-   - Are the APIs intuitive?
-   - Is debugging straightforward?
-   - Can I test this easily? </questions>
-
-3. **Operations Perspective** <questions>
-
-   - How do I deploy this safely?
-   - What metrics and logs are available?
-   - How do I troubleshoot issues?
-   - What are the resource requirements? </questions>
-
-4. **Security Team Perspective** <questions>
-
-   - What's the attack surface introduced by this specific feature?
-   - Are there compliance requirements for the data this feature handles?
-   - How is user data protected in the context of this user story?
-   - What are the audit capabilities? </questions>
-
-5. **Business Perspective** <questions>
-   - Does this code actually solve the stated problem? (from the Problem Narrative)
-   - Are there legal/compliance risks specific to this feature?
-   - Does the implementation match the architectural intent, or has it drifted?
-   - Is the scope contained — did implementation creep beyond the user story? </questions> </stakeholder_perspectives>
-
-#### Phase 4: Scenario Exploration
-
-<thinking_prompt> ULTRA-THINK: Explore edge cases and failure scenarios. What could go wrong? How does the system behave under stress? </thinking_prompt>
-
-<scenario_checklist>
-
-- [ ] **Happy Path**: Normal operation with valid inputs
-- [ ] **Invalid Inputs**: Null, empty, malformed data
-- [ ] **Boundary Conditions**: Min/max values, empty collections
-- [ ] **Concurrent Access**: Race conditions, deadlocks
-- [ ] **Scale Testing**: 10x, 100x, 1000x normal load
-- [ ] **Network Issues**: Timeouts, partial failures
-- [ ] **Resource Exhaustion**: Memory, disk, connections
-- [ ] **Security Attacks**: Injection, overflow, DoS
-- [ ] **Data Corruption**: Partial writes, inconsistency
-- [ ] **Cascading Failures**: Downstream service issues </scenario_checklist>
-
-### 6. Multi-Angle Review Perspectives
-
-#### Technical Excellence Angle
-
-- Code craftsmanship evaluation
-- Engineering best practices
-- Technical documentation quality
-- Tooling and automation assessment
-
-#### Purpose Delivery Angle
-
-- **User story delivery**: Does the code enable the stated user outcome?
-- **Success criteria coverage**: Which criteria are met, partially met, or unmet?
-- **Scope containment**: Was anything built beyond what the user story requires?
-- **Architectural fidelity**: Does implementation match the planned architecture, or has it drifted?
-- **Architecture handoff fidelity**: Does implementation honor the artifact or explicit handoff decisions about deletion test, interfaces, seams, adapters, and contracts?
-
-#### Risk Management Angle
-
-- Security risk assessment (grounded in what data/flows THIS feature handles)
-- Operational risk evaluation
-- Compliance risk verification
-- Technical debt accumulation
-- **User story risk**: What could prevent the user from achieving their stated outcome?
-
-#### Team Dynamics Angle
-
-- Code review etiquette
-- Knowledge sharing effectiveness
-- Collaboration patterns
-- Mentoring opportunities
-
-### 4. Simplification and Minimalism Review
-
-Apply the shared `Named Agent Dispatch` protocol above to `code-simplicity-reviewer`, then dispatch it to see if the code can be simplified. If the template cannot be quoted from a loaded source, stop and report that gap instead of dispatching blindly.
+The orchestrator must not:
+- redo security, performance, e2e, architecture, ticket-flow, clean-code, or framework analysis already delegated to an agent
+- invent new specialist findings unless they are obvious from the evidence ledger or required to correct a critical contradiction
+- expand scope because a specialist suggested a technically sound but unnecessary improvement
+- create todos for every candidate finding by default
 
 ### 5. Findings Synthesis and Todo Creation Using file-todos Skill
 
-<critical_requirement> ALL findings MUST be stored in the todos/ directory using the file-todos skill. Create todo files immediately after synthesis - do NOT present findings for user approval first. Use the skill for structured todo management. </critical_requirement>
+<critical_requirement> Only accepted actionable findings are stored in the todos/ directory using the file-todos skill. Candidate findings from agents must be validated, pruned, deduplicated, severity-checked, and filtered through WHY context plus an overengineering reduction lens before any todo is created. Do not present accepted findings one-by-one for approval before creating todos. </critical_requirement>
 
-#### Step 1: Synthesize All Findings Through WHY Filter
+#### Step 1: Synthesize Candidate Findings Through WHY Filter
 
 <thinking>
-I am about to be hit with a firehose of technical findings from technically-minded agents. My job is NOT to pass them all through — it's to DISTILL them. Every finding must be evaluated: does acting on this finding serve or harm the user story? Technically superior suggestions that don't deliver the user story are regressions, not improvements.
+I am about to receive candidate findings from technically-minded agents. My job is NOT to pass them all through -- it is to DISTILL them. Every candidate must be evaluated: is it evidence-backed, non-duplicative, proportional, and aligned with the user story? Technically superior suggestions that do not deliver the user story are regressions, not improvements.
 </thinking>
 
 <synthesis_tasks>
 
-- [ ] Collect findings from all parallel agents
+- [ ] Collect candidate findings from all parallel agents
 - [ ] Surface learnings-researcher results: if past solutions are relevant, flag them as "Known Pattern" with links to docs/solutions/ files
 - [ ] Discard any findings that recommend deleting or gitignoring files in `docs/plans/` or `docs/solutions/` (see Protected Artifacts above)
+- [ ] Reject or defer candidate findings that are unsupported, low-confidence without corroboration, duplicate another finding, speculative, outside the changed scope, or disproportionate to the user story
+- [ ] Apply the overengineering reduction lens: prefer deletion, inlining, local repair, or deferral over generalized abstractions, new frameworks, broad rewrites, or future-proofing that is not required by the success criteria
 
 **WHY-grounded classification (apply to EVERY finding before severity):**
 
-For each finding, ask: "If we act on this finding, what happens to the user story?"
+For each candidate finding, ask: "If we act on this finding, what happens to the user story?"
 
 - **🎯 PROTECTS USER STORY** — Finding addresses something that could prevent the user from achieving the stated outcome. (e.g., security hole in the auth flow when the user story is about secure login). These get elevated priority.
 - **🏛️ CONSTITUTION VIOLATION** — Implementation or recommendation conflicts with a repo-wide MUST / MUST NOT rule, or bypasses a required approval, without an explicit waiver. These should be treated as blocking unless the constitution is amended or the waiver is approved.
@@ -421,14 +364,15 @@ For each finding, ask: "If we act on this finding, what happens to the user stor
 - **🔧 QUALITY IMPROVEMENT** — Finding improves code quality without affecting the user story positively or negatively. Standard review finding. Keep severity as-is.
 - **📦 SCOPE EXPANSION** — Finding suggests adding functionality not in the user story or success criteria. Automatically downgrade to P3 regardless of agent-assigned severity, and tag as "Beyond current scope."
 
-- [ ] Categorize by type: security, performance, architecture, quality, etc.
+- [ ] Categorize accepted findings by type: security, performance, architecture, quality, etc.
 - [ ] Assign severity levels: 🔴 CRITICAL (P1), 🟡 IMPORTANT (P2), 🔵 NICE-TO-HAVE (P3)
   - **Override rule**: Findings classified as PROTECTS USER STORY get +1 severity bump (P3→P2, P2→P1)
   - **Override rule**: Findings classified as CONSTITUTION VIOLATION are blocking by default unless a valid waiver exists
   - **Override rule**: Findings classified as SCOPE EXPANSION get capped at P3
 - [ ] Remove duplicate or overlapping findings
-- [ ] Estimate effort for each finding (Small/Medium/Large)
-- [ ] **User Story Delivery Assessment**: After classifying all findings, state:
+- [ ] Estimate effort for each accepted finding (Small/Medium/Large)
+- [ ] Record rejected/deferred candidate findings separately with a short reason, but do not create todos for them
+- [ ] **User Story Delivery Assessment**: After classifying accepted findings, state:
   - "Does the implementation, AS REVIEWED, deliver the user story? YES / PARTIALLY / NO"
   - If PARTIALLY or NO, list which success criteria are unmet and why
 
@@ -436,54 +380,26 @@ For each finding, ask: "If we act on this finding, what happens to the user stor
 
 #### Step 2: Create Todo Files Using file-todos Skill
 
-<critical_instruction> Use the file-todos skill to create todo files for ALL findings immediately. Do NOT present findings one-by-one asking for user approval. Create all todo files in parallel using the skill, then summarize results to user. </critical_instruction>
-
-**Implementation Options:**
-
-**Option A: Direct File Creation (Fast)**
-
-- Create todo files directly using Write tool
-- All findings in parallel for speed
-- Use standard template from `.claude/skills/file-todos/assets/todo-template.md`
-- Follow naming convention: `{issue_id}-pending-{priority}-{description}.md`
-
-**Option B: Sub-Agents in Parallel (Recommended for Scale)** For large PRs with 15+ findings, use sub-agents to create finding files in parallel:
-
-```bash
-# Launch multiple finding-creator agents in parallel
-Task() - Create todos for first finding
-Task() - Create todos for second finding
-Task() - Create todos for third finding
-etc. for each finding.
-```
-
-Sub-agents can:
-
-- Process multiple findings simultaneously
-- Write detailed todo files with all sections filled
-- Organize findings by severity
-- Create comprehensive Proposed Solutions
-- Add acceptance criteria and work logs
-- Complete much faster than sequential processing
+<critical_instruction> Use the file-todos skill to create todo files only for accepted actionable findings. Do NOT create todos for rejected, duplicate, overengineered, speculative, or low-value findings. Do NOT spawn todo-writing subagents; the orchestrator owns final todo selection and conversion after synthesis. </critical_instruction>
 
 **Execution Strategy:**
 
-1. Synthesize all findings into categories (P1/P2/P3)
-2. Group findings by severity
-3. Launch 3 parallel sub-agents (one per severity level)
-4. Each sub-agent creates its batch of todos using the file-todos skill
-5. Consolidate results and present summary
+1. Synthesize candidate findings into accepted and rejected/deferred groups.
+2. Create todos for accepted P1/P2 findings by default.
+3. Create todos for P3 findings only when they are concrete, non-trivial, non-overengineered, and worth tracking beyond the review summary.
+4. For drift-risk findings, create a todo only when a human decision is required before merge or before more implementation proceeds. Otherwise list the suggestion under rejected/deferred findings with the drift reason.
+5. Consolidate results and present summary.
 
 **Process (Using file-todos Skill):**
 
-1. For each finding:
+1. For each accepted todo-worthy finding:
 
    - Determine severity (P1/P2/P3), applying the WHY override rules from synthesis
    - **Tag with WHY classification**: 🎯 PROTECTS USER STORY / ⚠️ DRIFT RISK / 🔧 QUALITY IMPROVEMENT / 📦 SCOPE EXPANSION
    - **Note which success criterion** this finding affects (or "None — general quality")
    - Write detailed Problem Statement and Findings
    - For DRIFT RISK findings: explicitly state what would change about the user's outcome if the suggestion is followed
-   - Create 2-3 Proposed Solutions with pros/cons/effort/risk
+   - Create a concise Proposed Solution section. Include multiple options only when there is a real decision to make.
    - Estimate effort (Small/Medium/Large)
    - Add acceptance criteria and work log
 
@@ -500,7 +416,7 @@ Sub-agents can:
    - YAML frontmatter structure: status, priority, issue_id, tags, dependencies
    - All required sections: Problem Statement, Findings, Solutions, etc.
 
-3. Create todo files in parallel:
+3. Create todo files after synthesis:
 
    ```bash
    {next_id}-pending-{priority}-{description}.md
@@ -524,7 +440,7 @@ Each todo must include:
 - **YAML frontmatter**: status, priority, issue_id, tags, dependencies
 - **Problem Statement**: What's broken/missing, why it matters
 - **Findings**: Discoveries from agents with evidence/location
-- **Proposed Solutions**: 2-3 options, each with pros/cons/effort/risk
+- **Proposed Solutions**: concise recommended fix; multiple options only when there is a real decision
 - **Recommended Action**: (Filled during triage, leave blank initially)
 - **Technical Details**: Affected files, components, database changes
 - **Acceptance Criteria**: Testable checklist items
@@ -559,7 +475,7 @@ Examples:
 
 #### Step 3: Summary Report
 
-After creating all todo files, present comprehensive summary:
+After synthesis and todo creation, present a concise summary:
 
 ````markdown
 ## ✅ Code Review Complete
@@ -585,7 +501,10 @@ After creating all todo files, present comprehensive summary:
 
 ### WHY-Grounded Findings Summary:
 
-- **Total Findings:** [X]
+- **Candidate Findings Reviewed:** [X]
+- **Accepted Findings:** [Y]
+- **Todo Files Created:** [Z]
+- **Rejected/Deferred Candidate Findings:** [N] — duplicates, unsupported claims, overengineering, scope expansion, drift risk, or low-value P3s
 - **🎯 Protects User Story:** [count] — findings that address threats to the user's outcome
 - **🏛️ Constitution Violations:** [count] — unwaived conflicts with repo-wide project rules
 - **⚠️ Drift Risk:** [count] — suggestions that would ALTER what the feature delivers (review carefully)
@@ -614,6 +533,10 @@ After creating all todo files, present comprehensive summary:
 
 - `005-pending-p3-{finding}.md` - {description}
 
+### Rejected / Deferred Candidate Findings:
+
+- `{agent or finding id}` - {short reason: duplicate, unsupported, overengineered, out of scope, drift risk not accepted, low-value P3}
+
 ### Review Agents Used:
 
 - rabak-laravel-reviewer
@@ -633,7 +556,7 @@ After creating all todo files, present comprehensive summary:
    - Implement fixes or request exemption
    - Verify fixes before merging PR
 
-2. **Review Drift Risk Findings**: These require your decision — they suggest changes that would alter what the feature delivers. Accept, reject, or modify each one. If the drift is architectural, update the architecture artifact or explicit handoff contract before more implementation proceeds.
+2. **Review Drift Risk Findings**: Only drift-risk findings that survived synthesis and require a decision should become todos. If the drift is architectural, update the architecture artifact or explicit handoff contract before more implementation proceeds.
 
 3. **Triage All Todos**:
    ```bash
@@ -666,7 +589,7 @@ Any **e2e gate failure** (Fake-in-e2e, Mock-transport / not-really-e2e, Empty/ha
 
 Any unwaived **🏛️ CONSTITUTION VIOLATION** findings should also block merge until the code is fixed, the waiver is explicitly approved, or the constitution is amended.
 
-Any **⚠️ DRIFT RISK** findings must be explicitly reviewed by the user before acting on them. Never auto-resolve drift risk findings — they require a human decision about whether the user story should change.
+Any accepted **⚠️ DRIFT RISK** findings must be explicitly reviewed by the user before acting on them. Never auto-resolve drift risk findings — they require a human decision about whether the user story should change.
 ```
 
 ## Final Phase: Workflow Next Step Advisor

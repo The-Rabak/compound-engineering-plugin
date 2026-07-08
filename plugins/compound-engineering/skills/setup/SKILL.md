@@ -218,7 +218,7 @@ options:
 - `review_mode`: "bulk" (default), "inline", or "both" (`bulk`/`both` invoke `/workflows:review`; `inline` stays template-based and must not spawn named review agents directly)
 
 **Workflow-injected mandatory reviewers:**
-- `/workflows:review` always adds `agent-native-reviewer`, `learnings-researcher`, and `uncle-bob`, regardless of `review_agents`.
+- `/workflows:review` always adds `agent-native-reviewer`, `learnings-researcher`, `uncle-bob`, `ticket-flow-auditor`, `e2e-test-strategist`, and `code-simplicity-reviewer`, regardless of `review_agents`. The review command deduplicates configured and mandatory reviewers before dispatch.
 - `/workflows:architecture` always runs `architecture-strategist` and `uncle-bob`.
 
 Write `compound-engineering.local.md`:
