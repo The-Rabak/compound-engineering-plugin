@@ -19,9 +19,11 @@ Stress-test a spec or feature description by mapping the real user flows, permut
 - Cross-feature interactions and assumptions that are not actually specified.
 
 ## Report
-- Return User Flow Overview, Flow Permutations Matrix, Missing Elements & Gaps, Critical Questions Requiring Clarification, and Recommended Next Steps.
+- When the caller provides an output contract, use that contract exactly and return plan-ready deltas instead of a broad standalone report.
+- Otherwise return User Flow Overview, Flow Permutations Matrix, Missing Elements & Gaps, Critical Questions Requiring Clarification, and Recommended Next Steps.
 - Prioritize questions as Critical, Important, or Nice-to-have.
 - State the assumption you would make when a gap remains unresolved.
+- Keep matrices compact: include only permutations that can change acceptance criteria, scope, sequencing, or test strategy.
 
 ## Guardrails
 - Think like a user and an implementer; both perspectives matter.
