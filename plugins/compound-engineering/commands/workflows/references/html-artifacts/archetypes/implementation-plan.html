@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add rate limiting to the public API — implementation-plan archetype exemplar</title>
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f6f7f9; --fg: #17181c; --muted: #5b6270;
+    --accent: #3457d5; --border: #dde1e7; --radius: 10px;
+    --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0b0e14; --surface:#12161f; --fg:#e7e9ee; --muted:#9aa2b1; --accent:#7c9bff; --border:#262c38; }
+  }
+  :root[data-theme="dark"] { --bg:#0b0e14; --surface:#12161f; --fg:#e7e9ee; --muted:#9aa2b1; --accent:#7c9bff; --border:#262c38; }
+  :root[data-theme="light"] { --bg:#ffffff; --surface:#f6f7f9; --fg:#17181c; --muted:#5b6270; --accent:#3457d5; --border:#dde1e7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-sans); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 1.1rem; margin: 0; }
+  .exporters button, #theme-toggle { background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); padding: .4rem .7rem; cursor: pointer; font-family: var(--font-sans); }
+  .layout { display: grid; grid-template-columns: 220px 1fr; gap: 1.5rem; padding: 1.5rem; }
+  nav.toc { position: sticky; top: 1rem; align-self: start; }
+  nav.toc ol { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .35rem; }
+  nav.toc a { color: var(--muted); text-decoration: none; font-size: .9rem; }
+  nav.toc a:hover { color: var(--accent); }
+  section { margin-bottom: 2rem; }
+  .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+  .tabs .tab-list { display: flex; gap: .5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+  .tabs [role="tab"] { background: none; border: none; padding: .5rem .75rem; cursor: pointer; color: var(--muted); font-family: var(--font-mono); }
+  .tabs [role="tab"][aria-selected="true"] { color: var(--accent); border-bottom: 2px solid var(--accent); }
+  [role="tabpanel"] { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+  [role="tabpanel"] code { font-family: var(--font-mono); }
+  @media (max-width: 720px) { .layout { grid-template-columns: 1fr; } nav.toc { position: static; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Add rate limiting to the public API</h1>
+  <div class="exporters">
+    <button id="theme-toggle" type="button" aria-pressed="false">Toggle theme</button>
+    <button id="export-json" type="button">Copy as JSON</button>
+    <button id="export-prompt" type="button">Copy as Prompt</button>
+    <button id="export-markdown" type="button">Copy as Markdown</button>
+  </div>
+</header>
+<div class="layout">
+  <nav class="toc" aria-label="Table of contents">
+    <ol>
+      <li><a href="#success-criteria">Success Criteria</a></li>
+      <li><a href="#execution-slices">Execution Slices</a></li>
+    </ol>
+  </nav>
+  <main>
+    <section id="success-criteria">
+      <h2>Success Criteria</h2>
+      <div class="stat-cards">
+        <article class="stat-card">
+          <h3>SC1</h3>
+          <p>Requests over the configured limit receive 429 with Retry-After.</p>
+        </article>
+      </div>
+    </section>
+    <section id="execution-slices">
+      <h2>Execution Slices</h2>
+      <div class="tabs" data-tabs>
+        <div class="tab-list" role="tablist">
+          <button role="tab" id="tab-S01" aria-controls="panel-S01" aria-selected="true" data-tab-target="panel-S01">S01</button>
+          <button role="tab" id="tab-S02" aria-controls="panel-S02" aria-selected="false" data-tab-target="panel-S02">S02</button>
+        </div>
+        <div class="tab-panels">
+          <div role="tabpanel" id="panel-S01" data-tab-panel>
+            <p><strong>Feature home:</strong> <code>src/api/middleware/</code></p>
+            <p>Add a token-bucket rate limiter middleware keyed by API key.</p>
+            <p><strong>Files:</strong> <code>src/api/middleware/rateLimiter.ts</code></p>
+            <p><strong>Depends on:</strong> none</p>
+          </div>
+          <div role="tabpanel" id="panel-S02" data-tab-panel hidden>
+            <p><strong>Feature home:</strong> <code>src/api/routes/</code></p>
+            <p>Wire the limiter into the public routes and return 429 with a Retry-After header.</p>
+            <p><strong>Files:</strong> <code>src/api/routes/public.ts</code></p>
+            <p><strong>Depends on:</strong> S01</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<!--
+  This is a static, hand-projected exemplar: every fact above was written
+  directly from the island below at generation time -- the composer does
+  NOT ship a runtime templating script that reconstructs the view from this
+  JSON on page load (see html-artifact-composer/SKILL.md step 4: "author
+  the island first, then project the HTML you just wrote it from"). The
+  inline script below is limited to genuine interactivity: theme toggling,
+  tab switching, and the three exporters -- never content generation.
+-->
+<script type="application/json" id="artifact-data">{"schema_version":1,"kind":"example","archetype":"implementation-plan","title":"Add rate limiting to the public API (archetype exemplar)","slices":[{"id":"S01","feature_home":"src/api/middleware/","scope":"Add a token-bucket rate limiter middleware keyed by API key.","files":["src/api/middleware/rateLimiter.ts"],"depends_on":[]},{"id":"S02","feature_home":"src/api/routes/","scope":"Wire the limiter into the public routes and return 429 with a Retry-After header.","files":["src/api/routes/public.ts"],"depends_on":["S01"]}],"success_criteria":[{"id":"SC1","statement":"Requests over the configured limit receive 429 with Retry-After."}]}</script>
+<script>
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var root = document.documentElement;
+    root.setAttribute("data-theme", root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  document.querySelectorAll("[data-tabs]").forEach(function (group) {
+    var tabs = group.querySelectorAll('[role="tab"]');
+    var panels = group.querySelectorAll("[data-tab-panel]");
+    tabs.forEach(function (tabButton) {
+      tabButton.addEventListener("click", function () {
+        tabs.forEach(function (btn) { btn.setAttribute("aria-selected", "false"); });
+        panels.forEach(function (panel) { panel.setAttribute("hidden", ""); });
+        tabButton.setAttribute("aria-selected", "true");
+        document.getElementById(tabButton.dataset.tabTarget).removeAttribute("hidden");
+      });
+    });
+  });
+
+  var islandRawText = document.getElementById("artifact-data").textContent;
+  var islandData = JSON.parse(islandRawText);
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+      return;
+    }
+    var scratch = document.createElement("textarea");
+    scratch.value = text;
+    document.body.appendChild(scratch);
+    scratch.select();
+    document.execCommand("copy");
+    scratch.remove();
+  }
+
+  document.getElementById("export-json").addEventListener("click", function () {
+    copyToClipboard(islandRawText);
+  });
+
+  document.getElementById("export-prompt").addEventListener("click", function () {
+    copyToClipboard("Resume work on this plan. Structured island data follows.\n\n" + islandRawText);
+  });
+
+  document.getElementById("export-markdown").addEventListener("click", function () {
+    var lines = ["# " + islandData.title, "", "## Execution Slices"];
+    islandData.slices.forEach(function (slice) {
+      lines.push("- **" + slice.id + "** (" + slice.feature_home + "): " + slice.scope);
+    });
+    copyToClipboard(lines.join("\n"));
+  });
+</script>
+</body>
+</html>

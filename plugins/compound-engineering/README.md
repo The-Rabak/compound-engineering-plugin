@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 38 specialized agents, 27 commands, and 27 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 38 specialized agents, 27 commands, and 28 skills.
 
 This Claude plugin install surface contains only Claude-relevant files. Codex plugin metadata and Copilot assets are generated only on explicit target builds/installs from the canonical portable source in `portable/compound-engineering/`.
 
@@ -84,7 +84,7 @@ bun test
 |-----------|-------|
 | Agents | 38 |
 | Commands | 27 |
-| Skills | 27 |
+| Skills | 28 |
 | Hooks | 0 |
 | MCP Servers | 1 |
 
@@ -209,6 +209,7 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `compound-docs` | Capture solved problems as categorized documentation |
 | `create-agent-skills` | Expert guidance for creating Claude Code skills |
 | `frontend-design` | Create production-grade frontend interfaces |
+| `html-artifact-composer` | Compose self-contained, interactive HTML artifacts (island-first JSON contract, token-layer design, injection-safe) from a workflow command's structured payload |
 | `focused-ticket-priming` | Turn one plan packet into one compact ticket-local execution packet |
 | `laravel-conventions` | Modern Laravel coding standards reference |
 | `skill-creator` | Guide for creating effective Claude Code skills |

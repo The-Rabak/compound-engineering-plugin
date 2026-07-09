@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CI/CD deployment pipeline — flowchart archetype exemplar</title>
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f6f7f9; --fg: #17181c; --muted: #5b6270;
+    --accent: #3457d5; --border: #dde1e7; --radius: 10px;
+    --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0b0e14; --surface:#12161f; --fg:#e7e9ee; --muted:#9aa2b1; --accent:#7c9bff; --border:#262c38; }
+  }
+  :root[data-theme="dark"] { --bg:#0b0e14; --surface:#12161f; --fg:#e7e9ee; --muted:#9aa2b1; --accent:#7c9bff; --border:#262c38; }
+  :root[data-theme="light"] { --bg:#ffffff; --surface:#f6f7f9; --fg:#17181c; --muted:#5b6270; --accent:#3457d5; --border:#dde1e7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-sans); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 1.1rem; margin: 0; }
+  .exporters button, #theme-toggle { background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); padding: .4rem .7rem; cursor: pointer; font-family: var(--font-sans); }
+  main { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 1.5rem; }
+  svg.pipeline { width: 100%; height: auto; }
+  svg.pipeline g.node rect { fill: var(--surface); stroke: var(--border); rx: 8; cursor: pointer; }
+  svg.pipeline g.node.is-active rect { stroke: var(--accent); stroke-width: 2; }
+  svg.pipeline g.node text { fill: var(--fg); font-family: var(--font-sans); font-size: 13px; }
+  svg.pipeline path.edge { stroke: var(--muted); stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+  .detail-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+  .detail-panel[hidden] { display: none; }
+  @media (max-width: 720px) { main { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>CI/CD deployment pipeline</h1>
+  <div class="exporters">
+    <button id="theme-toggle" type="button" aria-pressed="false">Toggle theme</button>
+    <button id="export-json" type="button">Copy as JSON</button>
+    <button id="export-prompt" type="button">Copy as Prompt</button>
+    <button id="export-markdown" type="button">Copy as Markdown</button>
+  </div>
+</header>
+<main>
+  <svg class="pipeline" viewBox="0 0 640 160" role="img" aria-label="Deployment pipeline diagram">
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"></path>
+      </marker>
+    </defs>
+    <path class="edge" d="M110,80 H180"></path>
+    <path class="edge" d="M270,80 H340"></path>
+    <path class="edge" d="M430,80 H500"></path>
+    <g class="node" id="node-build" data-detail-target="detail-build" tabindex="0" role="button" aria-describedby="detail-build">
+      <rect x="10" y="55" width="100" height="50"></rect>
+      <text x="60" y="85" text-anchor="middle">Build</text>
+    </g>
+    <g class="node" id="node-stage" data-detail-target="detail-stage" tabindex="0" role="button" aria-describedby="detail-stage">
+      <rect x="180" y="55" width="90" height="50"></rect>
+      <text x="225" y="85" text-anchor="middle">Staging</text>
+    </g>
+    <g class="node" id="node-gate" data-detail-target="detail-gate" tabindex="0" role="button" aria-describedby="detail-gate">
+      <rect x="340" y="55" width="90" height="50"></rect>
+      <text x="385" y="85" text-anchor="middle">Gate</text>
+    </g>
+    <g class="node" id="node-prod" data-detail-target="detail-prod" tabindex="0" role="button" aria-describedby="detail-prod">
+      <rect x="500" y="55" width="120" height="50"></rect>
+      <text x="560" y="85" text-anchor="middle">Production</text>
+    </g>
+  </svg>
+  <div id="detail-panels">
+    <div class="detail-panel" id="detail-build">
+      <h3>Build</h3>
+      <p>Compile and run unit tests on every push.</p>
+    </div>
+    <div class="detail-panel" id="detail-stage" hidden>
+      <h3>Deploy to staging</h3>
+      <p>Auto-deploys main to the staging cluster.</p>
+    </div>
+    <div class="detail-panel" id="detail-gate" hidden>
+      <h3>Manual gate</h3>
+      <p>A release owner approves promotion to production.</p>
+    </div>
+    <div class="detail-panel" id="detail-prod" hidden>
+      <h3>Deploy to production</h3>
+      <p>Blue/green rollout with automatic rollback on health-check failure.</p>
+    </div>
+  </div>
+</main>
+<!--
+  Static exemplar: every detail panel above and every node label in the SVG
+  was written directly from the island below at generation time. The script
+  only toggles which pre-rendered panel is visible on click/keydown -- it
+  never builds panel content from parsed JSON at runtime (see
+  html-artifact-composer/SKILL.md step 4).
+-->
+<script type="application/json" id="artifact-data">{"schema_version":1,"kind":"example","archetype":"flowchart","title":"CI/CD deployment pipeline (archetype exemplar)","nodes":[{"id":"build","label":"Build","detail":"Compile and run unit tests on every push."},{"id":"stage","label":"Deploy to staging","detail":"Auto-deploys main to the staging cluster."},{"id":"gate","label":"Manual gate","detail":"A release owner approves promotion to production."},{"id":"prod","label":"Deploy to production","detail":"Blue/green rollout with automatic rollback on health-check failure."}],"edges":[{"from":"build","to":"stage"},{"from":"stage","to":"gate"},{"from":"gate","to":"prod"}]}</script>
+<script>
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var root = document.documentElement;
+    root.setAttribute("data-theme", root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  document.querySelectorAll("g.node").forEach(function (nodeEl) {
+    nodeEl.addEventListener("click", function () { showDetail(nodeEl); });
+    nodeEl.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") showDetail(nodeEl);
+    });
+  });
+
+  function showDetail(nodeEl) {
+    document.querySelectorAll("g.node").forEach(function (n) { n.classList.remove("is-active"); });
+    nodeEl.classList.add("is-active");
+    var nodeId = nodeEl.id.replace("node-", "");
+    document.querySelectorAll(".detail-panel").forEach(function (panel) { panel.setAttribute("hidden", ""); });
+    document.getElementById("detail-" + nodeId).removeAttribute("hidden");
+  }
+
+  var islandRawText = document.getElementById("artifact-data").textContent;
+  var islandData = JSON.parse(islandRawText);
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+      return;
+    }
+    var scratch = document.createElement("textarea");
+    scratch.value = text;
+    document.body.appendChild(scratch);
+    scratch.select();
+    document.execCommand("copy");
+    scratch.remove();
+  }
+
+  document.getElementById("export-json").addEventListener("click", function () {
+    copyToClipboard(islandRawText);
+  });
+
+  document.getElementById("export-prompt").addEventListener("click", function () {
+    copyToClipboard("Resume work on this pipeline diagram. Structured island data follows.\n\n" + islandRawText);
+  });
+
+  document.getElementById("export-markdown").addEventListener("click", function () {
+    var lines = ["# " + islandData.title, ""];
+    islandData.nodes.forEach(function (node) {
+      lines.push("- **" + node.label + "**: " + node.detail);
+    });
+    copyToClipboard(lines.join("\n"));
+  });
+</script>
+</body>
+</html>

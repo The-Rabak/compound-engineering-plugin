@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quarterly roadmap — milestone-grid archetype exemplar</title>
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f6f7f9; --fg: #17181c; --muted: #5b6270;
+    --accent: #3457d5; --border: #dde1e7; --radius: 10px; --done: #2f9e5b; --pending: #b9860b;
+    --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0b0e14; --surface:#12161f; --fg:#e7e9ee; --muted:#9aa2b1; --accent:#7c9bff; --border:#262c38; }
+  }
+  :root[data-theme="dark"] { --bg:#0b0e14; --surface:#12161f; --fg:#e7e9ee; --muted:#9aa2b1; --accent:#7c9bff; --border:#262c38; }
+  :root[data-theme="light"] { --bg:#ffffff; --surface:#f6f7f9; --fg:#17181c; --muted:#5b6270; --accent:#3457d5; --border:#dde1e7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-sans); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 1.1rem; margin: 0; }
+  .exporters button, #theme-toggle { background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); padding: .4rem .7rem; cursor: pointer; font-family: var(--font-sans); }
+  main { padding: 1.5rem; }
+  ol.timeline { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--border); }
+  .timeline-item { position: relative; padding: 0 0 1.5rem 1.5rem; }
+  .timeline-item .timeline-marker { position: absolute; left: -6px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+  .timeline-item[data-status="done"] .timeline-marker { background: var(--done); }
+  .timeline-item[data-status="in-progress"] .timeline-marker { background: var(--accent); }
+  .timeline-item[data-status="pending"] .timeline-marker { background: var(--pending); }
+  .timeline-item h4 { margin: 0 0 .25rem; }
+  .timeline-item p { margin: 0; color: var(--muted); font-size: .9rem; }
+  @media (max-width: 480px) { main { padding: 1rem; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Quarterly roadmap</h1>
+  <div class="exporters">
+    <button id="theme-toggle" type="button" aria-pressed="false">Toggle theme</button>
+    <button id="export-json" type="button">Copy as JSON</button>
+    <button id="export-prompt" type="button">Copy as Prompt</button>
+    <button id="export-markdown" type="button">Copy as Markdown</button>
+  </div>
+</header>
+<main>
+  <ol class="timeline">
+    <li class="timeline-item" data-status="done">
+      <span class="timeline-marker"></span>
+      <h4>M1 — Data model migration</h4>
+      <p>No dependencies.</p>
+    </li>
+    <li class="timeline-item" data-status="in-progress">
+      <span class="timeline-marker"></span>
+      <h4>M2 — Dual-write rollout</h4>
+      <p>Depends on M1.</p>
+    </li>
+    <li class="timeline-item" data-status="pending">
+      <span class="timeline-marker"></span>
+      <h4>M3 — Read-path cutover</h4>
+      <p>Depends on M2.</p>
+    </li>
+    <li class="timeline-item" data-status="pending">
+      <span class="timeline-marker"></span>
+      <h4>M4 — Legacy path removal</h4>
+      <p>Depends on M3.</p>
+    </li>
+  </ol>
+</main>
+<!--
+  Static exemplar: order and dependency text above are a direct, hand-written
+  re-presentation of `milestones[]` below, authored at generation time --
+  never a schedule invented independently of the island, and never rebuilt
+  from parsed JSON by a runtime script (see primitives-catalog.md's
+  timeline/milestone-roadmap-grid section and SKILL.md step 4).
+-->
+<script type="application/json" id="artifact-data">{"schema_version":1,"kind":"example","archetype":"milestone-grid","title":"Quarterly roadmap (archetype exemplar)","milestones":[{"id":"M1","label":"Data model migration","status":"done","depends_on":[]},{"id":"M2","label":"Dual-write rollout","status":"in-progress","depends_on":["M1"]},{"id":"M3","label":"Read-path cutover","status":"pending","depends_on":["M2"]},{"id":"M4","label":"Legacy path removal","status":"pending","depends_on":["M3"]}]}</script>
+<script>
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var root = document.documentElement;
+    root.setAttribute("data-theme", root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  var islandRawText = document.getElementById("artifact-data").textContent;
+  var islandData = JSON.parse(islandRawText);
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+      return;
+    }
+    var scratch = document.createElement("textarea");
+    scratch.value = text;
+    document.body.appendChild(scratch);
+    scratch.select();
+    document.execCommand("copy");
+    scratch.remove();
+  }
+
+  document.getElementById("export-json").addEventListener("click", function () {
+    copyToClipboard(islandRawText);
+  });
+
+  document.getElementById("export-prompt").addEventListener("click", function () {
+    copyToClipboard("Resume work on this roadmap. Structured island data follows.\n\n" + islandRawText);
+  });
+
+  document.getElementById("export-markdown").addEventListener("click", function () {
+    var lines = ["# " + islandData.title, ""];
+    islandData.milestones.forEach(function (milestone) {
+      lines.push("- [" + milestone.status + "] **" + milestone.id + "** " + milestone.label);
+    });
+    copyToClipboard(lines.join("\n"));
+  });
+</script>
+</body>
+</html>

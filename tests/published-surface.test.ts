@@ -233,6 +233,39 @@ describe("published support surface", () => {
     expect(pluginReadme).toContain("| `todo-triage-researcher` | Produce compact evidence-backed action briefs for review-created todos |")
   })
 
+  test("publishes the html-artifact-composer skill and reconciles the skill count to 28", async () => {
+    const plugin = await loadPortablePlugin(portableRoot)
+    const skill = plugin.skills.find((candidate) => candidate.name === "html-artifact-composer")
+    const portableSkill = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "html-artifact-composer",
+      "SKILL.md",
+    )
+    const generatedSkill = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "skills",
+      "html-artifact-composer",
+      "SKILL.md",
+    )
+    const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
+
+    expect(skill).toBeDefined()
+    expect(plugin.skills.length).toBe(28)
+
+    for (const content of [portableSkill, generatedSkill]) {
+      expect(content).toContain("name: html-artifact-composer")
+      expect(content).toContain("classify")
+      expect(content).toContain("render_meta")
+    }
+
+    expect(pluginReadme).toContain("Includes 38 specialized agents, 27 commands, and 28 skills.")
+    expect(pluginReadme).toContain("| Skills | 28 |")
+    expect(pluginReadme).toContain("| `html-artifact-composer` |")
+  })
+
   test("retires local visual artifact guardrails from workflow-next-step and workflow prompts", async () => {
     const pluginYaml = await readRepoFile("portable", "compound-engineering", "plugin.yaml")
     const [brainstormWorkflow, planWorkflow, architectureWorkflow, reviewWorkflow] = await Promise.all(

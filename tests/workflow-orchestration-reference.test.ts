@@ -584,7 +584,7 @@ describe("workflow orchestration references", () => {
       "plan.md",
     )
 
-    expect(planPrompt).toContain("### 4. Build One Adaptive Plan Template")
+    expect(planPrompt).toContain("### 4. Compose the Plan Artifact")
     expect(planPrompt).toContain("Optional sections catalog (include only when decision-bearing)")
     expect(planPrompt).toContain("Representative routine plan (compact and scannable)")
     expect(planPrompt).toContain("Include only when this section changes a decision")

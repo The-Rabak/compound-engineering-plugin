@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Risk register — risk-table archetype exemplar</title>
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f6f7f9; --fg: #17181c; --muted: #5b6270;
+    --accent: #3457d5; --border: #dde1e7; --radius: 10px;
+    --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0b0e14; --surface:#12161f; --fg:#e7e9ee; --muted:#9aa2b1; --accent:#7c9bff; --border:#262c38; }
+  }
+  :root[data-theme="dark"] { --bg:#0b0e14; --surface:#12161f; --fg:#e7e9ee; --muted:#9aa2b1; --accent:#7c9bff; --border:#262c38; }
+  :root[data-theme="light"] { --bg:#ffffff; --surface:#f6f7f9; --fg:#17181c; --muted:#5b6270; --accent:#3457d5; --border:#dde1e7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-sans); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 1.1rem; margin: 0; }
+  .exporters button, #theme-toggle { background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); padding: .4rem .7rem; cursor: pointer; font-family: var(--font-sans); }
+  main { padding: 1.5rem; overflow-x: auto; }
+  table.risk-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  table.risk-table th, table.risk-table td { text-align: left; padding: .6rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.risk-table th { color: var(--muted); font-weight: 600; font-size: .85rem; text-transform: uppercase; letter-spacing: .02em; }
+  table.risk-table tr:last-child td { border-bottom: none; }
+  @media (max-width: 480px) { main { padding: 1rem; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Risk register</h1>
+  <div class="exporters">
+    <button id="theme-toggle" type="button" aria-pressed="false">Toggle theme</button>
+    <button id="export-json" type="button">Copy as JSON</button>
+    <button id="export-prompt" type="button">Copy as Prompt</button>
+    <button id="export-markdown" type="button">Copy as Markdown</button>
+  </div>
+</header>
+<main>
+  <table class="risk-table">
+    <thead>
+      <tr><th>Scope</th><th>Reason</th><th>Mitigation</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Dual-write window</td>
+        <td>A crash between the two writes can leave the legacy and new stores briefly inconsistent.</td>
+        <td>Reconciliation job runs every five minutes and pages on drift beyond 1 record.</td>
+      </tr>
+      <tr>
+        <td>Read-path cutover</td>
+        <td>The new store has not served production read traffic before this milestone.</td>
+        <td>Shadow-read comparison for two weeks before the cutover flips.</td>
+      </tr>
+    </tbody>
+  </table>
+</main>
+<!--
+  Static exemplar: one row per island risk entry, written directly at
+  generation time -- never a row for a risk with no island backing (the
+  risk/impact table rule in primitives-catalog.md), and never rebuilt from
+  parsed JSON by a runtime script (see SKILL.md step 4).
+-->
+<script type="application/json" id="artifact-data">{"schema_version":1,"kind":"example","archetype":"risk-table","title":"Risk register (archetype exemplar)","risks":[{"scope":"Dual-write window","reason":"A crash between the two writes can leave the legacy and new stores briefly inconsistent.","mitigation":"Reconciliation job runs every five minutes and pages on drift beyond 1 record."},{"scope":"Read-path cutover","reason":"The new store has not served production read traffic before this milestone.","mitigation":"Shadow-read comparison for two weeks before the cutover flips."}]}</script>
+<script>
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var root = document.documentElement;
+    root.setAttribute("data-theme", root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  var islandRawText = document.getElementById("artifact-data").textContent;
+  var islandData = JSON.parse(islandRawText);
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+      return;
+    }
+    var scratch = document.createElement("textarea");
+    scratch.value = text;
+    document.body.appendChild(scratch);
+    scratch.select();
+    document.execCommand("copy");
+    scratch.remove();
+  }
+
+  document.getElementById("export-json").addEventListener("click", function () {
+    copyToClipboard(islandRawText);
+  });
+
+  document.getElementById("export-prompt").addEventListener("click", function () {
+    copyToClipboard("Resume work on this risk register. Structured island data follows.\n\n" + islandRawText);
+  });
+
+  document.getElementById("export-markdown").addEventListener("click", function () {
+    var lines = ["# " + islandData.title, ""];
+    islandData.risks.forEach(function (risk) {
+      lines.push("- **" + risk.scope + "**: " + risk.reason + " — _Mitigation:_ " + risk.mitigation);
+    });
+    copyToClipboard(lines.join("\n"));
+  });
+</script>
+</body>
+</html>
