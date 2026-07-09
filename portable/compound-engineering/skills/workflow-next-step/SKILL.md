@@ -49,7 +49,7 @@ Run the advisor in this order. Do not jump directly from the just-finished comma
 2. **Bind the current chain**: collect only artifacts that belong to the same feature, bug, plan, ticket set, execution session, or maintenance target.
 3. **Audit completion evidence**: evaluate every relevant checklist row against the artifact checks below.
 4. **Summarize completed stages**: extract one precise handoff summary for each completed stage in the current chain.
-5. **Apply decision gates in order**: resolve blockers, optional advisor-owned actions, visual routing, then the graph transition.
+5. **Apply decision gates in order**: resolve blockers, optional advisor-owned actions, then the graph transition.
 6. **Emit one next-session directive**: output the exact command or skill invocation and the inputs needed to run it.
 
 ### Current Chain Selection
@@ -113,9 +113,8 @@ Apply these rules only after the advisor procedure and artifact checks are compl
 
 1. **Validity gate**: If the just-finished artifact fails its required checks, recommend the same workflow again or `document-review <artifact-path>` when review can repair ambiguity without rerunning the workflow.
 2. **Blocked-input gate**: If the next graph step lacks a required input path, recommend the narrowest command or skill that can produce or identify that input. Do not invent a path.
-3. **Visual-plan gate**: For complete brainstorm, plan, or architecture artifacts without a matching local visual sidecar, recommend visual generation first, followed immediately by the graph command.
-4. **Graph gate**: If the artifact is valid and inputs are known, recommend the next graph command from the stage rules below.
-5. **Stop gate**: If the chain is complete or the lane is maintenance-only, recommend `complete` with no command required.
+3. **Graph gate**: If the artifact is valid and inputs are known, recommend the next graph command from the stage rules below.
+4. **Stop gate**: If the chain is complete or the lane is maintenance-only, recommend `complete` with no command required.
 
 ### Stage Rules
 
@@ -145,29 +144,6 @@ The core workflow commands do not present handoff menus. Preserve their former c
 - **Open/view diff/revert**: After `plan` or `deepen-plan`, include these only as optional human inspection notes under "Inputs to pass" or "Why this is next"; do not make them the recommended next command unless the artifact is invalid or the user explicitly asked.
 - **Commit/push after triage**: Recommend commit/push only when triage executed changes that are complete and validated but not committed; otherwise route to review or compound.
 - **Done/stop**: When no next workflow is needed, set the recommended next step to `complete` and state that no command is required.
-
-## Visual Plan Routing
-
-For `brainstorm`, `plan`, and `architecture`, visual rendering is advisor-owned. If the source artifact is complete and a matching `docs/visual-artifacts/<workflow>/<slug>/` sidecar does not already exist, recommend generating the local visual plan first, then immediately proceed to the next graph command in the same next-session directive.
-
-Use this format in `Run it with` when a visual plan is next:
-
-```text
-Generate the local visual plan with local-visual-artifact-renderer:
-source_path: <artifact-path>
-source_workflow: <brainstorm|plan|architecture>
-visual_kind: plan
-template_profile: <brainstorm|plan|architecture>
-
-Then run:
-<next workflow command with exact inputs>
-```
-
-Do not recommend hosted Plan MCP setup, hosted URLs, share flows, publishing, or review visual recaps. For the next graph command after visual generation:
-
-- brainstorm -> `grill-with-docs <brainstorm-path>` unless lite/trivial, then `/workflows:plan <brainstorm-path>`
-- plan -> `/workflows:architecture <plan-path>`
-- architecture -> `/deepen-plan <plan-path>`
 
 ## Required Output
 

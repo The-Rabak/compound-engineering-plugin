@@ -1,6 +1,6 @@
 # Compounding Engineering Plugin
 
-AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 39 specialized agents, 28 commands, and 27 skills.
+AI-powered development tools that get smarter with every use. Make each unit of engineering work easier than the last. Includes 38 specialized agents, 27 commands, and 27 skills.
 
 This Claude plugin install surface contains only Claude-relevant files. Codex plugin metadata and Copilot assets are generated only on explicit target builds/installs from the canonical portable source in `portable/compound-engineering/`.
 
@@ -22,7 +22,6 @@ This Claude plugin install surface contains only Claude-relevant files. Codex pl
 - `/workflows:review` preserves mandatory specialist coverage, including `code-simplicity-reviewer`; token-budget reductions come from compact review packets, deduplicated dispatch, and synthesis-only orchestration rather than dropped subagents.
 - `/workflows:triage` delegates missing todo research to `todo-triage-researcher`, then validates compact evidence-backed briefs before decisions or requested execution.
 - Every core workflow ends with `workflow-next-step`, which binds the active artifact chain, audits completion evidence, summarizes completed stages, and prints the exact next-session command/input handoff.
-- Finalized brainstorms, plans, architecture handoffs, and reviews can offer optional local-only visual artifacts as MDX sidecars under `docs/visual-artifacts/` without hosted Plan MCP infrastructure. The renderer loads the BuilderIO Agent-Native plan style guidance, generates the pinned block catalog with `@agent-native/core@0.67.0`, and writes structured Plan primitives such as diagrams, file trees, tabs, checklists, annotated code, diffs, schema/API blocks, and wireframes when the source supports them. It writes `preview.html` by default, and `/visual-artifact <artifact-path>` wraps check and static preview from only the artifact path; `--serve` requires a reachable local Plan UI on `127.0.0.1:3001` by default.
 - `/lrj` is a Ralph-style coordinator for existing plans: ticketize, audit/repair the ticket set, then work/review/triage/validate and commit two ticket batches at a time until the ticket index is complete.
 - `/workflows:plan`, `/deepen-plan`, and `/workflows:work` now default to issue-shaped execution slices, with the first slice acting as the tracer bullet, while still allowing explicit `infra-track` and `fix-batch` modes when slices would be fake.
 - `/workflows:work` can execute the next safe batch directly from a ticket index while preserving parent plan and architecture refs.
@@ -83,8 +82,8 @@ bun test
 
 | Component | Count |
 |-----------|-------|
-| Agents | 39 |
-| Commands | 28 |
+| Agents | 38 |
+| Commands | 27 |
 | Skills | 27 |
 | Hooks | 0 |
 | MCP Servers | 1 |
@@ -139,7 +138,7 @@ Agents are organized into categories for easier discovery.
 | `design-iterator` | Iteratively refine UI through systematic design iterations |
 | `figma-design-sync` | Synchronize web implementations with Figma designs |
 
-### Workflow (8)
+### Workflow (7)
 
 | Agent | Description |
 |-------|-------------|
@@ -148,7 +147,6 @@ Agents are organized into categories for easier discovery.
 | `execution-agent` | Execute scoped `/workflows:work` tickets and units with strict clean-code, DRY, SOLID, and Ralph-aware delivery discipline |
 | `inline-code-quality-reviewer` | Performs the lightweight per-unit code quality check inside `/workflows:work` inline review mode after spec compliance passes |
 | `inline-spec-compliance-reviewer` | Performs the lightweight per-unit spec compliance check inside `/workflows:work` inline review mode |
-| `local-visual-artifact-renderer` | Convert finalized workflow Markdown artifacts into source-loyal local visual MDX sidecars |
 | `pr-comment-resolver` | Address PR comments and implement fixes |
 | `spec-flow-analyzer` | Analyze user flows and identify gaps in specifications |
 
@@ -189,7 +187,6 @@ Core workflow commands use `workflows:` prefix to avoid collisions with built-in
 | `/resolve_todo_parallel` | Resolve todos in parallel |
 | `/test-browser` | Run browser tests on PR-affected pages |
 | `/feature-video` | Record video walkthroughs and add to PR description |
-| `/visual-artifact` | Render or serve a local visual artifact from only its artifact path |
 | `/ralph-loop` | Start a self-referential loop until completion promise is met |
 | `/cancel-ralph` | Cancel an active ralph loop |
 | `/deploy-docs` | Deploy documentation site |

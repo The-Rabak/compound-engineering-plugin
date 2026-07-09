@@ -39,9 +39,9 @@ describe("workflow-next-step skill", () => {
     expect(content).toContain("/workflows:triage todos <first>-<last>")
     expect(content).toContain("/workflows:triage todos 13-23")
     expect(content).toContain("## Advisor-Owned Options")
-    expect(content).toContain("## Visual Plan Routing")
-    expect(content).toContain("Generate the local visual plan with local-visual-artifact-renderer")
-    expect(content).toContain("Then run:")
+    expect(content).not.toContain("## Visual Plan Routing")
+    expect(content).not.toContain("Generate the local visual plan with local-visual-artifact-renderer")
+    expect(content).not.toContain("Then run:")
   })
 
   test("defines a meticulous advisor decision procedure before routing", async () => {
@@ -68,7 +68,6 @@ describe("workflow-next-step skill", () => {
     const expectedGates = [
       "**Validity gate**",
       "**Blocked-input gate**",
-      "**Visual-plan gate**",
       "**Graph gate**",
       "**Stop gate**",
     ]
@@ -203,9 +202,6 @@ describe("workflow-next-step skill", () => {
       "What's next?",
       "Based on selection:",
       "Loop back to options",
-      "Create local visual artifact from this brainstorm.",
-      "Create local visual plan from this plan.",
-      "Create local architecture visual artifact.",
     ]
 
     for (const file of workflowFiles) {
