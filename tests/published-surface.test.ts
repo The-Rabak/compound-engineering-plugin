@@ -31,12 +31,12 @@ describe("published support surface", () => {
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
     const pluginChangelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
 
-    expect(plugin.manifest.version).toBe("4.20.0")
+    expect(plugin.manifest.version).toBe("4.21.0")
     expect(pluginManifest.version).toBe(plugin.manifest.version)
     expect(marketplace.plugins[0]?.version).toBe(plugin.manifest.version)
     expect(pluginManifest.description).toBe(plugin.manifest.description)
     expect(marketplace.plugins[0]?.description).toBe(plugin.manifest.description)
-    expect(pluginChangelog).toContain("## [4.20.0] - 2026-07-08")
+    expect(pluginChangelog).toContain("## [4.21.0] - 2026-07-09")
     expect(pluginReadme).toContain(
       `Includes ${plugin.agents.length} specialized agents, ${plugin.commands.length} commands, and ${plugin.skills.length} skills.`,
     )
@@ -122,8 +122,8 @@ describe("published support surface", () => {
       expect(readme).toContain("todo-triage-researcher")
     }
 
-    expect(rootReadme).toContain("39 specialized agents, 28 commands, and 27 skills")
-    expect(rootReadme).not.toContain("34 specialized agents, 28 commands, and 26 skills")
+    expect(rootReadme).toContain("38 specialized agents, 27 commands, and 28 skills")
+    expect(rootReadme).not.toContain("39 specialized agents, 28 commands, and 27 skills")
   })
 
   test("published surfaces retire ideate as a standalone workflow and skill", async () => {

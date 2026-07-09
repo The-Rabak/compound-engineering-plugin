@@ -2,7 +2,7 @@
 ticket_id: T06
 title: Release reconciliation — version bump, counts, CHANGELOG, docs rebuild
 kind: infra-track
-status: ready
+status: completed
 plan_ref: docs/plans/2026-07-09-feat-rich-html-artifacts-v1-plan.md
 tickets_ref: docs/tickets/2026-07-09-rich-html-artifacts-v1/index.md
 architecture_ref: docs/architecture/2026-07-09-rich-html-artifacts-architecture.md

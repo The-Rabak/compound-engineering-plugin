@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.21.0] - 2026-07-09
+
+### Added
+
+- **Rich interactive HTML artifacts (v1 pilot)** -- Added the `html-artifacts` subsystem: a JSON-island contract and serialization primitive plus a field-coverage map so structured plan data can round-trip through a single self-contained HTML document. Added the `html-artifact-composer` skill, which emits a self-contained interactive `plan.html` in place of the previous plain-Markdown plan file. Downstream consumers now dual-read the island payload through a shared island-extraction helper that fails loudly on a malformed or missing island rather than silently falling back.
+
+### Removed
+
+- **MDX visual-artifact system** -- Removed the local MDX visual-artifact command and its rendering agent, along with their MDX reference docs and the workflow-next-step Visual-Plan routing, now superseded by the `html-artifacts` subsystem above. The published surface moves from 39 specialized agents, 28 commands, and 27 skills to 38 specialized agents, 27 commands, and 28 skills.
+
 ## [4.20.0] - 2026-07-08
 
 ### Added

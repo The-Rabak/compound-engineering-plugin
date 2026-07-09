@@ -3,8 +3,8 @@ plan_ref: docs/plans/2026-07-09-feat-rich-html-artifacts-v1-plan.md
 architecture_ref: docs/architecture/2026-07-09-rich-html-artifacts-architecture.md
 brainstorm_ref: docs/brainstorms/2026-07-09-rich-html-artifacts-brainstorm.md
 execution_shape: vertical-slices
-ticket_set_status: in_progress
-last_completed_batch: 5
+ticket_set_status: completed
+last_completed_batch: 6
 total_batches: 6
 ---
 
@@ -46,7 +46,7 @@ Both roots (T01, T02) are independent. T01 is sequenced first because the vertic
 | 3 | T03 | completed | Composer skill generates the pilot `plan.html`; skills → 28 | Batch 1 |
 | 4 | T04 | completed | Downstream dual-read + island-extraction helper (fail-loud) | Batches 1, 3 |
 | 5 | T05 | completed | Pilot equivalence gate — L3 oracle + L4 malformed-island drill (go/no-go) — **PASS** | Batches 3, 4 |
-| 6 | T06 | pending | Release reconciliation: version bump, counts 38/27/28, CHANGELOG, `/release-docs` | Batches 2, 5 |
+| 6 | T06 | completed | Release reconciliation: v4.21.0 bump, counts 38/27/28, consolidated CHANGELOG, docs-site count reconciliation | Batches 2, 5 |
 
 Batch-status legend: `pending → in_progress → completed` (or `blocked`). `/workflows:work` advances `last_completed_batch` to N only after every ticket in Batch N reaches `completed`; on a blocked ticket, mark the batch `blocked` and do not advance.
 
