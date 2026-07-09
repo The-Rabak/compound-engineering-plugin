@@ -4,7 +4,7 @@ architecture_ref: docs/architecture/2026-07-09-rich-html-artifacts-architecture.
 brainstorm_ref: docs/brainstorms/2026-07-09-rich-html-artifacts-brainstorm.md
 execution_shape: vertical-slices
 ticket_set_status: in_progress
-last_completed_batch: 4
+last_completed_batch: 5
 total_batches: 6
 ---
 
@@ -45,7 +45,7 @@ Both roots (T01, T02) are independent. T01 is sequenced first because the vertic
 | 2 | T02 | completed | MDX visual-artifact system removed; counts → 38 agents / 27 commands | — |
 | 3 | T03 | completed | Composer skill generates the pilot `plan.html`; skills → 28 | Batch 1 |
 | 4 | T04 | completed | Downstream dual-read + island-extraction helper (fail-loud) | Batches 1, 3 |
-| 5 | T05 | pending | Pilot equivalence gate — L3 oracle + L4 malformed-island drill (go/no-go) | Batches 3, 4 |
+| 5 | T05 | completed | Pilot equivalence gate — L3 oracle + L4 malformed-island drill (go/no-go) — **PASS** | Batches 3, 4 |
 | 6 | T06 | pending | Release reconciliation: version bump, counts 38/27/28, CHANGELOG, `/release-docs` | Batches 2, 5 |
 
 Batch-status legend: `pending → in_progress → completed` (or `blocked`). `/workflows:work` advances `last_completed_batch` to N only after every ticket in Batch N reaches `completed`; on a blocked ticket, mark the batch `blocked` and do not advance.
@@ -75,6 +75,8 @@ Net: coupling, shared build/generated surfaces, and overlapping test files make 
 - **No blocking gaps** prevent starting. T01 (Batch 1) is execution-ready with no dependencies.
 - **Sequential-only:** no batch may be parallelized (see the parallelization assessment). `/workflows:work` must execute one batch at a time and advance `last_completed_batch` only after that batch's ticket reaches `completed`.
 - **Go/no-go gate:** T05 is the pilot's go/no-go. If T05's L3/L4 gate fails, **do not proceed to T06** (release) — send the failure back for repair. A failed gate blocks release by design.
+  - **Gate result (2026-07-09): PASS.** Ran real `/workflows:to-issues` → tracer `/workflows:work` over both arms (`.html` = `tests/fixtures/html-artifacts/representative-plan.html`; `.md` = `tests/fixtures/html-artifacts/frozen-premigration-plan.md`, authored by T05). Per-arm floors both cleared (3 tickets each, all scope-fence + acceptance-criteria non-empty, tracer unit `completed` with real Red-FAIL→Green→Post-Refactor-Green evidence in live session state). Cross-arm deep-equal held on the sorted ticket-id set, every per-ticket packet field (id, feature_home, sorted files/depends_on, dependency_type, serves→{SC ids}, test_command, tdd mode, normalized scope-fence + acceptance-criteria), and the index edges/batches — only cosmetic markdown/YAML-comment formatting differed (normalized away). L4 (corrupted-island copy) made `to-issues` stop loud with the artifact path + `INVALID_JSON` + the `JSON.parse` message — no partial proceed, no HTML scrape, no `.md` fallback. `bun test` green (261 pass). **Batch 6 (T06 release) may proceed.**
+  - **Non-blocking documentation finding (send to plan/T05 for a wording fix, not a gate fail):** the per-arm floor threshold in `plan.md:119` and T05 AC#1 reads "ticket count ≥ the number of `## Execution Slices` in **this plan** (4: A–D)". The "(4: A–D)" annotation is the *parent* rich-html-artifacts plan's own slice labels, not the 3-slice CSV-export fixture under conversion. The intent-correct floor is "≥ slices in the source plan being ticketized" (= 3 for both fixtures), which both arms satisfy with one ticket per slice. Reword to drop the "(4: A–D)" annotation (or scope it explicitly to the fixture) so a future reader cannot misapply "4" as a hard threshold — which would make this go/no-go gate permanently unpassable against the committed 3-slice fixtures.
 - **Watch items carried into tickets (not blockers, but must be handled during execution):**
   - The MDX test-flip surface in `tests/published-surface.test.ts` is broader than the plan's "three tests" (~lines 150–475, incl. the `:150`/`:232` count pins and the `:472–475` presence loop), and the hyphenated grep AC cannot catch space-separated phrases (`"local-only visual artifacts"` :473; `"visual routing"` in `workflow-next-step/SKILL.md:52`). T02 must flip them all — `bun test` green is the completeness proof, not grep.
   - `tests/published-surface.test.ts:474` (`"39 specialized agents"`) lives *inside* the `:472–475` MDX presence loop that T02 rewrites — it is **not** a surviving standalone count pin. T06 reconciles the four description sites + the `:125–126` root-README pair (verified against `find`).
