@@ -350,11 +350,13 @@ Use today's date. Keep the filename descriptive and kebab-case.
 
 Ensure `docs/plans/` exists. Ensure `.gitignore` contains `docs/plans/` and `docs/brainstorms/` if `.gitignore` exists or must be created. Do not add `docs/solutions/` to `.gitignore`.
 
-Load the `html-artifact-composer` skill. Invoke it with:
-- `target_path`: the path above.
+Assemble the payload, then **delegate composition to a fresh subagent per the composer's Invocation contract** (`skills/html-artifact-composer/SKILL.md` → "Invocation — the calling command MUST run the composer in a fresh subagent"). Do **not** load and run the composer inline in this planning context — by now it is large, and the single-file HTML generation belongs in a clean, focused context. Dispatch one fresh subagent and give it only:
+
+- an instruction to **load and follow** `skills/html-artifact-composer/SKILL.md` (point it at the file; do not paste the skill body into the prompt — the skill is its instruction set),
+- `target_path`: the path above,
 - `payload`: the object below, fully populated from this workflow's steps 0–3. The payload's shape matches `commands/workflows/references/html-artifacts/island-contract.md`'s Tier 1 envelope + Tier 2 `plan` contract core exactly; the composer projects the visible HTML and writes `render_meta` — this workflow does not choose an archetype or write markup by hand.
 
-If the composer reports a missing required field, fill it from steps 0–3 and retry; do not let the composer fabricate a value.
+The subagent writes the artifact and returns its path. If it reports a missing required field, fill it from steps 0–3 and re-dispatch; do not let the composer fabricate a value.
 
 #### Required Island Payload (Tier 1 envelope + Tier 2 contract core)
 

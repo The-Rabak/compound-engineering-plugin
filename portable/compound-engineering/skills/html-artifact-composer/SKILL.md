@@ -12,6 +12,16 @@ user-invocable: false
 
 The **create** capability of the `html-artifacts` subsystem (`CONTEXT.md` → **Composer skill**). A workflow command invokes this skill at its artifact-write step with a structured payload; this skill turns that payload into one self-contained `.html` file and returns its path. It never talks to the user directly and never asks for design input.
 
+## Invocation — the calling command MUST run the composer in a fresh subagent
+
+Any command that reaches its artifact-write step (`/workflows:plan` today; brainstorm/architecture and other emitters as they migrate) **delegates composition to a fresh subagent — it does not run the composer inline in its own context.** By the write step the command has accumulated a large context (brainstorm input, gathering-helper reports, the planning/authoring dialogue) that the projection does not need; running a single-file HTML generation on top of it bloats the orchestrator, degrades the generation, and drags that transcript into every later step. The payload is already the clean handoff, so the split is natural:
+
+1. **Orchestrator assembles the `payload`** (see Input contract) from its own steps. The payload alone must carry every fact the artifact will show — the one hard rule means nothing else could leak in anyway.
+2. **Orchestrator dispatches one fresh subagent** whose entire context is: an instruction to load and follow *this* `SKILL.md` (point it at the file — do **not** paste the skill body into the prompt; the skill is its instruction set), the `target_path`, the `payload`, and the design-DNA refs this skill loads. The subagent does the whole classify → project cycle.
+3. **The subagent returns only** the written artifact path (plus any missing-required-field report). On a missing-field report the orchestrator fills the field from its own steps and re-dispatches; it never lets the composer fabricate.
+
+Orchestrator owns *facts* (the payload); the composition subagent owns *projection* (the HTML) — the same delegation `/workflows:work` uses for heavy units. Every future command that gains a composer write-step invokes it this way, by reference to this section, so the pattern stays single-sourced instead of drifting per command.
+
 ## Required contract
 
 Before composing anything, load:
@@ -46,7 +56,7 @@ Read `gallery-manifest.md` (and only that file) and match rows by `type`/`tags[]
 - `risk-table` when `tdd.exceptions[]` or `constitution.waivers` is non-empty
 - `flowchart` only when the payload's `ext{}` content includes an actual pipeline/architecture graph to draw
 
-Load **only** the matched exemplar/recipe file(s) from `archetypes/`/`recipes/` — never the whole gallery. Compose their primitives into one document; do not literally copy an exemplar's sample content, only its structural pattern.
+Load **only** the matched exemplar/recipe file(s) from `archetypes/`/`recipes/` — never the whole gallery. Compose their primitives into one document; do not literally copy an exemplar's sample content, only its structural pattern. A matched archetype is a **floor, not a ceiling**: you are expected to recompose, reorder, augment, and add novel island-backed sections beyond it, and to vary that composition between artifacts — see "Design for engagement" below. Matching tells you what the content *is*, not what the finished piece must *look like*.
 
 ### 3. Draft bespoke (when nothing fits)
 
@@ -62,7 +72,18 @@ Generation order is fixed, in this order, every time:
 4. **Escape every prose fact for display.** Any island text rendered as visible HTML must be HTML-entity-escaped (`&`, `<`, `>`) at render time — this is what keeps a hostile payload (`</script>`, `<img onerror=...>`) inert in the visible view even though it is preserved verbatim (and safely) inside the island.
 5. **Mold-breaking content goes in `ext{}`, never as HTML-only prose.** If the composed layout wants to show something no Tier 1/2/3 field carries, add it to the island's `ext{}` region first, then render it from there. An HTML section with no corresponding island field anywhere (fixed-core or `ext`) is a contract violation, not creative freedom.
 6. **Wire the three exporters** against the same island script tag (`primitives-catalog.md` → "The three exporters"). Copy-as-JSON must read the island script's raw `textContent` and copy it verbatim — never re-`JSON.stringify` the parsed object, which would not guarantee byte-identity with what was written.
-7. **Populate `render_meta`** with every archetype id actually composed (in the order composed) and a stable `design_seed` string (e.g. `html-artifact-composer-v1-<date>`). This is writer-only in v1 — no reader consumes it yet, but future re-projection needs it.
+7. **Populate `render_meta`** with every archetype id actually composed (in the order composed) and a `design_seed` string that is **distinct per artifact but stable within one** (e.g. `<type>-<name>-<date>-<a-short-distinct-suffix>`) — so re-projection reproduces *this* design while different artifacts get different visual identities rather than one shared house stamp. This is writer-only in v1 — no reader consumes it yet, but future re-projection needs it.
+
+## Design for engagement — variety and flair
+
+These artifacts exist for one reason: to make a human *want* to open a dense document and actually read it. A projection that is perfectly faithful but visually flat has already failed that job, even when every fact is present. Here, presentation is not decoration — it is the point. Approach each artifact as a piece of design work, not a template to fill.
+
+- **Your presentation freedom is total, and safe to spend.** Downstream consumers read only the JSON island, never the rendered HTML — so nothing you do to the *look* can break a reader or the equivalence contract. Above the island contract and the invariants below, there is no house style to conform to. Compose boldly.
+- **Make each artifact its own.** Do not converge on one layout that every document comes out wearing. Two different plans should *feel* visibly different — a different structural rhythm, a different way of leading the eye, a visual personality that fits *this* content. Let `design_seed` stand for a genuine per-artifact aesthetic commitment, not a constant. This is the closest thing to "turning up the temperature" that a projection skill has: deliberate variation, chosen fresh each time.
+- **Draw the structure instead of describing it.** When content has a shape — a dependency chain, a pipeline, a hierarchy, a before/after, a sequence, a set of trade-offs — consider rendering it as an inline SVG diagram, flowchart, or figure rather than one more paragraph. A picture earns engagement prose cannot. Anything that carries facts reads them from the island (the one hard rule still holds); purely decorative flourishes carry no facts and are free.
+- **Break up the walls of text.** Long prose is where engagement goes to die. Give it rhythm and entry points: lift key phrases into callouts or asides, use progressive disclosure for depth, vary section shapes instead of stacking identical `<p>` blocks, and use whitespace, sidebars, and visual hierarchy so the eye always has somewhere to land. A dense `ext{}` block is a candidate for a diagram or a staged reveal, not a 400-word slab.
+- **Restraint is part of taste.** Flair serves engagement, never spectacle. It must never bury a fact, fight readability or accessibility, or tempt you to invent something the island doesn't carry. When a section is genuinely plain, a clean and quiet layout is the *right* creative choice — variety means fitting the design to the content, not forcing ornament onto it.
+- **No checklist on purpose.** There is deliberately no prescribed set of moves here, because a fixed recipe would make every artifact converge again. Resist reaching for the same handful of devices every time; read what this specific document is about and give it the design it deserves.
 
 ## Invariants enforced on every artifact, no exceptions
 
