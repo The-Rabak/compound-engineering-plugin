@@ -177,6 +177,24 @@ describe("workflow-next-step skill", () => {
     expect(grill).toContain("load the `workflow-next-step` skill")
   })
 
+  test("plan artifact check is dual-read aware for .html plan artifacts", async () => {
+    const content = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "workflow-next-step",
+      "SKILL.md",
+    )
+
+    // The plan artifact is the only artifact kind that may be `.html` in v1
+    // (the html-artifacts pilot). The advisor must discover either
+    // extension and, for `.html`, read the same fixed-core facts from the
+    // island via the shared extraction helper instead of frontmatter.
+    expect(content).toContain("docs/plans/YYYY-MM-DD-*-plan.md")
+    expect(content).toContain("docs/plans/YYYY-MM-DD-*-plan.html")
+    expect(content).toContain("references/html-artifacts/island-extraction-helper.md")
+  })
+
   test("core workflow commands do not own final handoff menus", async () => {
     const workflowFiles = [
       ["portable", "compound-engineering", "commands", "workflows", "constitution.md"],

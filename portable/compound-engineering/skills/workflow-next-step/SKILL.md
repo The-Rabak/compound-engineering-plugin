@@ -39,6 +39,8 @@ Prefer explicit paths over discovery:
 3. frontmatter refs in known artifacts
 4. newest matching artifacts by date and topic
 
+When discovering or matching the plan artifact, treat either `docs/plans/YYYY-MM-DD-*-plan.md` or `docs/plans/YYYY-MM-DD-*-plan.html` as the plan (dual-read by extension). Every other artifact kind (brainstorm, architecture, tickets, execution sessions, solutions) stays `.md`-only in v1.
+
 Never mark a step complete only because an unrelated file exists. Match by explicit ref, topic slug, date proximity, source path, or parent/child frontmatter.
 
 ## Advisor Procedure
@@ -74,7 +76,7 @@ Use these checks to decide whether each step is complete for the current feature
 | constitution | `docs/constitution.md` exists with active/versioned constitution content. Optional for a feature unless the repo already has one. |
 | brainstorm | Matching `docs/brainstorms/YYYY-MM-DD-*-brainstorm.md` exists with `status: complete`, all `handoff.*` fields true, and no unresolved open questions. |
 | grill-with-docs | `CONTEXT.md` exists or was updated with canonical glossary terms, and the active brainstorm or plan has inline additions to decision-bearing sections such as `## Chosen Approach`, `## Key Decisions`, `## Architectural Context`, `## Resolved Questions`, `## Implementation`, or execution packets. |
-| plan | Matching `docs/plans/YYYY-MM-DD-*-plan.md` exists with `status: active` or later, `handoff.*` true, `tdd`, `execution_shape`, runtime/e2e sections, and execution packets. |
+| plan | Matching `docs/plans/YYYY-MM-DD-*-plan.md` (legacy) or `docs/plans/YYYY-MM-DD-*-plan.html` (pilot HTML-artifact output) exists with `status: active` or later, `handoff.*` true, `tdd`, `execution_shape`, runtime/e2e sections, and execution packets. For `.html`, read these same fixed-core facts from the plan's `#artifact-data` JSON island via `commands/workflows/references/html-artifacts/island-extraction-helper.md` instead of frontmatter/sections — never scrape the rendered HTML, and never fall back to a `.md` mirror. |
 | architecture | Matching `docs/architecture/YYYY-MM-DD-*-architecture.md` exists and the parent plan records it with `architecture_ref` or a labeled related-artifact link. |
 | deepen-plan | The selected plan was updated by deepening, or a `*-plan-deepened.md` file exists; WHY handoff remains intact; architecture artifact or explicit handoff was consumed. |
 | to-issues | `docs/tickets/YYYY-MM-DD-<topic>/index.md` exists with ticket files, dependency graph, execution batches, `last_completed_batch`, and the parent plan records `tickets_ref` or a labeled related-artifact link. |

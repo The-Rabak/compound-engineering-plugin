@@ -58,6 +58,7 @@ When the input is a ticket index, this command supports `--batches N-M`.
 1. **Read the work document and extract WHY + guardrail context**
 
     - Read the work document completely
+    - **Dual-read by plan-file extension.** Whenever this step loads a plan artifact -- whether the work document itself is a plan, or the parent plan is loaded below via `plan_ref`/recorded refs -- detect `.md` vs `.html` from the plan path's extension before reading. **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged). **`.html`** -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and read the plan's `#artifact-data` JSON island for the same fixed-core facts the legacy path reads from frontmatter/sections. On any extraction failure, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- never proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror. Only the plan artifact may be `.html` in v1; `brainstorm_ref`, `architecture_ref`, and `tickets_ref` always stay `.md` and are read as legacy Markdown regardless of the plan's own format.
     - If the input is a ticket index or ticket file, first load `commands/workflows/references/ticket-execution-contract.md` and verify the artifact includes the required index or ticket contract. Stop and send the user back to `/workflows:to-issues` if the contract is missing or malformed.
     - If the input is a ticket index, extract:
       - `plan_ref`, `architecture_ref`, `execution_shape`, `ticket_set_status`, `last_completed_batch`, and `total_batches`
@@ -70,7 +71,7 @@ When the input is a ticket index, this command supports `--batches N-M`.
       - `feature_home`, `depends_on`, `dependency_type`, `files`, `test_command`, and `status`
       - the compact packet in `## Local Context`
       - the parent trace in `## Parent Refs` and `## Deeper-Dive Refs`
-    - If the input is a ticket index or ticket file, load the parent plan and architecture artifact from the recorded refs before continuing. The index chooses the batch; the ticket files remain the execution packets; the parent artifacts provide WHY and boundary context.
+    - If the input is a ticket index or ticket file, load the parent plan and architecture artifact from the recorded refs before continuing (branch on the parent plan's extension per the dual-read rule above; the architecture artifact stays `.md`). The index chooses the batch; the ticket files remain the execution packets; the parent artifacts provide WHY and boundary context.
     - **Resolve canonical WHY linkage** from parent refs (these ground everything that follows):
       - **Canonical WHY source** -- `brainstorm_ref` when present, otherwise the parent `plan_ref`
       - **User outcome anchor** -- one concise line from the parent user story

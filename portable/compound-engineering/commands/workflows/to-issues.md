@@ -19,7 +19,7 @@ The command is named `/workflows:to-issues` for continuity with the broader plan
 <plan_path> #$ARGUMENTS </plan_path>
 
 If the plan path above is empty:
-1. Check for recent plans: `ls -t docs/plans/*-plan*.md 2>/dev/null | head -5`
+1. Check for recent plans (a plan may be a legacy `.md` file or the pilot `.html` output of `/workflows:plan`): `ls -t docs/plans/*-plan*.md docs/plans/*-plan*.html 2>/dev/null | head -5`
 2. Ask the user which plan should be ticketized.
 
 Do not proceed until you have a valid plan path.
@@ -63,6 +63,13 @@ Prefer a real `architecture_ref`. If no architecture artifact exists, build an e
 ## Workflow
 
 ### 1. Read the plan and architecture context
+
+**Dual-read by plan-file extension.** Detect which reader applies from the plan path's extension before reading anything:
+
+- **`.md`** — parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** — load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the plan's `#artifact-data` JSON island. Read the same fixed-core facts the legacy path reads from frontmatter/sections, sourced from the island instead (see the helper's field-coverage-map pointer for the frontmatter-key/section-name -> island-field mapping). If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
+
+Only the plan artifact itself may be `.html` in v1. `brainstorm_ref`, `architecture_ref`, and `tickets_ref` always resolve to `.md` regardless of the plan's own format -- read them as legacy Markdown.
 
 Read the plan and extract:
 

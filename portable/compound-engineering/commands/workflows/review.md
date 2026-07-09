@@ -95,8 +95,8 @@ git log --oneline ${default_branch}..HEAD | grep -i "plan\|docs/plans"
 # Check for execution session that references a plan
 ls docs/execution-sessions/work-*/STATE.md 2>/dev/null
 
-#check for recent plan files
-ls -t docs/plans/*-plan*.md 2>/dev/null | head -5
+#check for recent plan files (legacy .md or the pilot .html output of /workflows:plan)
+ls -t docs/plans/*-plan*.md docs/plans/*-plan*.html 2>/dev/null | head -5
 
 # Check for architecture files
 ls -t docs/architecture/*.md 2>/dev/null | head -5
@@ -108,7 +108,14 @@ ls -t docs/tickets/*/index.md 2>/dev/null | head -5
 ls -t README.md 2>/dev/null | head -5
 ```
 
-If a plan file is found, read it and extract:
+If a plan file is found, detect which reader applies from its file extension before reading anything:
+
+- **`.md`** — parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** — load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the plan's `#artifact-data` JSON island for the same fixed-core facts the legacy path reads from frontmatter/sections. If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch — do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
+
+Only the plan artifact itself may be `.html` in v1. `brainstorm_ref`, `architecture_ref`, and `tickets_ref` always resolve to `.md` regardless of the plan's own format.
+
+Whichever path applied above, extract:
 - **Problem Narrative** — why this work exists, what pain it solves
 - **User Story** — who benefits and what outcome they get
 - **Architectural Context** — how the solution fits in the system
@@ -201,7 +208,7 @@ The mandatory `e2e-test-strategist` owns the detailed e2e audit. Pass it the led
 <protected_artifacts>
 The following paths are compound-engineering pipeline artifacts and must never be flagged for deletion, removal, or gitignore by any review agent:
 
-- `docs/plans/*.md` — Plan files created by `/workflows:plan`. These are living documents that track implementation progress (checkboxes are checked off by `/workflows:work`).
+- `docs/plans/*.md` and `docs/plans/*.html` — Plan files created by `/workflows:plan` (legacy Markdown or the pilot HTML-artifact output). These are living documents that track implementation progress (checkboxes are checked off by `/workflows:work` for `.md`; the equivalent status field for `.html`).
 - `docs/architecture/*.md` — Architecture improvement artifacts and handoff contracts created or referenced between planning, deepening, execution, and review.
 - `docs/tickets/**/*.md` — Local ticket artifacts created by `/workflows:to-issues` and updated by ticket-scoped execution.
 - `docs/solutions/*.md` — Solution documents created during the pipeline.
