@@ -107,6 +107,6 @@ These artifacts exist for one reason: to make a human *want* to open a dense doc
 
 - Never ask the user a design question (color, font, layout preference). Zero user design input is a success criterion (SC5), not a fallback for when the composer is unsure.
 - Never load the gallery wholesale — classify against `gallery-manifest.md` first, then load only the matched files.
-- Never build or invoke a runnable `serialize`/`extract` module. The escaping primitive is authored directly into the artifact's inline `<script>` each time (per `primitives-catalog.md`); the only place a reusable JS implementation of it is allowed to live is `tests/html-artifact-island.test.ts`, which this skill never imports.
-- Never mutate an existing artifact's island in place — that is the (v2, not yet built) island-mutation skill's job, not this skill's.
+- Never build or invoke a runnable `serialize`/`extract` module. The escaping primitive is authored directly into the artifact's inline `<script>` each time (per `primitives-catalog.md`); the only place a reusable JS implementation of it is allowed to live is `tests/support/island-spec.ts`, which this skill never imports.
+- Never mutate an existing artifact's island in place — that is the `html-artifact-mutator` skill's job, not this skill's.
 - Never write a fact into the HTML that required guessing; if the payload is missing something the projection needs, stop and report the missing field to the caller instead of inventing it.

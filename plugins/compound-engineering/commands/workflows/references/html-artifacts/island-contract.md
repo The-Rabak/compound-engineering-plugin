@@ -33,7 +33,7 @@ Shared across every kind, strict, versioned. The extraction helper reads this fi
 | `refs.source_docs.plans` | `string[]` | |
 | `render_meta` | object | Writer-only. See below. |
 
-### `render_meta` (writer-only, reader deferred to v2)
+### `render_meta` (writer: composer; reader: html-artifact-mutator)
 
 The **projection recipe** (`CONTEXT.md`): how an artifact was rendered, so a future re-projection reuses the same design instead of re-classifying.
 
@@ -45,7 +45,7 @@ render_meta: {
 }
 ```
 
-The composer (T03) writes this field. No v1 consumer reads it — the shape is pinned now so v2 re-projection has a stable target and no artifact migration is needed later.
+The composer (v1) writes this field; no v1 consumer read it — the shape was pinned then so v2 re-projection would have a stable target and no artifact migration would be needed later. The `html-artifact-mutator` skill (v2) is the first and only reader: a content-class mutation always re-projects, and re-projection dispatches a fresh subagent that reuses this exact recorded `{ archetypes, design_seed }` rather than re-classifying the artifact from scratch. This is the genuine new work v2 adds on top of v1's writer — see "Mutation contract" below for the full rules. Neither mutation class ever writes to `render_meta`: it is read-only from the mutator's perspective, forever.
 
 ## Tier 2 — Contract core (`kind: "plan"`)
 
@@ -237,10 +237,44 @@ Several legacy sections restate frontmatter scalars in prose for human readabili
 | `packet.acceptance_criteria` | `slices[].acceptance_criteria` | 2 |
 | `packet.test_command` | `slices[].test_command` | 2 |
 
+## Mutation contract (`html-artifact-mutator`, v2)
+
+Shipped alongside the `html-artifact-mutator` skill — the shared, single-owner "update" capability every mutating consumer (deepen-plan back-writes, grill-with-docs enrichment, ref/status back-writes, etc.) goes through. See the skill's own `SKILL.md` for the full read → parse → mutate → re-serialize → re-project pipeline this section backs.
+
+### Reference-impl placement
+
+The mutator's reference implementation lives in `tests/html-artifact-mutation.test.ts`, built on top of the same `serialize`/`extract`/`extractIslandData` primitives this document already describes above. Those primitives were extracted out of `tests/html-artifact-island.test.ts` into `tests/support/island-spec.ts` (a non-test, spec-only helper module) specifically so both suites import the identical implementation instead of drifting copies — importing a `.test.ts` file would re-execute its `describe`/`test` blocks, so a shared module was required the moment a second suite needed the same primitives. `tests/support/island-spec.ts` is never imported by any shipped skill or artifact, for the exact same "un-shippable by construction" reason this document already gives for the original placement.
+
+### Mutable-region policy
+
+Two mutation classes, each scoped to a disjoint region of the schema:
+
+| Class | May touch | May NOT touch | Re-projects? |
+|---|---|---|---|
+| **Scalar / contract-field** | Tier-1 envelope `status`, and every `refs.*` leaf | `title`, `type`, `date`, `kind`, `schema_version` (identity/classification, set once and never rewritten), `render_meta` | No — patches the island field in place. An *optional* single-element rendered update runs inline when safe (see below); otherwise a graceful "Related Artifacts" fallback section is appended and logged. |
+| **Content** | Tier-2 contract-core fields, Tier-3 prose fields, Tier-4 `ext{}` | Every Tier-1 envelope key, including `render_meta` | Yes — always, via a fresh subagent dispatch that reuses the recorded `render_meta` (see below). |
+
+`render_meta` is never mutated by either class — see "`render_meta` (writer: composer; reader: html-artifact-mutator)" above.
+
+### Scalar-class rendered update: single-element-or-fallback
+
+A scalar mutation never re-projects, but an in-place rendered update is light enough to run inline when it is unambiguous: if the field's *old* value is rendered verbatim as **exactly one** element following the composer's own conventions (e.g. a `<span class="badge">{value}</span>` for `type`/`status`/`date`), that element's text is replaced with the HTML-entity-escaped new value. Zero matches (nothing rendered) or more than one match (ambiguous) are both treated as **unsafe** — the mutator does not guess. Instead it appends a rendered "Related Artifacts" section near the end of `<body>` stating the new value (itself backed by the same island field — never an invented fact) and records a log entry naming the fallback. This is exactly the behavior `tests/html-artifact-mutation.test.ts` proves for both branches.
+
+### Content-class re-projection
+
+A content mutation always changes what the visible HTML should say, so it always re-projects — but re-drawing an existing composed layout well is a creative-composition task, not deterministic string surgery. The mutator dispatches a **fresh subagent** — the same delegation contract the composer's Invocation section uses — supplying only: the composer's `SKILL.md` (in re-projection mode), the already-mutated and re-serialized island, and the recorded `render_meta`. The subagent re-renders only the affected section(s) from the current island content, reusing the exact `archetypes`/`design_seed` already recorded rather than reclassifying. The mutation is not complete — and must not be reported as complete to the caller — until this re-projection has run; stopping after the island write alone would leave the machine contract correct but the human view stale, which is exactly the drift this contract exists to prevent.
+
+Because a live subagent dispatch has no deterministic unit surface, `tests/html-artifact-mutation.test.ts` proves the mechanical part of this contract deterministically (round-trip validity, field-coverage-map compliance, and — the core re-projection-stability guarantee — that `render_meta` is reused byte-for-byte across a content mutation, never regenerated) and stops at a `needsReprojection: true` signal rather than hand-building a deterministic HTML re-renderer as a stand-in for the subagent. This mirrors the architecture handoff's explicit rejection of an "Approach-B deterministic renderer."
+
+### Fail-loud mutation
+
+Every mutation function is built on the exact same `extractIslandData` this document already specifies: a missing, empty, truncated, or fixed-core-incomplete island fails loud with the matching `MISSING_ISLAND` / `EMPTY_ISLAND` / `INVALID_JSON` / `MISSING_REQUIRED_FIELD` code before any write is attempted — never a silent or partial write. A field outside a mutation's class region fails loud with a dedicated `UNMUTABLE_FIELD` code instead.
+
 ## Verification
 
 - **Gate L1 (unit):** `serialize`/`extract` round-trip byte-for-byte on hostile payloads (`</script>`, `</SCRIPT >`, `<!--`, `&`, single/double quotes, U+2028, U+2029) at every tier (Tier 1 top-level string, Tier 3 prose, nested Tier 2 packet field); the four malformed-island cases above all fail loud.
 - **Gate L2 (unit):** every legacy element enumerated above has a coverage-map entry; no duplicate entries; every entry declares a valid tier.
 - **Gate L3/L4 (e2e, later batches):** the pilot equivalence gate and the malformed-island real-agent drill, discharged once the composer (T03) exists to produce a real `plan.html`.
+- **Gate M1 (unit, v2):** both mutation classes round-trip correctly against a real composed fixture (`tests/fixtures/html-artifacts/representative-plan.html`); a scalar patch preserves every other field byte-identically and safely updates or falls back on the rendered view; a content mutation preserves every other field byte-identically, still satisfies the field-coverage map, and preserves `render_meta` unchanged; every malformed-island case and every out-of-policy field fails loud.
 
-Test command: `bun test tests/html-artifact-island.test.ts`.
+Test commands: `bun test tests/html-artifact-island.test.ts`, `bun test tests/html-artifact-mutation.test.ts`.

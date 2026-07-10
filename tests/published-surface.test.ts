@@ -122,8 +122,8 @@ describe("published support surface", () => {
       expect(readme).toContain("todo-triage-researcher")
     }
 
-    expect(rootReadme).toContain("38 specialized agents, 27 commands, and 28 skills")
-    expect(rootReadme).not.toContain("39 specialized agents, 28 commands, and 27 skills")
+    expect(rootReadme).toContain("38 specialized agents, 27 commands, and 29 skills")
+    expect(rootReadme).not.toContain("38 specialized agents, 27 commands, and 28 skills")
   })
 
   test("published surfaces retire ideate as a standalone workflow and skill", async () => {
@@ -233,7 +233,7 @@ describe("published support surface", () => {
     expect(pluginReadme).toContain("| `todo-triage-researcher` | Produce compact evidence-backed action briefs for review-created todos |")
   })
 
-  test("publishes the html-artifact-composer skill and reconciles the skill count to 28", async () => {
+  test("publishes the html-artifact-composer skill and reconciles the skill count to 29", async () => {
     const plugin = await loadPortablePlugin(portableRoot)
     const skill = plugin.skills.find((candidate) => candidate.name === "html-artifact-composer")
     const portableSkill = await readRepoFile(
@@ -253,7 +253,7 @@ describe("published support surface", () => {
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
 
     expect(skill).toBeDefined()
-    expect(plugin.skills.length).toBe(28)
+    expect(plugin.skills.length).toBe(29)
 
     for (const content of [portableSkill, generatedSkill]) {
       expect(content).toContain("name: html-artifact-composer")
@@ -261,9 +261,39 @@ describe("published support surface", () => {
       expect(content).toContain("render_meta")
     }
 
-    expect(pluginReadme).toContain("Includes 38 specialized agents, 27 commands, and 28 skills.")
-    expect(pluginReadme).toContain("| Skills | 28 |")
+    expect(pluginReadme).toContain("Includes 38 specialized agents, 27 commands, and 29 skills.")
+    expect(pluginReadme).toContain("| Skills | 29 |")
     expect(pluginReadme).toContain("| `html-artifact-composer` |")
+  })
+
+  test("publishes the html-artifact-mutator skill (T02 of the v2 ticket set)", async () => {
+    const plugin = await loadPortablePlugin(portableRoot)
+    const skill = plugin.skills.find((candidate) => candidate.name === "html-artifact-mutator")
+    const portableSkill = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "html-artifact-mutator",
+      "SKILL.md",
+    )
+    const generatedSkill = await readRepoFile(
+      "plugins",
+      "compound-engineering",
+      "skills",
+      "html-artifact-mutator",
+      "SKILL.md",
+    )
+    const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
+
+    expect(skill).toBeDefined()
+
+    for (const content of [portableSkill, generatedSkill]) {
+      expect(content).toContain("name: html-artifact-mutator")
+      expect(content).toContain("render_meta")
+      expect(content).toContain("Mutable-region policy")
+    }
+
+    expect(pluginReadme).toContain("| `html-artifact-mutator` |")
   })
 
   test("retires local visual artifact guardrails from workflow-next-step and workflow prompts", async () => {
