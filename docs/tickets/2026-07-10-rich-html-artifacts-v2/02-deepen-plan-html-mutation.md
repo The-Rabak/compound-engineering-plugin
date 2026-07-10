@@ -2,7 +2,7 @@
 ticket_id: T02
 title: deepen-plan on plan.html + scalar back-writes
 kind: tracer-bullet
-status: ready
+status: completed
 plan_ref: docs/plans/2026-07-09-feat-rich-html-artifacts-v2-plan.md
 tickets_ref: docs/tickets/2026-07-10-rich-html-artifacts-v2/index.md
 architecture_ref: docs/architecture/2026-07-09-rich-html-artifacts-architecture.md

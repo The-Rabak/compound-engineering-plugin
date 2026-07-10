@@ -4,7 +4,7 @@ architecture_ref: docs/architecture/2026-07-09-rich-html-artifacts-architecture.
 brainstorm_ref: docs/brainstorms/2026-07-09-rich-html-artifacts-brainstorm.md
 execution_shape: vertical-slices
 ticket_set_status: in_progress
-last_completed_batch: 1
+last_completed_batch: 2
 total_batches: 6
 ---
 
@@ -87,7 +87,7 @@ Because there are **no multi-ticket batches**, there is no intra-batch race to c
 | Ticket | Title | Kind | Serves | Depends on | Type | Status |
 |---|---|---|---|---|---|---|
 | [T01](01-html-artifact-mutator-skill.md) | `html-artifact-mutator` skill (update capability) | infra-track | SC1 | — | none (v1 external) | completed |
-| [T02](02-deepen-plan-html-mutation.md) | `deepen-plan` on `plan.html` + scalar back-writes | tracer-bullet | SC2 | T01 | hard | ready |
+| [T02](02-deepen-plan-html-mutation.md) | `deepen-plan` on `plan.html` + scalar back-writes | tracer-bullet | SC2 | T01 | hard | completed |
 | [T03](03-brainstorm-html-grill-plan-input.md) | `brainstorm` → HTML + grill mutation + plan-input dual-read | expansion | SC3 | T01 | hard | ready |
 | [T04](04-architecture-html-downstream-read.md) | `architecture` → HTML + mutation + downstream dual-read | expansion | SC4 | T01 | hard | ready |
 | [T05](05-discriminating-md-ref-sweep.md) | Discriminating system-wide `.md`-ref sweep | hardening | SC5 | T02, T03, T04 | hard | ready |
