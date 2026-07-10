@@ -39,7 +39,7 @@ Prefer explicit paths over discovery:
 3. frontmatter refs in known artifacts
 4. newest matching artifacts by date and topic
 
-When discovering or matching the plan artifact, treat either `docs/plans/YYYY-MM-DD-*-plan.md` or `docs/plans/YYYY-MM-DD-*-plan.html` as the plan (dual-read by extension). Every other artifact kind (brainstorm, architecture, tickets, execution sessions, solutions) stays `.md`-only in v1.
+When discovering or matching the plan artifact, treat either `docs/plans/YYYY-MM-DD-*-plan.md` or `docs/plans/YYYY-MM-DD-*-plan.html` as the plan (dual-read by extension). Brainstorm and architecture artifacts are dual-read the same way -- `.md` legacy or `.html` since T03 (brainstorm) and T04 (architecture) respectively; see the `brainstorm` and `architecture` rows in Artifact Checks below. Tickets, execution sessions, and solutions stay `.md`-only.
 
 Never mark a step complete only because an unrelated file exists. Match by explicit ref, topic slug, date proximity, source path, or parent/child frontmatter.
 
@@ -74,11 +74,11 @@ Use these checks to decide whether each step is complete for the current feature
 | Step | Completion evidence |
 |---|---|
 | constitution | `docs/constitution.md` exists with active/versioned constitution content. Optional for a feature unless the repo already has one. |
-| brainstorm | Matching `docs/brainstorms/YYYY-MM-DD-*-brainstorm.md` exists with `status: complete`, all `handoff.*` fields true, and no unresolved open questions. |
+| brainstorm | Matching `docs/brainstorms/YYYY-MM-DD-*-brainstorm.md` (legacy) or `docs/brainstorms/YYYY-MM-DD-*-brainstorm.html` (since T03) exists with `status: complete`, all `handoff.*` fields true, and no unresolved open questions. For `.html`, read these same fixed-core facts from the brainstorm's `#artifact-data` JSON island via `commands/workflows/references/html-artifacts/island-extraction-helper.md` instead of frontmatter/sections — never scrape the rendered HTML, and never fall back to a `.md` mirror. |
 | grill-with-docs | `CONTEXT.md` exists or was updated with canonical glossary terms, and the active brainstorm or plan has inline additions to decision-bearing sections such as `## Chosen Approach`, `## Key Decisions`, `## Architectural Context`, `## Resolved Questions`, `## Implementation`, or execution packets. |
 | plan | Matching `docs/plans/YYYY-MM-DD-*-plan.md` (legacy) or `docs/plans/YYYY-MM-DD-*-plan.html` (pilot HTML-artifact output) exists with `status: active` or later, `handoff.*` true, `tdd`, `execution_shape`, runtime/e2e sections, and execution packets. For `.html`, read these same fixed-core facts from the plan's `#artifact-data` JSON island via `commands/workflows/references/html-artifacts/island-extraction-helper.md` instead of frontmatter/sections — never scrape the rendered HTML, and never fall back to a `.md` mirror. |
-| architecture | Matching `docs/architecture/YYYY-MM-DD-*-architecture.md` exists and the parent plan records it with `architecture_ref` or a labeled related-artifact link. |
-| deepen-plan | The selected plan was updated by deepening, or a `*-plan-deepened.md` file exists; WHY handoff remains intact; architecture artifact or explicit handoff was consumed. |
+| architecture | Matching `docs/architecture/YYYY-MM-DD-*-architecture.md` (legacy) or `docs/architecture/YYYY-MM-DD-*-architecture.html` (since T04) exists and the parent plan records it with `architecture_ref` or a labeled related-artifact link. For `.html`, read these same fixed-core facts from the architecture artifact's `#artifact-data` JSON island via `commands/workflows/references/html-artifacts/island-extraction-helper.md` instead of frontmatter/sections — never scrape the rendered HTML, and never fall back to a `.md` mirror. |
+| deepen-plan | The selected plan was updated by deepening, or a `*-plan-deepened.md`/`*-plan-deepened.html` file exists (dual-read by extension, same as the plan row above); WHY handoff remains intact; architecture artifact or explicit handoff was consumed. |
 | to-issues | `docs/tickets/YYYY-MM-DD-<topic>/index.md` exists with ticket files, dependency graph, execution batches, `last_completed_batch`, and the parent plan records `tickets_ref` or a labeled related-artifact link. |
 | work | `docs/execution-sessions/work-*/STATE.md` for the current plan/ticket source has `status: completed`, unit files exist, relevant plan/ticket statuses were updated, and validation/evidence is recorded. |
 | review | A review summary was produced, TDD/e2e evidence was checked when relevant, and review findings were either absent or written to `todos/`. |

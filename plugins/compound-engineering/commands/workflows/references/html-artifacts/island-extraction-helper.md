@@ -1,6 +1,6 @@
 # Island-Extraction Helper
 
-The one authorized reader every downstream consumer of an `html-artifacts` `.html` artifact includes. It is **prose, not a runnable module** — downstream agents `Read` files and cannot execute JS, so a shipped helper function would be uninvokable. Any command or skill that reads an `.html` artifact from this subsystem (`to-issues`, `work`, `review`, `workflow-next-step`) follows this contract instead of inventing its own parsing.
+The one authorized reader every downstream consumer of an `html-artifacts` `.html` artifact includes. It is **prose, not a runnable module** — downstream agents `Read` files and cannot execute JS, so a shipped helper function would be uninvokable. Any command or skill that reads an `.html` artifact from this subsystem (`to-issues`, `work`, `review`, `workflow-next-step`, `architecture`, `deepen-plan`, `document-review`, `session-history`) follows this contract instead of inventing its own parsing.
 
 This document is the reader-side companion to `references/html-artifacts/island-contract.md`, which is the schema spec. Read that document first for the fixed-core field list; this document only covers *how to read* it safely.
 

@@ -66,14 +66,19 @@ Prefer a real `architecture_ref`. If no architecture artifact exists, build an e
 - **`.md`** — parse frontmatter and sections as today (legacy path, unchanged).
 - **`.html`** — load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the plan's `#artifact-data` JSON island. Read the same fixed-core facts the legacy path reads from frontmatter/sections, sourced from the island instead (see the helper's field-coverage-map pointer for the frontmatter-key/section-name -> island-field mapping). If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
 
-Only the plan artifact itself may be `.html` in v1. `brainstorm_ref`, `architecture_ref`, and `tickets_ref` always resolve to `.md` regardless of the plan's own format -- read them as legacy Markdown.
+`tickets_ref` always resolves to `.md` regardless of the plan's own format -- read it as legacy Markdown. `brainstorm_ref` and `architecture_ref` may also be `.md` or `.html` (since T03 and T04 respectively) rather than `.md`-only.
 
 Read the plan and extract:
 
 - plan WHY artifacts
 - `execution_shape` and execution packets
-- `brainstorm_ref`, `architecture_ref`, `constitution_version`, `constitution_waivers`, and `source_docs` when present
-- feature-home ownership and shared/global decisions from the architecture artifact or explicit handoff
+- `brainstorm_ref`, `architecture_ref`, `constitution_version`, `constitution_waivers`, and `source_docs` when present -- these are carried forward here only as path values, not parsed for content
+- feature-home ownership and shared/global decisions from the architecture artifact or explicit handoff, per the dual-read below
+
+If an `architecture_ref` or matching `docs/architecture/*.md`/`docs/architecture/*.html` artifact exists, detect which reader applies from the architecture artifact's own file extension (independent of the plan's):
+
+- **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** (T04) -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the architecture artifact's `#artifact-data` JSON island for feature-home ownership and shared/global decisions, sourced from the island's `architecture`-kind Tier-2 core (`feature_homes[]`, `shared_global_decisions[]`) instead of frontmatter/sections. If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
 
 If the selected `execution_shape` is missing or the packets are too vague to map cleanly into tickets, stop and send the user back to `/deepen-plan` instead of inventing ticket boundaries.
 

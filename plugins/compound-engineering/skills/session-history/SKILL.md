@@ -29,13 +29,15 @@ Search the smallest set of repo artifacts that could answer the question:
 
 - `docs/solutions/`
 - `docs/execution-sessions/`
-- `docs/plans/`
-- `docs/architecture/`
+- `docs/plans/` (`.md` or `.html`)
+- `docs/architecture/` (`.md` or `.html`)
 - `docs/tickets/`
-- `docs/brainstorms/`
+- `docs/brainstorms/` (`.md` or `.html`)
 - related `README`, `CHANGELOG`, constitution, or workflow-reference docs when they explain intent or constraints
 
 Prefer artifacts that already encode structured learning, decisions, or execution evidence.
+
+**Dual-read by artifact extension.** A matched plan, brainstorm, or architecture artifact may be legacy `.md` or the `.html`-artifact output (plan since the html-artifacts pilot, brainstorm since T03, architecture since T04). Never scrape a rendered `.html` artifact for its content. Detect the reader from the artifact's own extension: **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged). **`.html`** -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and read the artifact's `#artifact-data` JSON island for that kind's fixed-core facts instead. If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror. Solutions, execution sessions, and tickets stay `.md`-only.
 
 ### Tier 2: Recent Harness Sessions (conditional fallback)
 

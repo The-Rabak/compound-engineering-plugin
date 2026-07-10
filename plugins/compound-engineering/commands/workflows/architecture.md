@@ -72,7 +72,12 @@ Escalate to deep architecture review when risk is high.
 
 ### 1. Read the plan and linked context
 
-Read the plan file and extract:
+**Dual-read by plan-file extension.** Detect which reader applies from the plan path's extension before reading anything:
+
+- **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** (pilot HTML-artifact output) -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the plan's `#artifact-data` JSON island. Read the same fixed-core facts the legacy path reads from frontmatter/sections, sourced from the island instead (see the helper's field-coverage-map pointer for the frontmatter-key/section-name -> island-field mapping). If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
+
+Read the plan and extract:
 - Problem Narrative
 - User Story
 - Success Criteria
@@ -82,7 +87,7 @@ Read the plan file and extract:
 - Current or likely feature homes
 - `brainstorm_ref`, `constitution_version`, `constitution_waivers`, `source_docs`, and any existing `architecture_ref`
 
-If `brainstorm_ref` exists, read it for stakeholder impact, resolved questions, and architectural context that should not be lost.
+If `brainstorm_ref` exists, read it for stakeholder impact, resolved questions, and architectural context that should not be lost. Detect which reader applies from the brainstorm artifact's own file extension (independent of the plan's): **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged). **`.html`** (T03) -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and read the brainstorm artifact's `#artifact-data` JSON island for the same fixed-core facts, sourced from the island's `brainstorm`-kind Tier-2 core instead. If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror.
 
 If an existing `architecture_ref` already exists, read it first and decide whether to update it in place or replace it with a newer artifact. Do not create duplicate artifacts without explaining why.
 

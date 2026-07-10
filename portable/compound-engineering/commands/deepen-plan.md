@@ -104,7 +104,7 @@ Reject raw research dumps. If a helper returns broad notes, distill them into th
 - **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
 - **`.html`** -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the plan's `#artifact-data` JSON island. Read the same fixed-core facts the legacy path reads from frontmatter/sections, sourced from the island instead (see the helper's field-coverage-map pointer for the frontmatter-key/section-name -> island-field mapping). If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
 
-`architecture_ref` may now be `.md` **or** `.html` (T04) -- detect its own extension independently of the plan's, and read it via the dual-read branch below (where `architecture_ref` is read). `brainstorm_ref` and `tickets_ref` still always resolve to `.md` regardless of the plan's own format -- read them as legacy Markdown. (Note: `brainstorm_ref` pointing to `.md` only is now stale in one sense -- `/workflows:brainstorm` has emitted `.html` since T03 -- but migrating that read is explicitly out of this ticket's scope; a future ticket must sweep it.)
+`architecture_ref` may now be `.md` **or** `.html` (T04) -- detect its own extension independently of the plan's, and read it via the dual-read branch below (where `architecture_ref` is read). `tickets_ref` still always resolves to `.md` regardless of the plan's own format -- read it as legacy Markdown. `brainstorm_ref` may also be `.md` **or** `.html` (T03) -- detect its own extension independently of the plan's, and read it via the dual-read branch below (where `brainstorm_ref` is read).
 
 Read the plan and extract only the contract needed for deepening:
 - Problem Narrative
@@ -121,7 +121,12 @@ Read the plan and extract only the contract needed for deepening:
 
 If any `handoff` field is false or missing, flag it before deepening: "Plan is missing [X]. Deepening may add technically correct but purpose-misaligned changes. Consider running `/workflows:plan` to repair the plan first." Continue only when the missing field is not required for the requested hardening.
 
-Read `brainstorm_ref` only when it exists and the plan needs missing stakeholder impact, rejected approaches, resolved-question context, or WHY clarification. Do not summarize the entire brainstorm; extract only facts that affect the manifest.
+Read `brainstorm_ref` only when it exists and the plan needs missing stakeholder impact, rejected approaches, resolved-question context, or WHY clarification. Detect which reader applies from its own file extension (independent of the plan's):
+
+- **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** (T03) -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the brainstorm artifact's `#artifact-data` JSON island for the same fixed-core facts, sourced from the island's `brainstorm`-kind Tier-2 core instead. If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
+
+Do not summarize the entire brainstorm; extract only facts that affect the manifest.
 
 Read `architecture_ref` when present, detecting which reader applies from its own file extension (independent of the plan's):
 

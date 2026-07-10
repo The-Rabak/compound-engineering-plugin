@@ -186,8 +186,9 @@ describe("workflow-next-step skill", () => {
       "SKILL.md",
     )
 
-    // The plan artifact is the only artifact kind that may be `.html` in v1
-    // (the html-artifacts pilot). The advisor must discover either
+    // The plan artifact was the first artifact kind to gain a `.html`
+    // pilot output; brainstorm (T03) and architecture (T04) are now
+    // dual-read the same way. The advisor must discover either
     // extension and, for `.html`, read the same fixed-core facts from the
     // island via the shared extraction helper instead of frontmatter.
     expect(content).toContain("docs/plans/YYYY-MM-DD-*-plan.md")
