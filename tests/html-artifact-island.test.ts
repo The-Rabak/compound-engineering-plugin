@@ -1,10 +1,13 @@
 import { describe, expect, test } from "bun:test"
 import {
+  buildValidBrainstormIslandFixture,
   buildValidIslandFixture,
   embedIslandInHtmlDocument,
   extract,
   extractIslandData,
+  REQUIRED_BRAINSTORM_FIXED_CORE_KEYS,
   REQUIRED_FIXED_CORE_KEYS,
+  REQUIRED_KEYS_BY_KIND,
   serialize,
 } from "./support/island-spec"
 
@@ -377,6 +380,178 @@ describe("field-coverage map (Gate L2)", () => {
 
   test("every coverage entry declares a valid tier (1-4)", () => {
     const invalidTiers = FIELD_COVERAGE_MAP.filter((entry) => ![1, 2, 3, 4].includes(entry.tier))
+    expect(invalidTiers).toEqual([])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Kind-aware required set (T03): `extractIslandData`'s fail-loud
+// required-field check must be keyed by the island's own `kind` instead of
+// hard-coding the `plan` kind's 16 keys for every artifact. A `brainstorm`
+// island legitimately lacks `slices`/`tdd`/`execution_shape`/etc.; feeding
+// one to a kind-unaware extractor would wrongly throw
+// `MISSING_REQUIRED_FIELD`, which would break the brainstorm dual-read
+// `/workflows:plan` needs and the `grill-with-docs` content mutation.
+// ---------------------------------------------------------------------------
+
+describe("kind-aware required set (brainstorm kind, T03)", () => {
+  test("a valid brainstorm-kind island extracts successfully without spuriously requiring plan-only fields", () => {
+    const fixture = buildValidBrainstormIslandFixture()
+    const html = embedIslandInHtmlDocument(serialize(fixture))
+    const result = extractIslandData(html)
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data).toEqual(fixture)
+    }
+  })
+
+  test("every brainstorm required fixed-core key triggers MISSING_REQUIRED_FIELD, naming that exact key, when deleted", () => {
+    for (const key of REQUIRED_BRAINSTORM_FIXED_CORE_KEYS) {
+      const fixture: Record<string, unknown> = buildValidBrainstormIslandFixture()
+      delete fixture[key]
+      const html = embedIslandInHtmlDocument(serialize(fixture))
+      const result = extractIslandData(html)
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error).toBe("MISSING_REQUIRED_FIELD")
+        expect(result.message).toContain(key)
+      }
+    }
+  })
+
+  test("plan-kind required behavior is unchanged: REQUIRED_KEYS_BY_KIND.plan is exactly REQUIRED_FIXED_CORE_KEYS", () => {
+    expect(REQUIRED_KEYS_BY_KIND.plan).toEqual(REQUIRED_FIXED_CORE_KEYS as unknown as string[])
+  })
+
+  test("an unrecognized/missing kind falls back to the plan-kind required set (documented current-behavior limit, not a silent pass)", () => {
+    const fixture: Record<string, unknown> = buildValidIslandFixture()
+    delete fixture.kind
+    const html = embedIslandInHtmlDocument(serialize(fixture))
+    const result = extractIslandData(html)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.error).toBe("MISSING_REQUIRED_FIELD")
+      expect(result.message).toContain("kind")
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Field-coverage map (L2) for kind: "brainstorm" (T03) -- mirrors the
+// plan-kind L2 gate above exactly, against brainstorm.md's mandatory
+// frontmatter + section template instead of plan.md's.
+// ---------------------------------------------------------------------------
+
+const FIELD_COVERAGE_MAP_BRAINSTORM: FieldCoverageEntry[] = [
+  // Tier 1 -- envelope (shared)
+  { legacyElement: "frontmatter.date", islandHome: "date", tier: 1 },
+  {
+    legacyElement: "frontmatter.topic",
+    islandHome: "title",
+    tier: 1,
+    note: "folded into title -- same as how plan's filename slug is not a separate island field",
+  },
+  { legacyElement: "frontmatter.status", islandHome: "status", tier: 1 },
+  { legacyElement: "frontmatter.handoff.problem_narrative", islandHome: "handoff.problem_narrative", tier: 2 },
+  { legacyElement: "frontmatter.handoff.user_story", islandHome: "handoff.user_story", tier: 2 },
+  {
+    legacyElement: "frontmatter.handoff.architectural_context",
+    islandHome: "handoff.architectural_context",
+    tier: 2,
+  },
+  { legacyElement: "frontmatter.handoff.success_criteria", islandHome: "handoff.success_criteria", tier: 2 },
+
+  // Tier 2 -- strict machine-consumed core for kind "brainstorm" (downstream
+  // *acts* on these: /workflows:plan's brainstorm-input dual-read,
+  // grill-with-docs' content mutation). Note these are Tier 3 for the
+  // `plan` kind -- tiering is per-kind, not per-field-name.
+  { legacyElement: "section.Problem Narrative", islandHome: "problem_narrative", tier: 2 },
+  { legacyElement: "section.User Story", islandHome: "user_story", tier: 2 },
+  { legacyElement: "section.Success Criteria", islandHome: "success_criteria[]", tier: 2 },
+  { legacyElement: "section.Architectural Context", islandHome: "architectural_context", tier: 2 },
+  {
+    legacyElement: "section.Chosen Approach",
+    islandHome: "chosen_approach",
+    tier: 2,
+    note: "required key, legitimately empty value -- consumed by plan.md's carry-forward but not gated non-empty",
+  },
+  { legacyElement: "section.Key Decisions", islandHome: "key_decisions[]", tier: 2 },
+  {
+    legacyElement: "section.Open Questions",
+    islandHome: "open_questions[]",
+    tier: 2,
+    note: "required key, legitimately [] -- brainstorm.md's Phase 3 requires these resolved before finalizing",
+  },
+  { legacyElement: "section.Resolved Questions", islandHome: "resolved_questions[]", tier: 2 },
+
+  // Tier 3 -- rendered prose (never machine-parsed) for kind "brainstorm"
+  { legacyElement: "section.Scope Boundary", islandHome: "scope_boundary", tier: 3 },
+  { legacyElement: "section.Non-goals / Deferred Ideas", islandHome: "non_goals", tier: 3 },
+  {
+    legacyElement: "section.Constitution Alignment",
+    islandHome: "constitution_alignment",
+    tier: 3,
+    note: "looser prose for the brainstorm kind -- unlike plan's structured constitution.version/waivers Tier-2 object",
+  },
+  { legacyElement: "section.Approaches Considered", islandHome: "approaches_considered", tier: 3 },
+  { legacyElement: "section.Stakeholder Impact", islandHome: "stakeholder_impact", tier: 3 },
+]
+
+/**
+ * The authoritative legacy-brainstorm ground truth this unit proves
+ * coverage against: every `brainstorm.md` frontmatter key and every
+ * mandatory template section (`brainstorm.md`'s Phase 3 "Document
+ * structure"). Authored independently of `FIELD_COVERAGE_MAP_BRAINSTORM` so
+ * the L2 test is a real check, not a tautology -- mirrors
+ * `LEGACY_PLAN_CONTRACT_ELEMENTS` above.
+ */
+const LEGACY_BRAINSTORM_CONTRACT_ELEMENTS = [
+  "frontmatter.date",
+  "frontmatter.topic",
+  "frontmatter.status",
+  "frontmatter.handoff.problem_narrative",
+  "frontmatter.handoff.user_story",
+  "frontmatter.handoff.architectural_context",
+  "frontmatter.handoff.success_criteria",
+  "section.Problem Narrative",
+  "section.User Story",
+  "section.Success Criteria",
+  "section.Architectural Context",
+  "section.Chosen Approach",
+  "section.Key Decisions",
+  "section.Scope Boundary",
+  "section.Non-goals / Deferred Ideas",
+  "section.Constitution Alignment",
+  "section.Approaches Considered",
+  "section.Stakeholder Impact",
+  "section.Open Questions",
+  "section.Resolved Questions",
+]
+
+describe("field-coverage map for kind: brainstorm (Gate L2, T03)", () => {
+  test("every legacy brainstorm contract element has a named island home", () => {
+    const coveredElements = new Set(FIELD_COVERAGE_MAP_BRAINSTORM.map((entry) => entry.legacyElement))
+    const missing = LEGACY_BRAINSTORM_CONTRACT_ELEMENTS.filter((element) => !coveredElements.has(element))
+
+    expect(missing).toEqual([])
+  })
+
+  test("the brainstorm field-coverage map has no duplicate legacy-element entries", () => {
+    const seen = new Set<string>()
+    const duplicates = FIELD_COVERAGE_MAP_BRAINSTORM.filter((entry) => {
+      if (seen.has(entry.legacyElement)) return true
+      seen.add(entry.legacyElement)
+      return false
+    })
+
+    expect(duplicates).toEqual([])
+  })
+
+  test("every brainstorm coverage entry declares a valid tier (1-4)", () => {
+    const invalidTiers = FIELD_COVERAGE_MAP_BRAINSTORM.filter((entry) => ![1, 2, 3, 4].includes(entry.tier))
     expect(invalidTiers).toEqual([])
   })
 })

@@ -12,6 +12,12 @@ This document is the **spec**. The canonical reference implementation — the ex
 - **Required set = the full envelope + the enumerated Tier-2 `plan` contract core.** Tier 3 (prose) and Tier 4 (open extension) are part of the schema but are not enforced as required by the extractor.
 - Legitimate per-kind absence does not weaken the contract: `constitution.version: null` (no `docs/constitution.md`), `refs.source_docs.figma: []` (no Figma refs), `refs.tickets_ref: null` (before ticketization), `tdd.exceptions: []` (no exceptions apply) are all valid, complete data — not missing data.
 
+### v2 update (T03): the `brainstorm` kind
+
+The `brainstorm` kind is now fully defined alongside `plan` — its own Tier-2 contract core (below) and its own field-coverage map entries (Gate L2). `architecture`/`deepen-plan` kinds remain reserved for later tickets (T04+); slotting one in means adding one more Tier-2 section plus one more entry in the kind-aware required-key lookup below — **not** building a general multi-kind registry (the architecture handoff is explicit about this: "slot new kinds in without a registry").
+
+The required-field check (`extractIslandData`) became **kind-aware** to support this: it looks up the required key set for the island's own `kind` instead of hard-coding the `plan` kind's 16 keys for every artifact (a `brainstorm` island legitimately has no `slices`/`tdd`/`execution_shape`; a kind-unaware check would wrongly fail it). See "The `REQUIRED_FIXED_CORE_KEYS` set" below for the exact mechanism and why `plan`-kind behavior is unchanged.
+
 ## Tier 1 — Envelope
 
 Shared across every kind, strict, versioned. The extraction helper reads this first to route any artifact regardless of kind.
@@ -111,15 +117,83 @@ ext: Record<string, unknown>
 
 Whatever a bespoke layout needs to surface. Machines ignore it; it renders richly; it keeps island backing (per the composer's hard rule — every fact in the HTML traces to *some* island field, even a Tier-4 one).
 
+## Tier 2 — Contract core (`kind: "brainstorm"`, T03)
+
+Per-kind, strict — downstream **acts** on these fields: `/workflows:plan`'s brainstorm-input dual-read (Path A/B) and `grill-with-docs`' content-class mutation (the canonical brainstorm mutator).
+
+**Tiering is per-kind, not per-field-name.** `problem_narrative`, `user_story`, and `architectural_context` are Tier-3 *prose* for the `plan` kind (nothing downstream parses them structurally) but are Tier-2 *contract core* here — `/workflows:plan`'s dual-read fails loud if they are missing from a brainstorm island, so they are required, machine-read facts for this kind. A discriminated union is free to assign the same field name a different tier per kind; nothing forces the tiers to line up across kinds.
+
+| Field | Type | Notes |
+|---|---|---|
+| `problem_narrative` | `string` | Required, expected non-empty (E2E floor). |
+| `user_story` | `string` | Required, expected non-empty (E2E floor). |
+| `architectural_context` | `string` | Required. |
+| `success_criteria` | `string[]` | Required. Simpler shape than the `plan` kind's `{id, statement, verification}` — brainstorm.md's template is a plain bullet list, not a structured table. |
+| `chosen_approach` | `string` | Required **key**, legitimately an **empty string** — see "Surfaced classification" below. |
+| `key_decisions` | `Array<{ decision, rationale }>` | Required, expected non-empty (E2E floor). The field `grill-with-docs` content-mutates to rewrite a decision in place. |
+| `resolved_questions` | `Array<{ question, answer }>` | Required, expected non-empty (E2E floor) — this is the post-brainstorm record of what was resolved, distinct from `open_questions` below. |
+| `open_questions` | `string[]` | Required **key**, legitimately **`[]`** — `brainstorm.md`'s Phase 3 requires every open question to be resolved (and moved into `resolved_questions`) before the artifact is finalized, so a healthy, complete brainstorm island has an empty array here, not a populated one. Same "required key, legitimately empty value" discipline the `plan` kind already uses for `tdd.exceptions: []`. |
+| `handoff.problem_narrative` | `boolean` | Presence flag, distinct from the Tier-3-for-plan/Tier-2-for-brainstorm prose field of the same name — same shape as the `plan` kind's `handoff`. |
+| `handoff.user_story` | `boolean` | |
+| `handoff.architectural_context` | `boolean` | |
+| `handoff.success_criteria` | `boolean` | |
+
+### Surfaced classification: `chosen_approach` and `open_questions`
+
+Both fields are **consumed** by `/workflows:plan`'s brainstorm-input dual-read (Path B carries forward "Chosen Approach" and resolves/carries "Open Questions"), so they cannot be dropped to Tier 3 without losing a real downstream dependency — but neither is gated **non-empty** the way `problem_narrative`/`user_story`/`key_decisions`/`resolved_questions` are:
+
+- `chosen_approach` may legitimately be an empty string in a `--lite` brainstorm where only one approach was ever discussed and no explicit "why this approach" prose was produced beyond the user story itself.
+- `open_questions` is legitimately `[]` in the **healthy, expected** case (see above) — a non-empty `open_questions` on a *finalized* brainstorm island would itself be a process violation, not a schema violation.
+
+Resolution: both are **required keys** (present on every brainstorm island, so downstream can read them unconditionally without defensive per-field existence checks) whose **value** may legitimately be empty — the same "required key, legitimately empty/null value" pattern the `plan` kind already establishes for `tdd.exceptions`/`refs.tickets_ref`. Neither is part of the four fields the T03 E2E floor gates non-empty (`problem_narrative`/`user_story`/`key_decisions`/`resolved_questions`); that floor is a content-health check on the authored artifact, separate from this schema-level required-key check.
+
+## Tier 3 — Content / prose (`kind: "brainstorm"`, T03)
+
+Rendered, never machine-parsed — the looser sections of `brainstorm.md`'s template that nothing downstream reads structurally.
+
+| Field | Type | Note |
+|---|---|---|
+| `scope_boundary` | `string` | |
+| `non_goals` | `string` | |
+| `constitution_alignment` | `string` | Looser prose for this kind — unlike the `plan` kind's structured `constitution.version`/`constitution.waivers` Tier-2 object. A brainstorm may propose a constitution amendment in prose; it does not carry a structured waiver array. |
+| `approaches_considered` | `string` | |
+| `stakeholder_impact` | `string` | |
+
+Tier 4 (`ext: Record<string, unknown>`) is the same open-extension mechanism described above — shared shape, no per-kind redefinition needed.
+
 ## The `REQUIRED_FIXED_CORE_KEYS` set
 
-The fail-loud extractor treats exactly these 16 top-level keys as required (Tier 1 + Tier 2; Tier 3/4 are excluded by design):
+The fail-loud extractor treats exactly these 16 top-level keys as required for `kind: "plan"` (Tier 1 + Tier 2; Tier 3/4 are excluded by design):
 
 ```
 schema_version, kind, title, type, date, status, refs, render_meta,
 execution_shape, tdd, runtime_stack, constitution, handoff, slices,
 success_criteria, suggested_e2e_suite
 ```
+
+### Kind-aware required set (`REQUIRED_KEYS_BY_KIND`, T03)
+
+Introducing a second kind (`brainstorm`) exposed a real bug: a required-field check hard-coded to the `plan` kind's 16 keys would wrongly throw `MISSING_REQUIRED_FIELD` on a legitimate `brainstorm` island, which has no `slices`/`tdd`/`execution_shape`/`runtime_stack`/`constitution`/`suggested_e2e_suite`. Feeding a valid brainstorm island to that check would break both downstream consumers that need it to succeed: `/workflows:plan`'s brainstorm-input dual-read, and `grill-with-docs`' content-class mutation.
+
+The fix is a small, kind-keyed lookup — **not** a general multi-kind registry framework (the architecture handoff's explicit instruction: "slot new kinds in without building a registry"):
+
+```
+REQUIRED_KEYS_BY_KIND: Record<string, readonly string[]> = {
+  plan: REQUIRED_FIXED_CORE_KEYS,        // the same 16 keys, unchanged
+  brainstorm: [
+    schema_version, kind, title, type, date, status, refs, render_meta,
+    problem_narrative, user_story, architectural_context, success_criteria,
+    chosen_approach, key_decisions, resolved_questions, open_questions, handoff,
+  ],
+}
+```
+
+Each entry is the **full** required set for that kind (Tier-1 envelope + that kind's Tier-2 core) — not a delta layered on a shared envelope list. `extractIslandData` reads the parsed island's own `kind` field and looks up the matching entry; a missing or unrecognized `kind` value falls back to `REQUIRED_FIXED_CORE_KEYS` (the `plan` set). This has two consequences, both intentional:
+
+- **`plan`-kind behavior is byte-identical to before this ticket.** A `plan` island with `kind` missing, `kind: "plan"`, or any other value all resolve to the exact same 16-key check the extractor already ran.
+- **An unrecognized future kind (e.g. `architecture`, before T04 registers it) falls back to the `plan` required set**, which may spuriously demand plan-only fields from that kind's island. This is a documented, known limit of this ticket's minimal fix, not a silent gap — T04 closes it for `architecture` by adding one more entry to this lookup, exactly as `brainstorm` was added here.
+
+The exported reference-impl name is `REQUIRED_KEYS_BY_KIND` (`tests/support/island-spec.ts`); `REQUIRED_FIXED_CORE_KEYS` keeps its original name and its original 16-key value, referenced from `REQUIRED_KEYS_BY_KIND.plan`.
 
 ## Serialization primitive
 
@@ -237,6 +311,38 @@ Several legacy sections restate frontmatter scalars in prose for human readabili
 | `packet.acceptance_criteria` | `slices[].acceptance_criteria` | 2 |
 | `packet.test_command` | `slices[].test_command` | 2 |
 
+### Frontmatter keys (`kind: "brainstorm"`, T03)
+
+| Legacy element | Island home | Tier | Note |
+|---|---|---|---|
+| `frontmatter.date` | `date` | 1 | |
+| `frontmatter.topic` | `title` | 1 | Folded into `title` — the same way `plan`'s filename slug (`<type>-<name>`) is derived, not a separate island field. |
+| `frontmatter.status` | `status` | 1 | |
+| `frontmatter.handoff.problem_narrative` | `handoff.problem_narrative` | 2 | |
+| `frontmatter.handoff.user_story` | `handoff.user_story` | 2 | |
+| `frontmatter.handoff.architectural_context` | `handoff.architectural_context` | 2 | |
+| `frontmatter.handoff.success_criteria` | `handoff.success_criteria` | 2 | |
+
+`brainstorm.md`'s legacy frontmatter has no `type:` key (a brainstorm document has no `feat`/`fix`/`refactor` classification of its own in the pre-migration template). Tier 1's `type` field is still required — shared envelope, strict for every kind — so the composer gathers/infers it the same way it already gathers `date`/`status`; this is a minor template-vs-envelope gap this ticket surfaces rather than papers over.
+
+### Semantic sections downstream consumes (`kind: "brainstorm"`, T03)
+
+| Legacy element | Island home | Tier | Note |
+|---|---|---|---|
+| `section.Problem Narrative` | `problem_narrative` | 2 | Tier 2 for this kind — see the brainstorm Tier-2 section above for why. |
+| `section.User Story` | `user_story` | 2 | |
+| `section.Success Criteria` | `success_criteria[]` | 2 | |
+| `section.Architectural Context` | `architectural_context` | 2 | |
+| `section.Chosen Approach` | `chosen_approach` | 2 | Required key, legitimately empty value. |
+| `section.Key Decisions` | `key_decisions[]` | 2 | The field `grill-with-docs` content-mutates. |
+| `section.Scope Boundary` | `scope_boundary` | 3 | |
+| `section.Non-goals / Deferred Ideas` | `non_goals` | 3 | |
+| `section.Constitution Alignment` | `constitution_alignment` | 3 | Looser prose for this kind — see the brainstorm Tier-3 section above. |
+| `section.Approaches Considered` | `approaches_considered` | 3 | |
+| `section.Stakeholder Impact` | `stakeholder_impact` | 3 | |
+| `section.Open Questions` | `open_questions[]` | 2 | Required key, legitimately `[]`. |
+| `section.Resolved Questions` | `resolved_questions[]` | 2 | |
+
 ## Mutation contract (`html-artifact-mutator`, v2)
 
 Shipped alongside the `html-artifact-mutator` skill — the shared, single-owner "update" capability every mutating consumer (deepen-plan back-writes, grill-with-docs enrichment, ref/status back-writes, etc.) goes through. See the skill's own `SKILL.md` for the full read → parse → mutate → re-serialize → re-project pipeline this section backs.
@@ -252,7 +358,9 @@ Two mutation classes, each scoped to a disjoint region of the schema:
 | Class | May touch | May NOT touch | Re-projects? |
 |---|---|---|---|
 | **Scalar / contract-field** | Tier-1 envelope `status`, and every `refs.*` leaf | `title`, `type`, `date`, `kind`, `schema_version` (identity/classification, set once and never rewritten), `render_meta` | No — patches the island field in place. An *optional* single-element rendered update runs inline when safe (see below); otherwise a graceful "Related Artifacts" fallback section is appended and logged. |
-| **Content** | Tier-2 contract-core fields, Tier-3 prose fields, Tier-4 `ext{}` | Every Tier-1 envelope key, including `render_meta` | Yes — always, via a fresh subagent dispatch that reuses the recorded `render_meta` (see below). |
+| **Content** | Tier-2 contract-core fields **for the artifact's own `kind`** (e.g. `plan`: `execution_shape`, `tdd`, `runtime_stack`, `constitution`, `handoff`, `slices`, `success_criteria`, `suggested_e2e_suite`; `brainstorm`: `chosen_approach`, `key_decisions`, `resolved_questions`, `open_questions`, `handoff`), Tier-3 prose fields, Tier-4 `ext{}` | Every Tier-1 envelope key, including `render_meta` | Yes — always, via a fresh subagent dispatch that reuses the recorded `render_meta` (see below). |
+
+The content class's mutable region is the same rule for every kind — "Tier-2/3/4, never Tier-1" — the field-name lists above are illustrative per kind, not an exhaustive allowlist coupled to `plan` alone. `grill-with-docs`' brainstorm content mutations (e.g. rewriting a `key_decisions[]` entry, or moving a question from `open_questions[]` to `resolved_questions[]`) are exactly as in-policy as a plan's `slices[]` enrichment.
 
 `render_meta` is never mutated by either class — see "`render_meta` (writer: composer; reader: html-artifact-mutator)" above.
 

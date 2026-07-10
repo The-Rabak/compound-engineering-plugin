@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add a dark-mode toggle to the settings page — brainstorm-narrative archetype exemplar</title>
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f6f7f9; --fg: #17181c; --muted: #5b6270;
+    --accent: #7a4de8; --border: #dde1e7; --radius: 10px;
+    --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0c0b14; --surface:#151322; --fg:#ece9f4; --muted:#a29cc0; --accent:#b79bff; --border:#2a2540; }
+  }
+  :root[data-theme="dark"] { --bg:#0c0b14; --surface:#151322; --fg:#ece9f4; --muted:#a29cc0; --accent:#b79bff; --border:#2a2540; }
+  :root[data-theme="light"] { --bg:#ffffff; --surface:#f6f7f9; --fg:#17181c; --muted:#5b6270; --accent:#7a4de8; --border:#dde1e7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-sans); line-height: 1.55; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 1.1rem; margin: 0; }
+  .exporters button, #theme-toggle { background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); padding: .4rem .7rem; cursor: pointer; font-family: var(--font-sans); }
+  .layout { display: grid; grid-template-columns: 200px minmax(0, 640px); gap: 2rem; padding: 1.5rem 1.5rem 3rem; justify-content: center; }
+  nav.toc { position: sticky; top: 1rem; align-self: start; }
+  nav.toc ol { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .35rem; }
+  nav.toc a { color: var(--muted); text-decoration: none; font-size: .85rem; }
+  nav.toc a:hover { color: var(--accent); }
+  main section { margin-bottom: 2.5rem; }
+  main h2 { font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 .9rem; }
+  .lede { font-size: 1.05rem; }
+  blockquote.user-story { margin: 1rem 0 0; padding: 1rem 1.25rem; border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; font-size: 1rem; }
+  .approach-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; align-items: start; }
+  aside.considered { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .85rem 1rem; font-size: .85rem; color: var(--muted); }
+  aside.considered h3 { margin: 0 0 .4rem; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  ol.decision-spine { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--border); }
+  .decision-spine li { position: relative; padding: 0 0 1.4rem 1.5rem; }
+  .decision-spine li::before { content: ""; position: absolute; left: -7px; top: .2rem; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+  .decision-spine h4 { margin: 0 0 .25rem; font-size: .95rem; }
+  .decision-spine p { margin: 0; color: var(--muted); font-size: .88rem; }
+  details.qa { border: 1px solid var(--border); border-radius: var(--radius); padding: .6rem .9rem; margin-bottom: .5rem; background: var(--surface); }
+  details.qa summary { cursor: pointer; font-weight: 600; font-size: .92rem; }
+  details.qa div { margin-top: .5rem; color: var(--muted); font-size: .88rem; }
+  ul.criteria-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+  ul.criteria-list li { display: flex; gap: .6rem; align-items: flex-start; font-size: .92rem; }
+  ul.criteria-list li::before { content: "✓"; color: var(--accent); font-weight: 700; }
+  .scope-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .scope-strip > div { border: 1px solid var(--border); border-radius: var(--radius); padding: .85rem 1rem; }
+  .scope-strip h3 { margin: 0 0 .4rem; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .stakeholder-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; }
+  .stakeholder-row article { border: 1px solid var(--border); border-radius: var(--radius); padding: .75rem .9rem; }
+  .stakeholder-row h4 { margin: 0 0 .3rem; font-size: .85rem; color: var(--accent); }
+  .stakeholder-row p { margin: 0; font-size: .85rem; color: var(--muted); }
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; }
+    .approach-row, .scope-strip { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Add a dark-mode toggle to the settings page</h1>
+  <div class="exporters">
+    <button id="theme-toggle" type="button" aria-pressed="false">Toggle theme</button>
+    <button id="export-json" type="button">Copy as JSON</button>
+    <button id="export-prompt" type="button">Copy as Prompt</button>
+    <button id="export-markdown" type="button">Copy as Markdown</button>
+  </div>
+</header>
+<div class="layout">
+  <nav class="toc" aria-label="Table of contents">
+    <ol>
+      <li><a href="#why">Why</a></li>
+      <li><a href="#approach">Chosen Approach</a></li>
+      <li><a href="#decisions">Key Decisions</a></li>
+      <li><a href="#questions">Resolved Questions</a></li>
+      <li><a href="#success">Success Criteria</a></li>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#stakeholders">Stakeholder Impact</a></li>
+    </ol>
+  </nav>
+  <main>
+    <section id="why">
+      <h2>Why</h2>
+      <p class="lede">Users working at night keep the app open in a bright white window with no way to dim it, and repeatedly ask support how to fix "the blinding white screen."</p>
+      <blockquote class="user-story">As a night-shift user, I need a dark-mode toggle in Settings, so that I can use the app comfortably at night, because currently the interface is fixed to a bright theme which causes eye strain and repeated support requests.</blockquote>
+    </section>
+    <section id="approach">
+      <h2>Chosen Approach</h2>
+      <div class="approach-row">
+        <p>Add a three-state toggle (System / Light / Dark) backed by a single CSS custom-property layer already used elsewhere in the app, persisted to the user's existing preferences record — no new storage mechanism, no new design tokens.</p>
+        <aside class="considered">
+          <h3>Also considered</h3>
+          <p>A pure OS-preference-only mode (rejected: users without OS-level dark mode support, e.g. older browsers, would have no way to opt in).</p>
+        </aside>
+      </div>
+    </section>
+    <section id="decisions">
+      <h2>Key Decisions</h2>
+      <ol class="decision-spine">
+        <li>
+          <h4>Persist the choice to the user's preferences record, not localStorage.</h4>
+          <p>Keeps the setting consistent across devices, matching every other Settings-page preference.</p>
+        </li>
+        <li>
+          <h4>Default new users to "System" rather than "Light."</h4>
+          <p>Respects the OS-level signal the user already set instead of silently overriding it.</p>
+        </li>
+      </ol>
+    </section>
+    <section id="questions">
+      <h2>Resolved Questions</h2>
+      <details class="qa" name="brainstorm-qa" open>
+        <summary>Should the toggle also change marketing/logged-out pages?</summary>
+        <div>No — deferred; this brainstorm covers the authenticated Settings experience only.</div>
+      </details>
+      <details class="qa" name="brainstorm-qa">
+        <summary>Does this require a new design token set?</summary>
+        <div>No — reuses the existing token layer; only the default values per theme change.</div>
+      </details>
+    </section>
+    <section id="success">
+      <h2>Success Criteria</h2>
+      <ul class="criteria-list">
+        <li>A user can switch between System, Light, and Dark from Settings without a page reload.</li>
+        <li>The chosen theme persists across sessions and devices.</li>
+      </ul>
+    </section>
+    <section id="scope">
+      <h2>Scope</h2>
+      <div class="scope-strip">
+        <div>
+          <h3>In scope</h3>
+          <p>Settings toggle, preference persistence, existing token-layer dark values.</p>
+        </div>
+        <div>
+          <h3>Deferred</h3>
+          <p>Marketing/logged-out pages, per-page theme overrides, a scheduled auto-switch by time of day.</p>
+        </div>
+      </div>
+    </section>
+    <section id="stakeholders">
+      <h2>Stakeholder Impact</h2>
+      <div class="stakeholder-row">
+        <article><h4>End users</h4><p>Fewer eye-strain complaints; a long-requested preference.</p></article>
+        <article><h4>Support</h4><p>Fewer "blinding white screen" tickets.</p></article>
+        <article><h4>Design</h4><p>No new tokens; the existing dark values finally get a first-class entry point.</p></article>
+      </div>
+    </section>
+  </main>
+</div>
+<!--
+  This is a static, hand-projected exemplar: every fact above was written
+  directly from the island below at generation time -- the composer does
+  NOT ship a runtime templating script that reconstructs the view from this
+  JSON on page load (see html-artifact-composer/SKILL.md step 4: "author
+  the island first, then project the HTML you just wrote it from"). The
+  inline script below is limited to genuine interactivity: theme toggling
+  and the three exporters -- never content generation. The single-open
+  accordion above needs zero JavaScript (native <details name="..."> group
+  behavior); this exemplar has no other bespoke interaction script.
+
+  Visible-variety note (this archetype vs. `implementation-plan`): a
+  narrative-first single reading column instead of a two-pane
+  tabs/stat-card execution view, a decision "spine" instead of a milestone
+  timeline, a native accordion for Q&A instead of a risk table, and a plain
+  checklist instead of stat-cards for success criteria. Different accent
+  hue too (violet vs. blue) via `design_seed`-driven token values -- the
+  composer picks its own per real artifact, this exemplar's palette is
+  illustrative only.
+-->
+<script type="application/json" id="artifact-data">{"schema_version":1,"kind":"example","archetype":"brainstorm-narrative","title":"Add a dark-mode toggle to the settings page (archetype exemplar)","problem_narrative":"Users working at night keep the app open in a bright white window with no way to dim it, and repeatedly ask support how to fix the blinding white screen.","user_story":"As a night-shift user, I need a dark-mode toggle in Settings, so that I can use the app comfortably at night, because currently the interface is fixed to a bright theme which causes eye strain and repeated support requests.","chosen_approach":"Add a three-state toggle (System / Light / Dark) backed by a single CSS custom-property layer already used elsewhere in the app, persisted to the user's existing preferences record.","key_decisions":[{"decision":"Persist the choice to the user's preferences record, not localStorage.","rationale":"Keeps the setting consistent across devices, matching every other Settings-page preference."},{"decision":"Default new users to System rather than Light.","rationale":"Respects the OS-level signal the user already set instead of silently overriding it."}],"resolved_questions":[{"question":"Should the toggle also change marketing/logged-out pages?","answer":"No -- deferred; this brainstorm covers the authenticated Settings experience only."},{"question":"Does this require a new design token set?","answer":"No -- reuses the existing token layer; only the default values per theme change."}],"success_criteria":["A user can switch between System, Light, and Dark from Settings without a page reload.","The chosen theme persists across sessions and devices."]}</script>
+<script>
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var root = document.documentElement;
+    root.setAttribute("data-theme", root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  var islandRawText = document.getElementById("artifact-data").textContent;
+  var islandData = JSON.parse(islandRawText);
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+      return;
+    }
+    var scratch = document.createElement("textarea");
+    scratch.value = text;
+    document.body.appendChild(scratch);
+    scratch.select();
+    document.execCommand("copy");
+    scratch.remove();
+  }
+
+  document.getElementById("export-json").addEventListener("click", function () {
+    copyToClipboard(islandRawText);
+  });
+
+  document.getElementById("export-prompt").addEventListener("click", function () {
+    copyToClipboard("Resume work on this brainstorm. Structured island data follows.\n\n" + islandRawText);
+  });
+
+  document.getElementById("export-markdown").addEventListener("click", function () {
+    var lines = ["# " + islandData.title, "", "## Key Decisions"];
+    islandData.key_decisions.forEach(function (entry) {
+      lines.push("- " + entry.decision + ": " + entry.rationale);
+    });
+    copyToClipboard(lines.join("\n"));
+  });
+</script>
+</body>
+</html>

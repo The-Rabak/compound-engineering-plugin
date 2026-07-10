@@ -116,6 +116,78 @@ export interface PlanArtifactIsland {
 }
 
 /**
+ * Fixed-core island schema v1, `kind: "brainstorm"` (added T03).
+ *
+ * Tier 1 (envelope) is byte-identical in shape to `PlanArtifactIsland`'s --
+ * the envelope is shared across every kind by contract, never widened
+ * per-kind. Tier 2 (this kind's contract core) is different from `plan`'s:
+ * `/workflows:plan`'s brainstorm-input dual-read and `grill-with-docs`'
+ * content-class mutation are the two downstream consumers that *act* on
+ * these fields, so they are the brainstorm kind's required, machine-read
+ * core -- not Tier-3 rendered prose, even though the same-named fields
+ * (`problem_narrative`, `user_story`, `architectural_context`) are Tier-3
+ * prose for the `plan` kind. A discriminated union is allowed to assign a
+ * field a different tier per kind; nothing requires the tiering to line up
+ * across kinds (see `island-contract.md`'s brainstorm Tier-2 section for the
+ * full rationale, including the surfaced `chosen_approach`/`open_questions`
+ * classification call).
+ */
+export interface BrainstormArtifactIsland {
+  [key: string]: unknown
+  // Tier 1 -- envelope (shared, identical shape to PlanArtifactIsland)
+  schema_version: 1
+  kind: "brainstorm"
+  title: string
+  type: string
+  date: string
+  status: string
+  refs: {
+    brainstorm_ref: string | null
+    architecture_ref: string | null
+    tickets_ref: string | null
+    source_docs: {
+      tickets: string[]
+      docs: string[]
+      figma: string[]
+      plans: string[]
+    }
+  }
+  render_meta: {
+    archetypes: string[]
+    design_seed: string
+    [additiveField: string]: unknown
+  }
+  // Tier 2 -- `brainstorm`-kind contract core (strict machine-consumed core
+  // per island-contract.md: present as a key on every brainstorm island;
+  // `chosen_approach`/`resolved_questions`/`open_questions` may legitimately
+  // hold an empty value -- same "required key, legitimately empty value"
+  // discipline the `plan` kind already uses for `tdd.exceptions`/`refs.tickets_ref`)
+  problem_narrative: string
+  user_story: string
+  architectural_context: string
+  success_criteria: string[]
+  chosen_approach: string
+  key_decisions: Array<{ decision: string; rationale: string }>
+  resolved_questions: Array<{ question: string; answer: string }>
+  /** Legitimately `[]` -- brainstorm.md's Phase 3 requires open questions to be resolved (moved to `resolved_questions`) before the artifact is finalized. */
+  open_questions: string[]
+  handoff: {
+    problem_narrative: boolean
+    user_story: boolean
+    architectural_context: boolean
+    success_criteria: boolean
+  }
+  // Tier 3 -- rendered prose (never machine-parsed) for the brainstorm kind
+  scope_boundary: string
+  non_goals: string
+  constitution_alignment: string
+  approaches_considered: string
+  stakeholder_impact: string
+  // Tier 4 -- open extension (machine-ignored)
+  ext: Record<string, unknown>
+}
+
+/**
  * Serializes an island payload into a breakout-safe JSON string suitable
  * for embedding inside `<script type="application/json" id="artifact-data">`.
  *
@@ -257,7 +329,15 @@ export function extractIslandData(html: string): IslandExtractionResult {
   }
 
   const data = parsed as Record<string, unknown>
-  const missingKey = REQUIRED_FIXED_CORE_KEYS.find((key) => !(key in data))
+  // Kind-aware required set (T03): look up the required keys for this
+  // island's own `kind` instead of hard-coding the `plan` kind's list for
+  // every artifact. A missing/unrecognized `kind` falls back to
+  // `REQUIRED_FIXED_CORE_KEYS`, which preserves the exact prior behavior
+  // for `plan` (and correctly still reports "kind" itself as missing when
+  // absent, since that key is present in every kind's required set).
+  const kind = typeof data.kind === "string" ? data.kind : undefined
+  const requiredKeys = (kind !== undefined && REQUIRED_KEYS_BY_KIND[kind]) || REQUIRED_FIXED_CORE_KEYS
+  const missingKey = requiredKeys.find((key) => !(key in data))
   if (missingKey) {
     return {
       ok: false,
@@ -362,6 +442,93 @@ export function buildValidIslandFixture(overrides: Partial<PlanArtifactIsland> =
   return { ...fixture, ...overrides }
 }
 
+/**
+ * Builds a complete, schema-valid `BrainstormArtifactIsland` fixture for
+ * tests (added T03). `overrides` shallow-merges over the defaults -- pass a
+ * hostile payload as e.g. `{ problem_narrative: "</script>" }` to exercise
+ * one field at a time, mirroring `buildValidIslandFixture` above.
+ *
+ * Content mirrors the CSV-export brainstorm that precedes
+ * `buildValidIslandFixture`'s CSV-export plan fixture, so the two fixture
+ * families tell one coherent story instead of two unrelated ones.
+ */
+export function buildValidBrainstormIslandFixture(
+  overrides: Partial<BrainstormArtifactIsland> = {},
+): BrainstormArtifactIsland {
+  const fixture: BrainstormArtifactIsland = {
+    schema_version: 1,
+    kind: "brainstorm",
+    title: "Add CSV Export to the Reporting Dashboard",
+    type: "feat",
+    date: "2026-07-09",
+    status: "complete",
+    refs: {
+      brainstorm_ref: null,
+      architecture_ref: null,
+      tickets_ref: null,
+      source_docs: {
+        tickets: [],
+        // Legitimately empty: brainstorm.md's legacy frontmatter template
+        // never captured `source_docs` at all -- doc gathering happens in
+        // `/workflows:plan`'s own step 1.5, not at brainstorm time.
+        docs: [],
+        figma: [],
+        plans: [],
+      },
+    },
+    render_meta: {
+      archetypes: ["brainstorm-narrative"],
+      design_seed: "brainstorm-csv-export-2026-07-09-a1",
+    },
+    problem_narrative:
+      "Analysts currently screenshot report tables to share them, losing precision and making downstream re-analysis impossible.",
+    user_story:
+      "As an analyst, I need to export any report I can view as a CSV file, so that I can re-analyze the underlying numbers in my own tools instead of retyping them from a screenshot.",
+    architectural_context:
+      "Lives in the existing reporting module; the serializer is a pure function reused by both the new export route and, later, a scheduled-export job.",
+    success_criteria: [
+      "A user can export any report they can view as a CSV file.",
+      "Exported CSV opens correctly in Excel and Google Sheets without column misalignment.",
+    ],
+    chosen_approach:
+      "Add a pure toCsv() serializer reused by a new export API route and a UI button, rather than a client-side-only export or a background export job, because it fully satisfies both success criteria with the least moving parts.",
+    key_decisions: [
+      {
+        decision: "Stream the export instead of buffering the whole CSV in memory",
+        rationale: "Some reports have 100k+ rows; buffering risks OOM on the API pod.",
+      },
+      {
+        decision: "Reuse the existing report-read permission for the export endpoint instead of a new scope",
+        rationale: "Export is the same data the user can already view; a new scope would be needless complexity.",
+      },
+    ],
+    resolved_questions: [
+      {
+        question: "Should exports support XLSX as well as CSV?",
+        answer: "No -- deferred; CSV alone satisfies both success criteria and the user's stated workflow.",
+      },
+    ],
+    open_questions: [],
+    handoff: {
+      problem_narrative: true,
+      user_story: true,
+      architectural_context: true,
+      success_criteria: true,
+    },
+    scope_boundary:
+      "Explicitly included: serializer, export route, UI button. Deferred: scheduled/recurring exports, XLSX format.",
+    non_goals: "Scheduled/recurring exports. XLSX format.",
+    constitution_alignment: "No constitution version is recorded for this repository; no waivers apply.",
+    approaches_considered:
+      "A client-side-only export was rejected because large reports would freeze the browser tab. A background export job was rejected as premature -- no user has asked for exports larger than an interactive request can serve.",
+    stakeholder_impact:
+      "Analysts get a direct export path. Engineering gains a reusable serializer for a later scheduled-export feature. No operations or business impact beyond normal feature rollout.",
+    ext: {},
+  }
+
+  return { ...fixture, ...overrides }
+}
+
 export const REQUIRED_FIXED_CORE_KEYS = [
   // Tier 1 -- envelope (shared across every kind)
   "schema_version",
@@ -382,6 +549,56 @@ export const REQUIRED_FIXED_CORE_KEYS = [
   "success_criteria",
   "suggested_e2e_suite",
 ] as const
+
+/**
+ * Tier-2 contract-core keys for `kind: "brainstorm"` (added T03), expressed
+ * as the FULL required-key set for the kind (Tier-1 envelope + this kind's
+ * Tier-2 core) -- the same "full set, not a delta" shape
+ * `REQUIRED_FIXED_CORE_KEYS` already uses for `plan`. See
+ * `island-contract.md`'s brainstorm Tier-2 section for the field-by-field
+ * rationale, including why `problem_narrative`/`user_story`/
+ * `architectural_context` are required core here despite being Tier-3
+ * prose for the `plan` kind.
+ */
+export const REQUIRED_BRAINSTORM_FIXED_CORE_KEYS = [
+  // Tier 1 -- envelope (shared across every kind)
+  "schema_version",
+  "kind",
+  "title",
+  "type",
+  "date",
+  "status",
+  "refs",
+  "render_meta",
+  // Tier 2 -- contract core for kind "brainstorm"
+  "problem_narrative",
+  "user_story",
+  "architectural_context",
+  "success_criteria",
+  "chosen_approach",
+  "key_decisions",
+  "resolved_questions",
+  "open_questions",
+  "handoff",
+] as const
+
+/**
+ * Kind-aware required-key lookup (the T03 fix): `extractIslandData`'s
+ * fail-loud required-field check used to hard-code the `plan` kind's 16
+ * keys for every artifact, which would wrongly throw `MISSING_REQUIRED_FIELD`
+ * on a legitimate `brainstorm` island (it has no `slices`/`tdd`/etc.). Each
+ * entry here is already the FULL required set for that kind (envelope +
+ * that kind's Tier-2 core), so a lookup miss (missing/unrecognized `kind`)
+ * falls back to `REQUIRED_FIXED_CORE_KEYS` -- preserving today's exact
+ * behavior for `plan` and for every kind this repository could produce
+ * before this ticket. This is intentionally a plain keyed lookup, not a
+ * general multi-kind registry: a future kind (e.g. `architecture`, T04)
+ * registers one more entry here, nothing else.
+ */
+export const REQUIRED_KEYS_BY_KIND: Record<string, readonly string[]> = {
+  plan: REQUIRED_FIXED_CORE_KEYS,
+  brainstorm: REQUIRED_BRAINSTORM_FIXED_CORE_KEYS,
+}
 
 /**
  * Embeds a pre-serialized JSON string inside a full HTML document's

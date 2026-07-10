@@ -4,7 +4,7 @@
 
 `type` is the document's primary shape; `tags[]` are additional matchable facets. An artifact commonly composes more than one row — a full-stack `plan` typically matches `implementation-plan` + `milestone-grid` + `risk-table`, and sometimes `flowchart`.
 
-Full HTML exemplars exist **only** for the four plan-composing rows (`storage: exemplar`); every other row is a compact recipe sheet (`storage: recipe`) that also doubles as the bespoke-drafting blueprint when nothing in the gallery fits.
+Full HTML exemplars exist for the four plan-composing rows plus the `brainstorm-narrative` anchor row added in T03 (`storage: exemplar`); every other row is a compact recipe sheet (`storage: recipe`) that also doubles as the bespoke-drafting blueprint when nothing in the gallery fits.
 
 | id | family | type | tags[] | one-line-intent | storage | path |
 |---|---|---|---|---|---|---|
@@ -12,6 +12,8 @@ Full HTML exemplars exist **only** for the four plan-composing rows (`storage: e
 | `flowchart` | infra-ops | diagram | pipeline, architecture, sequence | Clickable-SVG pipeline/architecture diagram with a detail panel per node | exemplar | `archetypes/flowchart.html` |
 | `milestone-grid` | planning | roadmap | timeline, dependencies, sequencing | Ordered timeline of execution units showing dependency chains | exemplar | `archetypes/milestone-grid.html` |
 | `risk-table` | planning | risk | exceptions, waivers, impact | Risk/impact table rendered from an island's exception/waiver arrays | exemplar | `archetypes/risk-table.html` |
+| `brainstorm-narrative` | planning | brainstorm | narrative, decisions, why-context | Narrative WHY-context read: problem/user-story lede, decision spine, resolved-questions accordion, plain-checklist success criteria | exemplar | `archetypes/brainstorm-narrative.html` |
+| `decision-log` | planning | brainstorm | decisions, resolved-questions, narrative | Decision spine + resolved-questions accordion companion recipe (the decision/Q&A portion alone, for a bespoke document that doesn't need the full narrative layout) | recipe | `recipes/decision-log.md` |
 | `code-review-pr-writeup` | code | review | diff, comments, pr | Diff-rows + comment-bubble writeup of a reviewed change set | recipe | `recipes/code-review-pr-writeup.md` |
 | `module-map` | code | reference | architecture, dependencies, modules | Clickable module/dependency map with a detail panel per module | recipe | `recipes/module-map.md` |
 | `component-variants` | code | reference | ui, design-system, variants | Grid of component variants with props/state called out per card | recipe | `recipes/component-variants.md` |

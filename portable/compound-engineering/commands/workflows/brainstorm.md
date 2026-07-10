@@ -170,113 +170,70 @@ Iterate until confirmed. This context map flows into every execution agent's `{{
 
 ### Phase 3: Capture the Design
 
-Write a brainstorm document to `docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.md`.
+Write a brainstorm artifact to `docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.html`.
 
 Ensure `docs/brainstorms/` directory exists before writing.
 
-**Document structure (mandatory sections for downstream handoff):**
+Assemble one decision-bearing payload, then hand it to the `html-artifact-composer` skill to project as a self-contained HTML artifact. Do not hand-write HTML and do not hand-write a `.md` file for the brainstorm output -- the composer is the single writer of the artifact.
 
-```markdown
----
-date: YYYY-MM-DD
-topic: <kebab-case-topic>
+**IMPORTANT -- resolve Open Questions before assembling the payload:** Before gathering the payload below, check whether any open questions remain unresolved from the dialogue in Phases 1-2.5. If there are open questions, YOU MUST ask the user about each one using AskUserQuestion before proceeding. Every question that gets an answer becomes a `resolved_questions[]` entry; `open_questions[]` on the payload must be `[]` once this step completes -- the composer projects whatever it is given, so an unresolved open question left off this step ships silently unresolved into the artifact.
+
+#### Required Island Payload (Tier 1 envelope + Tier 2 `brainstorm` contract core)
+
+Gather exactly these fields before invoking the composer -- same content the legacy hand-authored template used to carry, now the composer's input rather than hand-written Markdown. The payload's shape matches `commands/workflows/references/html-artifacts/island-contract.md`'s Tier 1 envelope + Tier 2 `brainstorm` contract core exactly:
+
+```yaml
+title: [Topic Title]
+type: [feat|fix|refactor]
 status: complete
+date: YYYY-MM-DD
+refs:
+  brainstorm_ref: null
+  architecture_ref: null
+  tickets_ref: null
+  source_docs:
+    tickets: []
+    docs: []
+    figma: []
+    plans: []
 handoff:
   problem_narrative: true
   user_story: true
   architectural_context: true
   success_criteria: true
----
-
-# <Topic Title>
-
-## Problem Narrative
-
-[The synthesized problem statement from Phase 1.4. WHY we're building this.
-2-4 sentences: who has the problem, what triggers it, what the impact is.]
-
-## User Story
-
-[The structured user story from Phase 1.4. The north star for all downstream work.]
-
-As a [persona],
-I need to [action]
-so that [outcome],
-because currently [pain point]
-which causes [impact].
-
-## Success Criteria
-
-[How we'll know this is working. Tied to the user story, not just technical correctness.]
-
-- [Measurable outcome 1 -- linked to the user story's "so that"]
-- [Measurable outcome 2]
-- [Observable behavior that proves the problem is solved]
-
-## Architectural Context
-
-[The structural context map from Phase 2.5. WHERE this lives in the system.]
-
-- **Lives in:** [service/module/layer]
-- **Feature home:** [primary feature namespace or module home]
-- **Interacts with:** [neighboring systems/modules]
-- **User entry point:** [UI/API/CLI/event]
-- **Data:** [what data flows, where it lives]
-- **Dependencies:** [what this depends on, what may depend on it]
-- **Shared / global notes:** [what should stay shared instead of being absorbed into the feature home]
-
-## Chosen Approach
-
-[Description of the selected approach and WHY it was chosen -- traced back to the
-user story and problem narrative. Not just "it's simpler" but "it's simpler AND
-it fully addresses the user's need because..."]
-
-## Key Decisions
-
-- [Decision 1]: [Rationale tied to problem/user story]
-- [Decision 2]: [Rationale tied to problem/user story]
-
-## Scope Boundary
-
-[Compact statement of what this brainstorm includes now, using the minimal effective planning hierarchy: explicit request, confirmed decisions, and necessary inferences.]
-
-## Non-goals / Deferred Ideas
-
-- [Useful adjacent idea, persona, workflow, or hardening item that is intentionally not part of this plan]
-- [Optional complexity to revisit only if later success criteria require it]
-
-## Constitution Alignment
-
-- **Relevant project rules:** [Which constitution principles or baselines matter here]
-- **No amendment needed because:** [Why the feature fits existing rules]
-- **Proposed amendment (if any):** [Only when this feature exposes a durable gap in the constitution]
-
-## Approaches Considered
-
-[Brief summary of alternatives and why they were not chosen, relative to the
-user story and success criteria.]
-
-## Stakeholder Impact
-
-[Who is affected by this change and how. Populated from Phase 1.2 dialogue.]
-
-- **End users:** [How their experience changes]
-- **Developers:** [How this affects the codebase, patterns, maintenance]
-- **Operations:** [Deployment, monitoring, infrastructure impact]
-- **Business:** [Revenue, cost, compliance, timeline impact]
-
-## Open Questions
-
-- [Any unresolved questions for the planning phase]
-
-## Resolved Questions
-
-- [Questions that were resolved during brainstorming, with answers]
+problem_narrative: "" # Phase 1.4 synthesis -- WHY we're building this, 2-4 sentences
+user_story: "" # Phase 1.4 synthesis -- the north star for all downstream work
+architectural_context: "" # Phase 2.5 structural context map -- WHERE this lives in the system
+success_criteria: [] # Phase 1.4 synthesis, one string per measurable outcome tied to the user story's "so that"
+chosen_approach: "" # Phase 2 selection + WHY it was chosen, traced back to the user story
+key_decisions: [] # [{ decision, rationale }] -- rationale tied to problem/user story
+resolved_questions: [] # [{ question, answer }] -- every question resolved via AskUserQuestion above
+open_questions: [] # MUST be [] once the resolution step above completes
 ```
 
-**IMPORTANT:** Before finalizing the brainstorm artifact, check if there are any Open Questions listed in the brainstorm document. If there are open questions, YOU MUST ask the user about each one using AskUserQuestion before completion. Move resolved questions to the "Resolved Questions" section.
+Never emit an empty optional element by omitting its key: if a list is legitimately empty (no key decisions surfaced yet, no source docs gathered), pass it as `[]`/`""`/`null` rather than dropping the key -- the composer still needs every key present per the fixed-core contract. `chosen_approach` and `open_questions` are the two fields that may legitimately hold an empty value (`island-contract.md`'s brainstorm Tier-2 section explains why); every other field above should be non-empty by the time this phase dispatches the composer.
 
-**Validation:** Check that all `handoff` frontmatter fields are `true`. If any section is empty or missing, go back and fill it. The downstream phases depend on this contract.
+#### Required Island Content (Tier 3 prose)
+
+Gather exactly the looser content the legacy body sections used to hold -- the composer projects each into a navigable, narrative-first section instead of a markdown heading:
+
+- `scope_boundary` -- the compact **Scope Boundary** statement: what this brainstorm includes now, using the minimal effective planning hierarchy (explicit request, confirmed decisions, necessary inferences).
+- `non_goals` -- the **Non-goals / Deferred Ideas** list: useful adjacent ideas, personas, workflows, or hardening items intentionally deferred, plus optional complexity to revisit only if later success criteria require it.
+- `constitution_alignment` -- relevant project rules, why no amendment is needed, or a proposed amendment when this feature exposes a durable constitution gap.
+- `approaches_considered` -- brief summary of alternatives and why they were not chosen, relative to the user story and success criteria.
+- `stakeholder_impact` -- end users / developers / operations / business impact, populated from Phase 1.2 dialogue.
+
+Anything decision-bearing with no field above (a bespoke diagram, a persona map) goes into `ext{}` on the payload, never handed to the composer as free-floating prose -- the composer's hard rule requires island backing for every rendered fact.
+
+#### Dispatch the composer via a fresh subagent
+
+Do **not** load and run the composer inline in this brainstorming context -- by this point the context holds the full discovery dialogue, which the projection does not need. Mirror the exact fresh-subagent Invocation contract `commands/workflows/plan.md` already uses at its own artifact-write step (`skills/html-artifact-composer/SKILL.md` -> "Invocation"):
+
+1. **Assemble the `payload`** from the fields gathered above -- it alone must carry every fact the artifact will show.
+2. **Dispatch one fresh subagent** whose entire context is: an instruction to **load and follow** `skills/html-artifact-composer/SKILL.md` (point it at the file; do not paste the skill body into the prompt -- the skill is its instruction set), `target_path` (the path above), and the `payload`.
+3. **The subagent returns only** the written artifact path (plus any missing-required-field report). On a missing-field report, fill the field from Phases 1-2.5 and re-dispatch -- never let the composer fabricate a value.
+
+**Validation before finalizing:** Check that all four `handoff` fields are `true` and that `open_questions` is `[]`. If any payload field is empty or missing where the brainstorm's own dialogue produced it, go back and fill it before dispatching -- the downstream phases (`/workflows:plan`'s dual-read, `grill-with-docs`' content mutation) depend on this contract.
 
 ### Phase 4: Finalize Artifact
 
@@ -289,7 +246,7 @@ When complete, display:
 ```
 Brainstorm complete!
 
-Document: docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.md
+Document: docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.html
 
 Problem: [One-sentence problem narrative]
 User Story: As a [persona], I need to [action] so that [outcome]

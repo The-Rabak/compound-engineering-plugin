@@ -62,7 +62,9 @@ Authored here (the shipped mutation contract) and mirrored in `island-contract.m
 | Class | May touch | May NOT touch |
 |---|---|---|
 | **scalar** | Tier-1 envelope `status`, and every `refs.*` leaf (`refs.brainstorm_ref`, `refs.architecture_ref`, `refs.tickets_ref`, `refs.source_docs.*`) | `title`, `type`, `date`, `kind`, `schema_version` (identity/classification, set once at composition and never rewritten), `render_meta` (writer-only) |
-| **content** | Tier-2 contract-core fields (`execution_shape`, `tdd`, `runtime_stack`, `constitution`, `handoff`, `slices`, `success_criteria`, `suggested_e2e_suite`), Tier-3 prose fields, Tier-4 `ext{}` | Every Tier-1 envelope key, including `render_meta` |
+| **content** | Tier-2 contract-core fields **for the artifact's own `kind`** (e.g. `plan`: `execution_shape`, `tdd`, `runtime_stack`, `constitution`, `handoff`, `slices`, `success_criteria`, `suggested_e2e_suite`; `brainstorm`: `chosen_approach`, `key_decisions`, `resolved_questions`, `open_questions`, `handoff`), Tier-3 prose fields, Tier-4 `ext{}` | Every Tier-1 envelope key, including `render_meta` |
+
+The per-kind field names above are illustrative, not an exhaustive allowlist scoped to `plan` alone — the rule is "Tier-2/3/4 for whichever kind this artifact is, never Tier-1," so a `brainstorm` artifact's `key_decisions[]`/`resolved_questions[]`/`open_questions[]` are exactly as in-policy for a content mutation as a `plan`'s `slices[]`. See `island-contract.md`'s per-kind Tier-2 sections for the authoritative field list per `kind`.
 
 `render_meta` is never mutated by either class. Scalar mutations don't touch it because they
 never re-project. Content mutations don't touch it because re-projection must *reuse* the

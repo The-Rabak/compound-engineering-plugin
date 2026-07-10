@@ -58,6 +58,7 @@ Use these references as contracts. Load them only when their section is needed; 
 - `commands/workflows/references/tdd-evidence-contract.md`
 - `commands/workflows/references/e2e-testing-contract.md`
 - `commands/workflows/references/vertical-slice-architecture.md` when `execution_shape.mode=vertical-slices`
+- `commands/workflows/references/html-artifacts/island-extraction-helper.md` and `commands/workflows/references/html-artifacts/island-contract.md` when the brainstorm being read as input (Path A or Path B) is a `.html` artifact
 
 When dispatching a named agent, apply `Named Agent Dispatch` from `orchestration-protocol.md`: verify the bundled agent source and metadata, dispatch the resolved agent identifier, and pass only workflow-specific payload plus resolved context. Do not paste the agent file body into the prompt.
 
@@ -134,23 +135,32 @@ Every plan must have:
 
 Choose exactly one source path.
 
+#### Brainstorm Input Dual-Read (feature-local)
+
+Whenever a brainstorm is read as input below (Path A step 4's `brainstorm_ref`, or Path B's matched brainstorm), detect which reader applies from the brainstorm path's extension before reading anything -- `/workflows:brainstorm` now emits `.html`, but older `.md` brainstorms still exist and are read unchanged:
+
+- **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the brainstorm's `#artifact-data` JSON island. Read the same lynchpin facts the legacy path reads from frontmatter/sections, sourced from the island instead: `problem_narrative`, `user_story`, `architectural_context`, `success_criteria[]`, `chosen_approach`, `key_decisions[]`, `resolved_questions[]`, `open_questions[]`, and `handoff.*` (see `island-contract.md`'s brainstorm-kind field-coverage map for the section-name -> island-field mapping). If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
+
+This branch is feature-local to this workflow's brainstorm-input step and does not change how `/workflows:plan` writes its own artifact (still the composer, per step 4 below).
+
 #### Path A: Spec or Plan File Provided
 
 If the arguments contain a `.md` path:
 1. Read the file.
 2. Announce the source path.
 3. Extract title, problem, approach, acceptance criteria, existing tasks, open questions, and any frontmatter refs.
-4. If `brainstorm_ref` exists, read that brainstorm and inherit its lynchpin sections.
+4. If `brainstorm_ref` exists, read that brainstorm (`.md` or `.html` -- see Brainstorm Input Dual-Read above) and inherit its lynchpin sections.
 5. Preserve well-defined sections and enrich only the gaps needed for this workflow's required contract.
 
 #### Path B: Matching Brainstorm Found
 
-If no file path is provided, check `docs/brainstorms/` for a matching recent brainstorm.
+If no file path is provided, check `docs/brainstorms/` for a matching recent brainstorm (`.md` or `.html`).
 
 Use a brainstorm only when topic/title/frontmatter clearly matches the request. If several match, ask the user which one to use.
 
 When a brainstorm is selected:
-1. Read it.
+1. Read it (see Brainstorm Input Dual-Read above).
 2. Carry forward its Problem Narrative, User Story, Architectural Context, Success Criteria, Chosen Approach, Key Decisions, and Open Questions.
 3. Resolve blocking open questions before planning.
 4. Do not re-decide settled brainstorm decisions unless research exposes a contradiction.
@@ -334,7 +344,7 @@ For simple low-risk plans, the orchestrator may write a compact suggested e2e su
 
 ### 4. Compose the Plan Artifact
 
-Assemble one decision-bearing payload, then hand it to the `html-artifact-composer` skill to project as a self-contained HTML artifact. Do not hand-write HTML and do not hand-write a `.md` file for the plan output — the composer is the single writer of the artifact. (The `.md` brainstorm this plan may have read as *input* in step 1 is unaffected; only the plan's own *output* format changes.)
+Assemble one decision-bearing payload, then hand it to the `html-artifact-composer` skill to project as a self-contained HTML artifact. Do not hand-write HTML and do not hand-write a `.md` file for the plan output — the composer is the single writer of the artifact. (The brainstorm this plan may have read as *input* in step 1 — `.md` or `.html`, per the Brainstorm Input Dual-Read above — is unaffected; only the plan's own *output* format changes.)
 
 Write the plan to:
 
