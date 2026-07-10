@@ -17,8 +17,8 @@ Its job is to turn the plan's architectural context into a **consumable artifact
 <plan_path> #$ARGUMENTS </plan_path>
 
 **If the plan path above is empty:**
-1. Check for recent plans: `ls -t docs/plans/*-plan*.md 2>/dev/null | head -5`
-2. Ask the user: "Which plan should I improve architecturally? Please provide the path (for example `docs/plans/2026-01-15-feat-my-feature-plan.md`)."
+1. Check for recent plans (a plan may be a legacy `.md` file or the pilot `.html` output of `/workflows:plan`): `ls -t docs/plans/*-plan*.md docs/plans/*-plan*.html 2>/dev/null | head -5`
+2. Ask the user: "Which plan should I improve architecturally? Please provide the path (for example `docs/plans/2026-01-15-feat-my-feature-plan.md` or `docs/plans/2026-01-15-feat-my-feature-plan.html`)."
 
 Do not proceed until you have a valid plan file path.
 
@@ -113,18 +113,81 @@ For escalated/deep runs, resolve meaningful conflicts explicitly in the artifact
 
 ### 3. Write the artifact
 
+Assemble one decision-bearing payload, then hand it to the `html-artifact-composer` skill to project as a self-contained HTML artifact. Do not hand-write HTML and do not hand-write a `.md` file for the architecture output — the composer is the single writer of the artifact.
+
 Write the architecture artifact to:
 
 ```text
-docs/architecture/YYYY-MM-DD-<topic>-architecture.md
+docs/architecture/YYYY-MM-DD-<topic>-architecture.html
 ```
+
+Use today's date. Keep the filename descriptive and kebab-case, matching the parent plan's topic.
 
 Ensure `docs/architecture/` exists before writing.
 
-After writing the artifact:
-1. Add or update `architecture_ref: <artifact path>` in the plan frontmatter when possible.
-2. If frontmatter cannot be safely updated, add a clearly labeled `## Related Artifacts` section to the plan with the artifact path.
-3. Do not silently move the artifact elsewhere.
+#### Required Island Payload (Tier 1 envelope + Tier 2 `architecture` contract core)
+
+Gather exactly these fields before invoking the composer. The payload's shape matches `commands/workflows/references/html-artifacts/island-contract.md`'s Tier 1 envelope + Tier 2 `architecture` contract core exactly:
+
+```yaml
+title: [Topic Title]
+type: [feat|fix|refactor] # inferred from the parent plan's own type -- the architecture template has no frontmatter type: key of its own; gather/infer it the same way date/status are gathered (see island-contract.md's architecture frontmatter-keys note)
+status: complete
+date: YYYY-MM-DD
+refs:
+  brainstorm_ref: [path or null]
+  architecture_ref: null # an architecture artifact never references itself
+  tickets_ref: null
+  source_docs:
+    tickets: []
+    docs: []
+    figma: []
+    plans: []
+plan_ref: [the plan path this run improved]
+feature_homes: [] # [{ feature_home, owns, notes }]
+shared_global_decisions: [] # [{ candidate, decision, rationale }]
+deepening_candidates: [] # string[]
+context_tiers:
+  global: ""
+  on_demand: ""
+  ticket_local: ""
+deletion_test: [] # [{ candidate, decision, rationale }]
+interfaces_as_test_surfaces: [] # [{ interface, callers_rely_on, must_not_leak, evidence_needed }]
+seams_adapters_contracts: [] # [{ seam, adapter, contract, stability_class }]
+drift_checks: [] # string[]
+recommendations:
+  deepen_plan: []
+  work: []
+  review: []
+handoff:
+  deepen_plan: true
+  work: true
+  review: true
+```
+
+Gather these fields directly from the workflow steps above (module blueprint, feature-home ownership, shared/global decisions, deepening candidates, deletion test, interfaces/seams/contracts, context tiers, drift checks, downstream recommendations). Never emit an empty optional element by omitting its key — the composer still needs every key present per the fixed-core contract; a legitimately empty list or comparison (e.g. no Design-It-Twice ran) still needs its key present as `[]`/`""`.
+
+#### Required Island Content (Tier 3 prose)
+
+- `purpose_linkage` — canonical WHY source, local intent, success-criteria focus, and architectural scope.
+- `module_blueprint` — the full module / feature-home / contains / rationale table.
+- `design_it_twice` — the high-leverage option comparison when one applied; `""` when none did.
+- `review_depth` — the chosen depth (`lightweight`/`escalated`) and why, from step 2.5 above.
+- `open_questions` — any unresolved architecture-level questions; `""` when none remain.
+
+#### Dispatch the composer via a fresh subagent
+
+Do **not** load and run the composer inline in this architecture context — by this point the context holds the full plan read, the architecture-improvement pass, and (for escalated runs) reviewer findings, none of which the projection needs. Mirror the exact fresh-subagent Invocation contract `commands/workflows/plan.md` and `commands/workflows/brainstorm.md` already use at their own artifact-write steps (`skills/html-artifact-composer/SKILL.md` → "Invocation"):
+
+1. **Assemble the `payload`** from the fields gathered above — it alone must carry every fact the artifact will show. Include `type` in the envelope payload; the composer's required-field check fails loud if it is missing.
+2. **Dispatch one fresh subagent** whose entire context is: an instruction to **load and follow** `skills/html-artifact-composer/SKILL.md` (point it at the file; do not paste the skill body into the prompt — the skill is its instruction set), `target_path` (the path above), and the `payload`.
+3. **The subagent returns only** the written artifact path (plus any missing-required-field report). On a missing-field report, fill the field from the workflow steps above and re-dispatch — never let the composer fabricate a value.
+
+After the artifact is written:
+1. **Record `architecture_ref` back into the plan, dual-read by the plan's own file extension:**
+   - **`.md` plan** — add or update `architecture_ref: <artifact path>` in the plan frontmatter directly (legacy path, unchanged). If frontmatter cannot be safely updated, add a clearly labeled `## Related Artifacts` section to the plan with the artifact path instead.
+   - **`.html` plan** — never edit the rendered markup directly. Route through `skills/html-artifact-mutator/SKILL.md` (the shared T01 update capability) with `mutation: { class: "scalar", field: "refs.architecture_ref", value: <artifact path> }` against the plan's own path as `target_path`. This is the scalar-only dispatch carve-out: it runs entirely inline, no subagent. Follow the mutator's single-element-or-fallback rule for the rendered view — if the old value (`null`, since no architecture ref existed before this run) has no unique rendered element to patch, the mutator appends the graceful "Related Artifacts" fallback section and logs it, which is the expected outcome for a first-time architecture_ref back-write.
+2. Do not silently move the artifact elsewhere.
 
 For escalated/deep runs, run the `document-review` skill in **architecture** mode against the architecture artifact plus the parent plan context. This pass can run headlessly. Its job is to tighten feature-home ownership, shared/global boundary honesty, deletion-test justification, and downstream handoff usefulness without creating a parallel shadow spec.
 
@@ -152,7 +215,7 @@ When complete, summarize:
 Architecture improvement complete!
 
 Plan: <plan_path>
-Artifact: docs/architecture/YYYY-MM-DD-<topic>-architecture.md
+Artifact: docs/architecture/YYYY-MM-DD-<topic>-architecture.html
 
 Key deepening candidates:
 - <candidate 1>

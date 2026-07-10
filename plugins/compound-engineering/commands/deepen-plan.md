@@ -38,7 +38,7 @@ Use these references as contracts. Load only the references needed for the curre
 - `commands/workflows/references/tdd-evidence-contract.md`
 - `commands/workflows/references/e2e-testing-contract.md` when the plan has a runtime surface or a suggested e2e suite
 - `commands/workflows/references/vertical-slice-architecture.md` when `execution_shape.mode=vertical-slices`
-- `commands/workflows/references/html-artifacts/island-extraction-helper.md` when the plan path is `.html`
+- `commands/workflows/references/html-artifacts/island-extraction-helper.md` when the plan path is `.html`, or when `architecture_ref` (T04) resolves to `.html`
 - `commands/workflows/references/html-artifacts/island-contract.md` and `skills/html-artifact-mutator/SKILL.md` when this run will back-write into an `.html` plan (a content enrichment or a `status`/`tickets_ref` scalar patch)
 
 When dispatching a named agent, apply `Named Agent Dispatch` from `orchestration-protocol.md`: verify the bundled agent source and metadata, dispatch the resolved agent identifier, and pass only workflow-specific payload plus resolved context. Do not paste the agent file body into the prompt.
@@ -100,7 +100,7 @@ Reject raw research dumps. If a helper returns broad notes, distill them into th
 - **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
 - **`.html`** -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the plan's `#artifact-data` JSON island. Read the same fixed-core facts the legacy path reads from frontmatter/sections, sourced from the island instead (see the helper's field-coverage-map pointer for the frontmatter-key/section-name -> island-field mapping). If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
 
-Only the plan artifact itself may be `.html` in v1. `brainstorm_ref`, `architecture_ref`, and `tickets_ref` always resolve to `.md` regardless of the plan's own format -- read them as legacy Markdown.
+`architecture_ref` may now be `.md` **or** `.html` (T04) -- detect its own extension independently of the plan's, and read it via the dual-read branch below (where `architecture_ref` is read). `brainstorm_ref` and `tickets_ref` still always resolve to `.md` regardless of the plan's own format -- read them as legacy Markdown. (Note: `brainstorm_ref` pointing to `.md` only is now stale in one sense -- `/workflows:brainstorm` has emitted `.html` since T03 -- but migrating that read is explicitly out of this ticket's scope; a future ticket must sweep it.)
 
 Read the plan and extract only the contract needed for deepening:
 - Problem Narrative
@@ -119,7 +119,12 @@ If any `handoff` field is false or missing, flag it before deepening: "Plan is m
 
 Read `brainstorm_ref` only when it exists and the plan needs missing stakeholder impact, rejected approaches, resolved-question context, or WHY clarification. Do not summarize the entire brainstorm; extract only facts that affect the manifest.
 
-Read `architecture_ref` when present and extract: Feature Homes and Ownership, shared/global decisions, deepening candidates, context tiers, deletion-test decisions, interfaces as test surfaces, seams, adapters, contracts, drift checks, and downstream recommendations. If no architecture artifact exists, build a compact explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and Related Artifacts. Record whether the handoff is real or plan-derived.
+Read `architecture_ref` when present, detecting which reader applies from its own file extension (independent of the plan's):
+
+- **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** (T04) -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the architecture artifact's `#artifact-data` JSON island. Read the same fixed-core facts the legacy path reads from sections, sourced from the island's `architecture`-kind Tier-2 core instead (see `island-contract.md`'s architecture field-coverage map for the section-name -> island-field mapping). If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
+
+Whichever path applied, extract: Feature Homes and Ownership, shared/global decisions, deepening candidates, context tiers, deletion-test decisions, interfaces as test surfaces, seams, adapters, contracts, drift checks, and downstream recommendations. If no architecture artifact exists, build a compact explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and Related Artifacts. Record whether the handoff is real or plan-derived.
 
 ### 2. Resolve Required Contracts
 

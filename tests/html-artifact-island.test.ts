@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test"
 import {
+  buildValidArchitectureIslandFixture,
   buildValidBrainstormIslandFixture,
   buildValidIslandFixture,
   embedIslandInHtmlDocument,
   extract,
   extractIslandData,
+  REQUIRED_ARCHITECTURE_FIXED_CORE_KEYS,
   REQUIRED_BRAINSTORM_FIXED_CORE_KEYS,
   REQUIRED_FIXED_CORE_KEYS,
   REQUIRED_KEYS_BY_KIND,
@@ -553,5 +555,179 @@ describe("field-coverage map for kind: brainstorm (Gate L2, T03)", () => {
   test("every brainstorm coverage entry declares a valid tier (1-4)", () => {
     const invalidTiers = FIELD_COVERAGE_MAP_BRAINSTORM.filter((entry) => ![1, 2, 3, 4].includes(entry.tier))
     expect(invalidTiers).toEqual([])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Kind-aware required set (T04): registering the `architecture` kind in
+// `REQUIRED_KEYS_BY_KIND` must not spuriously demand plan/brainstorm-only
+// fields from a legitimate architecture island (it has no
+// `slices`/`tdd`/`problem_narrative`/etc.), and every one of its own
+// required keys must actually be enforced.
+// ---------------------------------------------------------------------------
+
+describe("kind-aware required set (architecture kind, T04)", () => {
+  test("a valid architecture-kind island extracts successfully without spuriously requiring plan/brainstorm-only fields", () => {
+    const fixture = buildValidArchitectureIslandFixture()
+    const html = embedIslandInHtmlDocument(serialize(fixture))
+    const result = extractIslandData(html)
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data).toEqual(fixture)
+    }
+  })
+
+  test("every architecture required fixed-core key triggers MISSING_REQUIRED_FIELD, naming that exact key, when deleted", () => {
+    for (const key of REQUIRED_ARCHITECTURE_FIXED_CORE_KEYS) {
+      const fixture: Record<string, unknown> = buildValidArchitectureIslandFixture()
+      delete fixture[key]
+      const html = embedIslandInHtmlDocument(serialize(fixture))
+      const result = extractIslandData(html)
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error).toBe("MISSING_REQUIRED_FIELD")
+        expect(result.message).toContain(key)
+      }
+    }
+  })
+
+  test("plan-kind and brainstorm-kind required behavior stay unchanged after registering the architecture kind", () => {
+    expect(REQUIRED_KEYS_BY_KIND.plan).toEqual(REQUIRED_FIXED_CORE_KEYS as unknown as string[])
+    expect(REQUIRED_KEYS_BY_KIND.brainstorm).toEqual(REQUIRED_BRAINSTORM_FIXED_CORE_KEYS as unknown as string[])
+
+    const planFixture = buildValidIslandFixture()
+    const planHtml = embedIslandInHtmlDocument(serialize(planFixture))
+    const planResult = extractIslandData(planHtml)
+    expect(planResult.ok).toBe(true)
+    if (planResult.ok) expect(planResult.data).toEqual(planFixture)
+
+    const brainstormFixture = buildValidBrainstormIslandFixture()
+    const brainstormHtml = embedIslandInHtmlDocument(serialize(brainstormFixture))
+    const brainstormResult = extractIslandData(brainstormHtml)
+    expect(brainstormResult.ok).toBe(true)
+    if (brainstormResult.ok) expect(brainstormResult.data).toEqual(brainstormFixture)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Field-coverage map (L2) for kind: "architecture" (T04) -- mirrors the
+// plan-kind and brainstorm-kind L2 gates above exactly, against the real
+// reference document (`docs/architecture/2026-07-09-rich-html-artifacts-architecture.md`)
+// instead of `plan.md`/`brainstorm.md`.
+// ---------------------------------------------------------------------------
+
+const FIELD_COVERAGE_MAP_ARCHITECTURE: FieldCoverageEntry[] = [
+  // Tier 1 -- envelope (shared)
+  { legacyElement: "frontmatter.date", islandHome: "date", tier: 1 },
+  {
+    legacyElement: "frontmatter.topic",
+    islandHome: "title",
+    tier: 1,
+    note: "folded into title -- same fold the brainstorm kind's frontmatter.topic already uses",
+  },
+  { legacyElement: "frontmatter.status", islandHome: "status", tier: 1 },
+  { legacyElement: "frontmatter.plan_ref", islandHome: "plan_ref", tier: 2 },
+  { legacyElement: "frontmatter.brainstorm_ref", islandHome: "refs.brainstorm_ref", tier: 1 },
+  { legacyElement: "frontmatter.handoff.deepen_plan", islandHome: "handoff.deepen_plan", tier: 2 },
+  { legacyElement: "frontmatter.handoff.work", islandHome: "handoff.work", tier: 2 },
+  { legacyElement: "frontmatter.handoff.review", islandHome: "handoff.review", tier: 2 },
+
+  // Tier 2 -- strict machine-consumed core for kind "architecture"
+  // (downstream *acts* on these: /deepen-plan, /workflows:review,
+  // /workflows:work each read the identical nine-field set below).
+  { legacyElement: "section.Purpose Linkage", islandHome: "purpose_linkage", tier: 3 },
+  { legacyElement: "section.Feature Homes and Ownership", islandHome: "feature_homes[]", tier: 2 },
+  { legacyElement: "section.Module Blueprint for Implementation", islandHome: "module_blueprint", tier: 3 },
+  { legacyElement: "section.Shared / Global Decisions", islandHome: "shared_global_decisions[]", tier: 2 },
+  { legacyElement: "section.Deepening Candidates", islandHome: "deepening_candidates[]", tier: 2 },
+  { legacyElement: "section.Deletion Test", islandHome: "deletion_test[]", tier: 2 },
+  { legacyElement: "section.Interfaces as Test Surfaces", islandHome: "interfaces_as_test_surfaces[]", tier: 2 },
+  { legacyElement: "section.Seams, Adapters, and Contracts", islandHome: "seams_adapters_contracts[]", tier: 2 },
+  { legacyElement: "section.Design-It-Twice", islandHome: "design_it_twice", tier: 3 },
+  { legacyElement: "section.Context Tiers", islandHome: "context_tiers", tier: 2 },
+  { legacyElement: "section.Review Depth", islandHome: "review_depth", tier: 3 },
+  { legacyElement: "section.Recommendations for /deepen-plan", islandHome: "recommendations.deepen_plan[]", tier: 2 },
+  { legacyElement: "section.Recommendations for /workflows:work", islandHome: "recommendations.work[]", tier: 2 },
+  { legacyElement: "section.Recommendations for /workflows:review", islandHome: "recommendations.review[]", tier: 2 },
+  { legacyElement: "section.Drift Checks", islandHome: "drift_checks[]", tier: 2 },
+  { legacyElement: "section.Open Questions", islandHome: "open_questions", tier: 3 },
+]
+
+/**
+ * The authoritative legacy-architecture ground truth this unit proves
+ * coverage against: every frontmatter key and every named section in
+ * `docs/architecture/2026-07-09-rich-html-artifacts-architecture.md` (the
+ * reference document) plus the exact nine machine-consumed fields
+ * `/deepen-plan`, `/workflows:review`, and `/workflows:work` each extract.
+ * Authored independently of `FIELD_COVERAGE_MAP_ARCHITECTURE` so the L2 test
+ * is a real check, not a tautology -- mirrors `LEGACY_PLAN_CONTRACT_ELEMENTS`
+ * and `LEGACY_BRAINSTORM_CONTRACT_ELEMENTS` above.
+ */
+const LEGACY_ARCHITECTURE_CONTRACT_ELEMENTS = [
+  "frontmatter.date",
+  "frontmatter.topic",
+  "frontmatter.status",
+  "frontmatter.plan_ref",
+  "frontmatter.brainstorm_ref",
+  "frontmatter.handoff.deepen_plan",
+  "frontmatter.handoff.work",
+  "frontmatter.handoff.review",
+  "section.Purpose Linkage",
+  "section.Feature Homes and Ownership",
+  "section.Module Blueprint for Implementation",
+  "section.Shared / Global Decisions",
+  "section.Deepening Candidates",
+  "section.Deletion Test",
+  "section.Interfaces as Test Surfaces",
+  "section.Seams, Adapters, and Contracts",
+  "section.Design-It-Twice",
+  "section.Context Tiers",
+  "section.Review Depth",
+  "section.Recommendations for /deepen-plan",
+  "section.Recommendations for /workflows:work",
+  "section.Recommendations for /workflows:review",
+  "section.Drift Checks",
+  "section.Open Questions",
+]
+
+describe("field-coverage map for kind: architecture (Gate L2, T04)", () => {
+  test("every legacy architecture contract element has a named island home", () => {
+    const coveredElements = new Set(FIELD_COVERAGE_MAP_ARCHITECTURE.map((entry) => entry.legacyElement))
+    const missing = LEGACY_ARCHITECTURE_CONTRACT_ELEMENTS.filter((element) => !coveredElements.has(element))
+
+    expect(missing).toEqual([])
+  })
+
+  test("the architecture field-coverage map has no duplicate legacy-element entries", () => {
+    const seen = new Set<string>()
+    const duplicates = FIELD_COVERAGE_MAP_ARCHITECTURE.filter((entry) => {
+      if (seen.has(entry.legacyElement)) return true
+      seen.add(entry.legacyElement)
+      return false
+    })
+
+    expect(duplicates).toEqual([])
+  })
+
+  test("every architecture coverage entry declares a valid tier (1-4)", () => {
+    const invalidTiers = FIELD_COVERAGE_MAP_ARCHITECTURE.filter((entry) => ![1, 2, 3, 4].includes(entry.tier))
+    expect(invalidTiers).toEqual([])
+  })
+
+  test("the required fixed-core keys are exactly the Tier-1 envelope plus the Tier-2 fields enumerated in the coverage map", () => {
+    const tier2CoverageIslandHomes = new Set(
+      FIELD_COVERAGE_MAP_ARCHITECTURE.filter((entry) => entry.tier === 2).map((entry) =>
+        entry.islandHome.replace(/\[\]$/, "").split(".")[0],
+      ),
+    )
+    const tier2RequiredKeys = REQUIRED_ARCHITECTURE_FIXED_CORE_KEYS.filter(
+      (key) => !REQUIRED_FIXED_CORE_KEYS.includes(key as (typeof REQUIRED_FIXED_CORE_KEYS)[number]),
+    )
+
+    for (const key of tier2RequiredKeys) {
+      expect(tier2CoverageIslandHomes.has(key)).toBe(true)
+    }
   })
 })

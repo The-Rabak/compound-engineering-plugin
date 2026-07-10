@@ -119,7 +119,12 @@ Whichever path applied above, extract:
 - **tickets_ref / Related Artifacts** — pointer to the ticket set, if available
 - **constitution_version** / **constitution_waivers** — what repo-wide rules apply and which exceptions were explicitly approved
 
-If an `architecture_ref` or matching `docs/architecture/*.md` artifact exists, read it and extract:
+If an `architecture_ref` or matching `docs/architecture/*.md` artifact exists, detect which reader applies from the architecture artifact's own file extension (independent of the plan's):
+
+- **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** (T04) -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the architecture artifact's `#artifact-data` JSON island for the same fixed-core facts the legacy path reads from sections, sourced from the island's `architecture`-kind Tier-2 core instead (see `island-contract.md`'s architecture field-coverage map for the section-name -> island-field mapping). If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
+
+Whichever path applied, extract:
 - Feature Homes and Ownership
 - Shared / Global Decisions
 - Deepening Candidates

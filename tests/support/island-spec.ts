@@ -188,6 +188,85 @@ export interface BrainstormArtifactIsland {
 }
 
 /**
+ * Fixed-core island schema v1, `kind: "architecture"` (added T04).
+ *
+ * Tier 1 (envelope) is byte-identical in shape to `PlanArtifactIsland`'s --
+ * shared across every kind, never widened per-kind. Tier 2 (this kind's
+ * contract core) is the nine-field set `/deepen-plan`, `/workflows:review`,
+ * and `/workflows:work` each read verbatim from the architecture artifact:
+ * Feature Homes and Ownership, Shared/Global Decisions, Deepening
+ * Candidates, Context Tiers, Deletion Test, Interfaces as Test Surfaces,
+ * Seams/Adapters/Contracts, Drift Checks, and Recommendations (folded into
+ * one `recommendations` object keyed by consumer instead of three separate
+ * prose sections). `docs/architecture/2026-07-09-rich-html-artifacts-architecture.md`
+ * is the reference document this schema is grounded in -- see
+ * `island-contract.md`'s architecture Tier-2 section for the full
+ * field-by-field rationale, including which fields the T04 E2E floor gates
+ * non-empty and which are required keys outside that floor.
+ */
+export interface ArchitectureArtifactIsland {
+  [key: string]: unknown
+  // Tier 1 -- envelope (shared, identical shape to PlanArtifactIsland)
+  schema_version: 1
+  kind: "architecture"
+  title: string
+  type: string
+  date: string
+  status: string
+  refs: {
+    brainstorm_ref: string | null
+    architecture_ref: string | null
+    tickets_ref: string | null
+    source_docs: {
+      tickets: string[]
+      docs: string[]
+      figma: string[]
+      plans: string[]
+    }
+  }
+  render_meta: {
+    archetypes: string[]
+    design_seed: string
+    [additiveField: string]: unknown
+  }
+  // Tier 2 -- `architecture`-kind contract core
+  /**
+   * The parent plan this architecture artifact was produced from. Not read
+   * by the three downstream consumers -- they arrive at the architecture
+   * artifact via the *plan's* `architecture_ref`, not the reverse -- kept
+   * for provenance and so `frontmatter.plan_ref` has a field-coverage-map
+   * home.
+   */
+  plan_ref: string | null
+  feature_homes: Array<{ feature_home: string; owns: string; notes: string }>
+  shared_global_decisions: Array<{ candidate: string; decision: string; rationale: string }>
+  deepening_candidates: string[]
+  /** Required key; NOT gated non-empty by the T04 E2E floor -- see island-contract.md's "Surfaced classification" note. */
+  context_tiers: { global: string; on_demand: string; ticket_local: string }
+  deletion_test: Array<{ candidate: string; decision: string; rationale: string }>
+  interfaces_as_test_surfaces: Array<{
+    interface: string
+    callers_rely_on: string
+    must_not_leak: string
+    evidence_needed: string
+  }>
+  seams_adapters_contracts: Array<{ seam: string; adapter: string; contract: string; stability_class: string }>
+  drift_checks: string[]
+  /** One field replaces the reference doc's three separate "Recommendations for /x" sections. */
+  recommendations: { deepen_plan: string[]; work: string[]; review: string[] }
+  /** A different shape from the `plan`/`brainstorm` kinds' `handoff` -- matches the real architecture artifact's own frontmatter exactly. */
+  handoff: { deepen_plan: boolean; work: boolean; review: boolean }
+  // Tier 3 -- rendered prose (never machine-parsed) for the architecture kind
+  purpose_linkage: string
+  module_blueprint: string
+  design_it_twice: string
+  review_depth: string
+  open_questions: string
+  // Tier 4 -- open extension (machine-ignored)
+  ext: Record<string, unknown>
+}
+
+/**
  * Serializes an island payload into a breakout-safe JSON string suitable
  * for embedding inside `<script type="application/json" id="artifact-data">`.
  *
@@ -529,6 +608,136 @@ export function buildValidBrainstormIslandFixture(
   return { ...fixture, ...overrides }
 }
 
+/**
+ * Builds a complete, schema-valid `ArchitectureArtifactIsland` fixture for
+ * tests (added T04). `overrides` shallow-merges over the defaults -- pass a
+ * hostile payload as e.g. `{ purpose_linkage: "</script>" }` to exercise one
+ * field at a time, mirroring `buildValidBrainstormIslandFixture` above.
+ *
+ * Continues the CSV-export reporting-dashboard narrative
+ * `buildValidIslandFixture` and `buildValidBrainstormIslandFixture` already
+ * tell, so all three fixture families describe one coherent feature instead
+ * of three unrelated ones.
+ */
+export function buildValidArchitectureIslandFixture(
+  overrides: Partial<ArchitectureArtifactIsland> = {},
+): ArchitectureArtifactIsland {
+  const fixture: ArchitectureArtifactIsland = {
+    schema_version: 1,
+    kind: "architecture",
+    title: "Add CSV Export to the Reporting Dashboard — Architecture",
+    type: "feat",
+    date: "2026-07-09",
+    status: "complete",
+    refs: {
+      brainstorm_ref: "docs/brainstorms/2026-07-09-rich-html-artifacts-brainstorm.md",
+      architecture_ref: null,
+      tickets_ref: null,
+      source_docs: {
+        tickets: [],
+        docs: [],
+        figma: [],
+        plans: ["docs/plans/2026-07-09-feat-csv-export-plan.md"],
+      },
+    },
+    render_meta: {
+      archetypes: ["architecture-blueprint"],
+      design_seed: "architecture-csv-export-2026-07-09-a1",
+    },
+    plan_ref: "docs/plans/2026-07-09-feat-csv-export-plan.md",
+    feature_homes: [
+      {
+        feature_home: "src/reporting/export/",
+        owns: "The toCsv() serializer, the export API route, and the UI export button.",
+        notes: "New feature home; nothing else in the reporting module currently owns export formatting.",
+      },
+      {
+        feature_home: "src/reporting/ (existing)",
+        owns: "The report query result the exporter reads; unchanged by this feature.",
+        notes: "Read-only dependency, not a new owner.",
+      },
+    ],
+    shared_global_decisions: [
+      {
+        candidate: "toCsv() serializer",
+        decision: "feature-local",
+        rationale:
+          "Only one consumer (the export route) exists today; promote to shared only when the scheduled-export job needs it.",
+      },
+      {
+        candidate: "Report-read permission check",
+        decision: "reuse existing shared permission model",
+        rationale:
+          "Export reads the same data the viewer already authorizes; a new scope would duplicate an existing shared decision.",
+      },
+    ],
+    deepening_candidates: [
+      "Confirm the streaming-export approach handles 100k+ row reports without exceeding the API pod's memory limits.",
+      "Decide whether the CSV UTF-8 BOM is always emitted or only for locales where Excel needs it.",
+    ],
+    context_tiers: {
+      global:
+        "Dependency-free single-file HTML is a hard invariant for any generated artifact; the existing report-read permission model applies to every export surface.",
+      on_demand: "This architecture artifact; the CSV-export brainstorm; the reporting module's existing query-layer docs.",
+      ticket_local:
+        "The exporter's feature home, the exact files, the scope fence, and the one acceptance criterion each execution slice owns.",
+    },
+    deletion_test: [
+      {
+        candidate: "Scheduled/recurring export job",
+        decision: "delay",
+        rationale: "No user has asked for exports larger than an interactive request can serve; building it now is unused structure.",
+      },
+      {
+        candidate: "Streaming CSV serializer",
+        decision: "keep",
+        rationale: "Survives the deletion test: without it, the 100k+ row success criterion cannot be met without risking OOM.",
+      },
+    ],
+    interfaces_as_test_surfaces: [
+      {
+        interface: "toCsv() serializer",
+        callers_rely_on: "A pure function that streams rows to a writable without buffering the full result set.",
+        must_not_leak: "Report-viewer rendering details; the serializer must not import UI code.",
+        evidence_needed: "Unit test streaming a 100k+ row fixture without exceeding a fixed memory ceiling.",
+      },
+    ],
+    seams_adapters_contracts: [
+      {
+        seam: "Export route to serializer",
+        adapter: "toCsv() called with the same query result the viewer already fetched",
+        contract: "The export route never re-queries the data; it reuses the viewer's already-authorized result.",
+        stability_class: "permanent",
+      },
+    ],
+    drift_checks: [
+      "A new export format is added without reusing the existing report-read permission check.",
+      "The serializer buffers the full result set in memory instead of streaming.",
+    ],
+    recommendations: {
+      deepen_plan: ["Confirm the streaming approach's memory ceiling before execution hardening."],
+      work: ["Keep the serializer feature-local; do not promote it to shared until a second consumer exists."],
+      review: ["Verify the export route reuses the existing permission check rather than introducing a new scope."],
+    },
+    handoff: {
+      deepen_plan: true,
+      work: true,
+      review: true,
+    },
+    purpose_linkage:
+      "Canonical WHY source: the CSV-export brainstorm. Local intent: keep the serializer feature-local and streaming-safe. Success-criteria focus: both brainstorm success criteria. Architectural scope: the reporting module's export surface only.",
+    module_blueprint:
+      "| Module | Feature home | Contains | Why this arrangement |\n|---|---|---|---|\n| Export serializer | src/reporting/export/ | toCsv(), the export route, the UI button | Groups the new export surface in one place, reusing the existing report-read permission model. |",
+    design_it_twice: "",
+    review_depth:
+      "lightweight — the change is a small, well-understood addition to an existing module with no disputed boundaries.",
+    open_questions: "",
+    ext: {},
+  }
+
+  return { ...fixture, ...overrides }
+}
+
 export const REQUIRED_FIXED_CORE_KEYS = [
   // Tier 1 -- envelope (shared across every kind)
   "schema_version",
@@ -583,21 +792,55 @@ export const REQUIRED_BRAINSTORM_FIXED_CORE_KEYS = [
 ] as const
 
 /**
- * Kind-aware required-key lookup (the T03 fix): `extractIslandData`'s
- * fail-loud required-field check used to hard-code the `plan` kind's 16
- * keys for every artifact, which would wrongly throw `MISSING_REQUIRED_FIELD`
- * on a legitimate `brainstorm` island (it has no `slices`/`tdd`/etc.). Each
- * entry here is already the FULL required set for that kind (envelope +
- * that kind's Tier-2 core), so a lookup miss (missing/unrecognized `kind`)
- * falls back to `REQUIRED_FIXED_CORE_KEYS` -- preserving today's exact
- * behavior for `plan` and for every kind this repository could produce
- * before this ticket. This is intentionally a plain keyed lookup, not a
- * general multi-kind registry: a future kind (e.g. `architecture`, T04)
- * registers one more entry here, nothing else.
+ * Tier-2 contract-core keys for `kind: "architecture"` (added T04),
+ * expressed as the FULL required-key set for the kind (Tier-1 envelope +
+ * this kind's Tier-2 core) -- the same "full set, not a delta" shape
+ * `REQUIRED_FIXED_CORE_KEYS`/`REQUIRED_BRAINSTORM_FIXED_CORE_KEYS` already
+ * use. See `island-contract.md`'s architecture Tier-2 section for the
+ * field-by-field rationale.
+ */
+export const REQUIRED_ARCHITECTURE_FIXED_CORE_KEYS = [
+  // Tier 1 -- envelope (shared across every kind)
+  "schema_version",
+  "kind",
+  "title",
+  "type",
+  "date",
+  "status",
+  "refs",
+  "render_meta",
+  // Tier 2 -- contract core for kind "architecture"
+  "plan_ref",
+  "feature_homes",
+  "shared_global_decisions",
+  "deepening_candidates",
+  "context_tiers",
+  "deletion_test",
+  "interfaces_as_test_surfaces",
+  "seams_adapters_contracts",
+  "drift_checks",
+  "recommendations",
+  "handoff",
+] as const
+
+/**
+ * Kind-aware required-key lookup (the T03 fix, extended at T04):
+ * `extractIslandData`'s fail-loud required-field check used to hard-code
+ * the `plan` kind's 16 keys for every artifact, which would wrongly throw
+ * `MISSING_REQUIRED_FIELD` on a legitimate `brainstorm` or `architecture`
+ * island (neither has `slices`/`tdd`/etc.). Each entry here is already the
+ * FULL required set for that kind (envelope + that kind's Tier-2 core), so
+ * a lookup miss (missing/unrecognized `kind`) falls back to
+ * `REQUIRED_FIXED_CORE_KEYS` -- preserving today's exact behavior for
+ * `plan` and for every kind this repository could produce before T03. This
+ * is intentionally a plain keyed lookup, not a general multi-kind registry:
+ * a future kind (e.g. `deepen-plan`) registers one more entry here, nothing
+ * else.
  */
 export const REQUIRED_KEYS_BY_KIND: Record<string, readonly string[]> = {
   plan: REQUIRED_FIXED_CORE_KEYS,
   brainstorm: REQUIRED_BRAINSTORM_FIXED_CORE_KEYS,
+  architecture: REQUIRED_ARCHITECTURE_FIXED_CORE_KEYS,
 }
 
 /**
