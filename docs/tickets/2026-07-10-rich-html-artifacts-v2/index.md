@@ -3,8 +3,8 @@ plan_ref: docs/plans/2026-07-09-feat-rich-html-artifacts-v2-plan.md
 architecture_ref: docs/architecture/2026-07-09-rich-html-artifacts-architecture.md
 brainstorm_ref: docs/brainstorms/2026-07-09-rich-html-artifacts-brainstorm.md
 execution_shape: vertical-slices
-ticket_set_status: in_progress
-last_completed_batch: 5
+ticket_set_status: completed
+last_completed_batch: 6
 total_batches: 6
 ---
 
@@ -91,7 +91,7 @@ Because there are **no multi-ticket batches**, there is no intra-batch race to c
 | [T03](03-brainstorm-html-grill-plan-input.md) | `brainstorm` → HTML + grill mutation + plan-input dual-read | expansion | SC3 | T01 | hard | completed |
 | [T04](04-architecture-html-downstream-read.md) | `architecture` → HTML + mutation + downstream dual-read | expansion | SC4 | T01 | hard | completed |
 | [T05](05-discriminating-md-ref-sweep.md) | Discriminating system-wide `.md`-ref sweep | hardening | SC5 | T02, T03, T04 | hard | completed |
-| [T06](06-release-reconciliation.md) | Release reconciliation (version + CHANGELOG + `/release-docs`) | infra-track | ships SC1–SC5 | T05 | hard | ready |
+| [T06](06-release-reconciliation.md) | Release reconciliation (version + CHANGELOG + `/release-docs`) | infra-track | ships SC1–SC5 | T05 | hard | completed |
 
 ## Blockers
 

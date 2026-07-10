@@ -12,7 +12,7 @@
     {
       "name": "compound-engineering",
       "description": "OpenCode-first AI-powered development tools. Includes 38 specialized agents, 27 commands, and 29 skills spanning code review, research, design, and workflow automation, with generated Copilot and Codex support plus Claude Code compatibility outputs.",
-      "version": "4.21.0",
+      "version": "4.22.0",
       "author": {
         "name": "The Rabak",
         "email": "arielvaron@gmail.com",

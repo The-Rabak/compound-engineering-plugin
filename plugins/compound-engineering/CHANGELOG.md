@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.22.0] - 2026-07-10
+
+### Added
+
+- **Rich interactive HTML artifacts (v2)** -- Added the `html-artifact-mutator` skill, the shared island **update** capability: it mutates a single field or content region of an existing HTML artifact in place (scalar and content mutation classes) and re-projects the affected view from the recorded `render_meta`, without regenerating the document from scratch. The published surface moves from 28 skills to 29.
+- **In-place plan enrichment** -- `/deepen-plan` now enriches a plan and back-writes the result into the existing `plan.html` in place via the mutator, instead of producing a separate output.
+- **Brainstorm and architecture HTML artifacts** -- `/workflows:brainstorm` and `/workflows:architecture` now emit island-backed HTML artifacts, mutable in place like `plan.html`; `grill-with-docs` mutates the brainstorm artifact directly rather than rewriting it wholesale.
+- **Dual-read artifact consumers** -- Completed the discriminating `.md`-ref sweep across every workflow-artifact consumer (`deepen-plan`, `review`, `work`, `to-issues`, `workflow-next-step`, `document-review`, `session-history`, `constitution-guardian`), so each dual-reads `.md`/`.html` artifacts through the shared island-extraction helper.
+
 ## [4.21.0] - 2026-07-09
 
 ### Added

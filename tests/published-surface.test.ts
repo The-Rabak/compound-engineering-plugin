@@ -31,12 +31,12 @@ describe("published support surface", () => {
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")
     const pluginChangelog = await readRepoFile("plugins", "compound-engineering", "CHANGELOG.md")
 
-    expect(plugin.manifest.version).toBe("4.21.0")
+    expect(plugin.manifest.version).toBe("4.22.0")
     expect(pluginManifest.version).toBe(plugin.manifest.version)
     expect(marketplace.plugins[0]?.version).toBe(plugin.manifest.version)
     expect(pluginManifest.description).toBe(plugin.manifest.description)
     expect(marketplace.plugins[0]?.description).toBe(plugin.manifest.description)
-    expect(pluginChangelog).toContain("## [4.21.0] - 2026-07-09")
+    expect(pluginChangelog).toContain("## [4.22.0] - 2026-07-10")
     expect(pluginReadme).toContain(
       `Includes ${plugin.agents.length} specialized agents, ${plugin.commands.length} commands, and ${plugin.skills.length} skills.`,
     )
