@@ -89,11 +89,13 @@ design stable across edits (no classifier drift between one edit and the next).
      rendered update: if the field's *old* value is rendered verbatim as exactly one element the
      composer's own conventions produce (e.g. a `<span class="badge">{value}</span>` for
      `type`/`status`/`date`), replace that element's text with the HTML-entity-escaped new value.
-     If zero or more than one such element exists, the rewrite is unsafe to guess at — instead,
-     append a rendered "Related Artifacts" section near the end of `<body>` stating the new
-     value (backed by the same island field, never inventing new facts), and log that the safer
-     fallback ran instead of an ambiguous in-place rewrite. This is light enough to run inline;
-     it never dispatches a subagent.
+     If zero or more than one such element exists — **or the field's old value was `null`/absent
+     and is being set for the first time** (e.g. a `refs.tickets_ref: null → "..."` back-write,
+     where there is no existing rendered token to find at all) — the in-place rewrite is unsafe or
+     impossible; instead, append a rendered "Related Artifacts" section near the end of `<body>`
+     stating the new value (backed by the same island field, never inventing new facts), and log
+     that the safer fallback ran instead of an ambiguous in-place rewrite or a silent no-op. This
+     is light enough to run inline; it never dispatches a subagent.
    - **Content class — always re-project, via a fresh subagent.** A content mutation always
      changes what the visible HTML should say, and re-drawing an existing composed layout well
      is exactly the composer's kind of creative judgment — not a job for deterministic string
@@ -119,6 +121,9 @@ design stable across edits (no classifier drift between one edit and the next).
    fact left contradicting the current island).
 3. For a scalar mutation, confirm either the single rendered element was updated in place, or
    the fallback "Related Artifacts" section was appended and the fallback logged — never neither.
+   This holds even when the field's old value was `null`/absent (newly set for the first time):
+   there is no existing rendered token to patch, so that case routes to the fallback too, exactly
+   like zero rendered matches — it must never be treated as a no-op.
 4. Confirm no external dependency, script tag, or style block was added or removed by the edit;
    the file remains a single self-contained document.
 5. Return the mutated artifact's path (and the fallback log, if any) to the caller. Do not print

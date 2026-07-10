@@ -31,8 +31,11 @@ import {
  *     inline (no subagent dispatch): if the old value is rendered as
  *     exactly one `<span class="badge">` element (the composer's own
  *     convention for `type`/`status`/`date`), that element is patched in
- *     place; otherwise a "Related Artifacts" fallback section is appended
- *     and the fallback is logged instead of risking an ambiguous rewrite.
+ *     place; otherwise -- including when the field was previously
+ *     `null`/absent and is being set for the first time (e.g. a
+ *     `refs.tickets_ref: null -> "..."` back-write) -- a "Related
+ *     Artifacts" fallback section is appended and the fallback is logged,
+ *     never a silent no-op, instead of risking an ambiguous rewrite.
  *
  *   - CONTENT class: Tier-2 contract-core / Tier-3 prose / Tier-4 `ext{}`.
  *     Patches the island, categorically rejects any Tier-1 envelope key
@@ -163,24 +166,32 @@ type ContentMutationResult = ContentMutationSuccess | { ok: false; error: Mutati
  * Attempts a single-element in-place rendered update for a scalar field
  * whose old value is rendered verbatim inside a `<span class="badge">`
  * element (the composer's own convention for `type`/`status`/`date`
- * badges). Patches the element's text in place ONLY when exactly one such
- * element exists in the document -- zero matches (nothing rendered) or
- * more than one (ambiguous) are both "unsafe" by this policy, and the
- * caller falls back to appending a rendered "Related Artifacts" section
- * instead of guessing at an ambiguous rewrite.
+ * badges). Patches the element's text in place ONLY when `oldValue` is a
+ * string AND exactly one such element exists in the document -- zero
+ * matches (nothing rendered), more than one (ambiguous), and `oldValue ===
+ * null` (the field was previously null/absent -- newly being set for the
+ * first time, so there is no existing rendered token to search for at all)
+ * are all "unsafe" by this policy. In every one of those cases the caller
+ * falls back to appending a rendered "Related Artifacts" section instead
+ * of guessing at an ambiguous rewrite or silently doing nothing -- this
+ * function always returns either an in-place patch or a logged fallback,
+ * never neither.
  */
 function reprojectScalarBadge(
   html: string,
-  oldValue: string,
+  oldValue: string | null,
   newValue: string,
 ): { html: string; renderedInPlace: boolean; log: string[] } {
-  const badgePattern = new RegExp(
-    `(<span\\b[^>]*\\bclass=["'][^"']*\\bbadge\\b[^"']*["'][^>]*>)${escapeRegExp(oldValue)}(</span>)`,
-    "g",
-  )
-  const matches = html.match(badgePattern) ?? []
+  const badgePattern =
+    typeof oldValue === "string"
+      ? new RegExp(
+          `(<span\\b[^>]*\\bclass=["'][^"']*\\bbadge\\b[^"']*["'][^>]*>)${escapeRegExp(oldValue)}(</span>)`,
+          "g",
+        )
+      : null
+  const matches = badgePattern ? (html.match(badgePattern) ?? []) : []
 
-  if (matches.length === 1) {
+  if (badgePattern && matches.length === 1) {
     const patchedHtml = html.replace(
       badgePattern,
       (_match, openTag: string, closeTag: string) => `${openTag}${escapeHtml(newValue)}${closeTag}`,
@@ -195,9 +206,11 @@ function reprojectScalarBadge(
     `</section>\n`
 
   const reason =
-    matches.length === 0
-      ? `No unique rendered badge element found for old value ${JSON.stringify(oldValue)}.`
-      : `Ambiguous rendered match (${matches.length} elements) for old value ${JSON.stringify(oldValue)}.`
+    oldValue === null
+      ? `Field was previously null/absent (newly set to ${JSON.stringify(newValue)}); there is no existing rendered value to patch in place.`
+      : matches.length === 0
+        ? `No unique rendered badge element found for old value ${JSON.stringify(oldValue)}.`
+        : `Ambiguous rendered match (${matches.length} elements) for old value ${JSON.stringify(oldValue)}.`
 
   return {
     html: html.replace(/<\/body>/i, `${fallbackSection}</body>`),
@@ -209,14 +222,18 @@ function reprojectScalarBadge(
 /**
  * Scalar / contract-field mutation class (`island-contract.md` -- Mutable
  * region: scalar). Patches exactly one Tier-1 envelope field (`status` or a
- * `refs.*` leaf) on the island in place -- never re-projects. If the old
+ * `refs.*` leaf) on the island in place -- never re-projects. Always
+ * attempts the rendered reflection via `reprojectScalarBadge`: if the old
  * value is uniquely rendered as a single badge element, that element is
  * patched in place too (light enough to run inline, no subagent needed);
- * otherwise a "Related Artifacts" fallback section is appended and the
- * fallback is logged rather than risking an ambiguous rewrite. Fails loud
- * (never a silent/partial write) for every `extractIslandData` malformed-
- * island case, plus a dedicated `UNMUTABLE_FIELD` code when `fieldPath`
- * falls outside the scalar mutable region.
+ * otherwise -- including when the field was previously `null`/absent and
+ * is being set for the first time (e.g. a `refs.tickets_ref` back-write) --
+ * a "Related Artifacts" fallback section is appended and the fallback is
+ * logged rather than risking an ambiguous rewrite or silently leaving the
+ * rendered view stale. Fails loud (never a silent/partial write) for every
+ * `extractIslandData` malformed-island case, plus a dedicated
+ * `UNMUTABLE_FIELD` code when `fieldPath` falls outside the scalar mutable
+ * region.
  */
 function mutateScalarField(html: string, fieldPath: string, newValue: string): ScalarMutationResult {
   if (!MUTABLE_SCALAR_FIELD_PATHS.has(fieldPath)) {
@@ -235,18 +252,15 @@ function mutateScalarField(html: string, fieldPath: string, newValue: string): S
   setPath(island, fieldPath, newValue)
 
   const serialized = serialize(island)
-  let mutatedHtml = replaceArtifactDataScriptText(html, serialized)
+  const mutatedHtml = replaceArtifactDataScriptText(html, serialized)
 
-  let renderedInPlace = false
-  let log: string[] = []
-  if (typeof oldValue === "string") {
-    const outcome = reprojectScalarBadge(mutatedHtml, oldValue, newValue)
-    mutatedHtml = outcome.html
-    renderedInPlace = outcome.renderedInPlace
-    log = outcome.log
-  }
+  // A null/absent/non-string oldValue has no existing rendered token to
+  // find and patch in place -- reprojectScalarBadge treats that exactly
+  // like a zero-match search and routes to the fallback (append + log), so
+  // the rendered reflection is always attempted, never skipped.
+  const outcome = reprojectScalarBadge(mutatedHtml, typeof oldValue === "string" ? oldValue : null, newValue)
 
-  return { ok: true, html: mutatedHtml, renderedInPlace, log }
+  return { ok: true, html: outcome.html, renderedInPlace: outcome.renderedInPlace, log: outcome.log }
 }
 
 // ---------------------------------------------------------------------------
@@ -350,6 +364,38 @@ describe("scalar mutation class (Tier-1 envelope status/refs only)", () => {
     const mutatedIsland = extractIslandData(result.html)
     expect(mutatedIsland.ok).toBe(true)
     if (mutatedIsland.ok) expect(mutatedIsland.data.status).toBe("completed")
+  })
+
+  test("falls back to a rendered Related Artifacts section + a log entry when the field was previously null (newly set), never a silent no-op", () => {
+    const island = buildValidIslandFixture({
+      refs: {
+        brainstorm_ref: "docs/brainstorms/2026-07-09-rich-html-artifacts-brainstorm.md",
+        architecture_ref: "docs/architecture/2026-07-09-rich-html-artifacts-architecture.md",
+        tickets_ref: null,
+        source_docs: { tickets: [], docs: ["CONTEXT.md"], figma: [], plans: [] },
+      },
+    })
+    const html = embedIslandInHtmlDocument(serialize(island))
+
+    const newTicketsRef = "docs/tickets/2026-07-10-rich-html-artifacts-v2/index.md"
+    const result = mutateScalarField(html, "refs.tickets_ref", newTicketsRef)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+
+    // "Never neither": there is no existing rendered token for a null old
+    // value, so this must route to the fallback (append + log), not a
+    // silent no-op that leaves the rendered view stale.
+    expect(result.renderedInPlace).toBe(false)
+    expect(result.log.length).toBeGreaterThan(0)
+    expect(result.html).toContain('id="related-artifacts-mutation-fallback"')
+    expect(result.html).toContain(`Updated value: ${newTicketsRef}`)
+
+    const mutatedIsland = extractIslandData(result.html)
+    expect(mutatedIsland.ok).toBe(true)
+    if (mutatedIsland.ok) {
+      const refs = mutatedIsland.data.refs as PlanArtifactIsland["refs"]
+      expect(refs.tickets_ref).toBe(newTicketsRef)
+    }
   })
 
   test("rejects a field outside the scalar mutable region", async () => {
