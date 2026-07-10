@@ -20,18 +20,21 @@ If `plan_ref` is missing, or a canonical WHY source cannot be resolved from `bra
 
 ## Mandatory output location
 
-Write the artifact to:
+The architecture artifact is composed as a self-contained **`.html`** file by the `html-artifact-composer` skill, dispatched as a fresh subagent from `/workflows:architecture`'s "Write the artifact" step (per the composer's Invocation contract in `skills/html-artifact-composer/SKILL.md`). This reference document defines the artifact's **content contract** -- what the payload must carry -- not its file format or authoring mechanism; do not hand-author the artifact as Markdown.
+
+The artifact path is:
 
 ```text
-docs/architecture/YYYY-MM-DD-<topic>-architecture.md
+docs/architecture/YYYY-MM-DD-<topic>-architecture.html
 ```
 
-Then record that path back into the plan as `architecture_ref: <artifact path>` or under a `## Related Artifacts` section.
+Then record that path back into the plan as `architecture_ref: <artifact path>` or under a `## Related Artifacts` section (dual-read by the plan's own file extension -- see `/workflows:architecture`'s write-step for the `.md`/`.html` handling).
 
 ## Required frontmatter
 
+These fields are no longer hand-authored YAML frontmatter for a `.md` file. They are carried in the composer's **payload** as the island's **Tier-1 envelope** (schema per `references/html-artifacts/island-contract.md`), and the `html-artifact-composer` skill projects them into the artifact's `#artifact-data` island. The list below is the content contract those payload fields must satisfy:
+
 ```yaml
----
 date: YYYY-MM-DD
 topic: <kebab-case-topic>
 status: complete
@@ -41,10 +44,11 @@ handoff:
   deepen_plan: true
   work: true
   review: true
----
 ```
 
 ## Required sections
+
+The sections below are the content the composer's payload must carry -- projected into the architecture-kind island's Tier-2 contract core (structured facts) and Tier-3 prose (rendered narrative), not hand-authored Markdown headings in a `.md` file:
 
 ```markdown
 # <Topic Title> Architecture Improvement

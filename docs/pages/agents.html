@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Agent Reference - Compounding Engineering</title>
-  <meta content="Complete reference for all 31 specialized AI agents in the Compounding Engineering plugin." name="description" />
+  <meta content="Complete reference for all 38 specialized AI agents in the Compounding Engineering plugin." name="description" />
   <meta content="width=device-width, initial-scale=1" name="viewport" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="../css/style.css" rel="stylesheet" type="text/css" />
@@ -30,9 +30,9 @@
           <div class="nav-section">
             <h3>Reference</h3>
             <ul>
-              <li><a href="agents.html" class="active">Agents (34)</a></li>
-              <li><a href="commands.html">Commands (29)</a></li>
-              <li><a href="skills.html">Skills (27)</a></li>
+              <li><a href="agents.html" class="active">Agents (38)</a></li>
+              <li><a href="commands.html">Commands (27)</a></li>
+              <li><a href="skills.html">Skills (29)</a></li>
               <li><a href="mcp-servers.html">MCP Servers (1)</a></li>
             </ul>
           </div>
@@ -45,10 +45,10 @@
           <div class="nav-section">
             <h3>On This Page</h3>
             <ul>
-              <li><a href="#review-agents">Review Agents (19)</a></li>
-<li><a href="#research-agents">Research Agents (6)</a></li>
+              <li><a href="#review-agents">Review Agents (21)</a></li>
+<li><a href="#research-agents">Research Agents (7)</a></li>
 <li><a href="#design-agents">Design Agents (3)</a></li>
-<li><a href="#workflow-agents">Workflow Agents (3)</a></li>
+<li><a href="#workflow-agents">Workflow Agents (7)</a></li>
             </ul>
           </div>
         </nav>
@@ -92,7 +92,7 @@ claude agent security-sentinel "Audit the auth flow"</code></pre>
 
 
 <section id="review-agents">
-  <h2><i class="fa-solid fa-code-pull-request"></i> Review Agents (19)</h2>
+  <h2><i class="fa-solid fa-code-pull-request"></i> Review Agents (21)</h2>
   <table class="docs-table">
     <thead>
       <tr>
@@ -120,12 +120,14 @@ claude agent security-sentinel "Audit the auth flow"</code></pre>
       <tr><td><code>performance-oracle</code></td><td>Performance analysis and optimization</td></tr>
       <tr><td><code>schema-drift-detector</code></td><td>Detect unrelated schema dump and schema artifact drift in database PRs</td></tr>
       <tr><td><code>security-sentinel</code></td><td>Security audits and vulnerability assessments</td></tr>
+      <tr><td><code>ticket-flow-auditor</code></td><td>Audit plan-to-ticket and ticket-to-implementation alignment, scope fences, and execution drift</td></tr>
+      <tr><td><code>uncle-bob</code></td><td>Audit naming, cohesion, side effects, boundaries, and dead code for readable, change-friendly software</td></tr>
     </tbody>
   </table>
 </section>
 
 <section id="research-agents">
-  <h2><i class="fa-solid fa-microscope"></i> Research Agents (6)</h2>
+  <h2><i class="fa-solid fa-microscope"></i> Research Agents (7)</h2>
   <table class="docs-table">
     <thead>
       <tr>
@@ -140,6 +142,7 @@ claude agent security-sentinel "Audit the auth flow"</code></pre>
       <tr><td><code>issue-intelligence-analyst</code></td><td>Analyze GitHub issues to surface recurring themes and pain patterns</td></tr>
       <tr><td><code>learnings-researcher</code></td><td>Search institutional learnings for relevant past solutions</td></tr>
       <tr><td><code>repo-research-analyst</code></td><td>Research repository structure and conventions</td></tr>
+      <tr><td><code>todo-triage-researcher</code></td><td>Produce evidence-backed action briefs for review-created todos to support triage decisions</td></tr>
     </tbody>
   </table>
 </section>
@@ -162,7 +165,7 @@ claude agent security-sentinel "Audit the auth flow"</code></pre>
 </section>
 
 <section id="workflow-agents">
-  <h2><i class="fa-solid fa-gears"></i> Workflow Agents (3)</h2>
+  <h2><i class="fa-solid fa-gears"></i> Workflow Agents (7)</h2>
   <table class="docs-table">
     <thead>
       <tr>
@@ -172,6 +175,10 @@ claude agent security-sentinel "Audit the auth flow"</code></pre>
     </thead>
     <tbody>
       <tr><td><code>bug-reproduction-validator</code></td><td>Systematically reproduce and validate bug reports</td></tr>
+      <tr><td><code>e2e-test-strategist</code></td><td>Design, harden, and audit real end-to-end test suites with zero tolerance for fakes or hardcoded passes</td></tr>
+      <tr><td><code>execution-agent</code></td><td>Execute one scoped ticket or work unit with strict clean-code, DRY, and SOLID delivery discipline</td></tr>
+      <tr><td><code>inline-code-quality-reviewer</code></td><td>Perform lightweight per-unit code quality checks inside /workflows:work inline review mode</td></tr>
+      <tr><td><code>inline-spec-compliance-reviewer</code></td><td>Perform lightweight per-unit spec compliance checks inside /workflows:work inline review mode</td></tr>
       <tr><td><code>pr-comment-resolver</code></td><td>Address PR comments and implement fixes</td></tr>
       <tr><td><code>spec-flow-analyzer</code></td><td>Analyze user flows and identify gaps in specifications</td></tr>
     </tbody>
