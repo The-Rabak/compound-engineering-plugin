@@ -8,7 +8,7 @@ This document is the **spec**. The canonical reference implementation — the ex
 
 ## v1 discipline
 
-- This schema fully defines only the **envelope** (Tier 1) and the **`plan` kind** (Tier 2 contract core). `kind` and `schema_version` exist and are read, but **no multi-kind registry is built in v1** — that is reserved for v2 (`brainstorm`, `architecture`, `deepen-plan` kinds).
+- This schema fully defines the **envelope** (Tier 1) and the **`plan`**, **`brainstorm`**, and **`architecture`** kinds (Tier 2 contract core each, added since T03/T04 — see the v2 updates below). `kind` and `schema_version` exist and are read; **no general multi-kind registry was built** — each kind is added via one Tier-2 section plus one `REQUIRED_KEYS_BY_KIND` entry. The **`deepen-plan`** kind remains reserved for a future ticket.
 - **Required set = the full envelope + the enumerated Tier-2 `plan` contract core.** Tier 3 (prose) and Tier 4 (open extension) are part of the schema but are not enforced as required by the extractor.
 - Legitimate per-kind absence does not weaken the contract: `constitution.version: null` (no `docs/constitution.md`), `refs.source_docs.figma: []` (no Figma refs), `refs.tickets_ref: null` (before ticketization), `tdd.exceptions: []` (no exceptions apply) are all valid, complete data — not missing data.
 
@@ -450,7 +450,7 @@ The content class's mutable region is the same rule for every kind — "Tier-2/3
 
 ### Scalar-class rendered update: single-element-or-fallback
 
-A scalar mutation never re-projects, but an in-place rendered update is light enough to run inline when it is unambiguous: if the field's *old* value is rendered verbatim as **exactly one** element following the composer's own conventions (e.g. a `<span class="badge">{value}</span>` for `type`/`status`/`date`), that element's text is replaced with the HTML-entity-escaped new value. Zero matches (nothing rendered) or more than one match (ambiguous) are both treated as **unsafe** — the mutator does not guess. Instead it appends a rendered "Related Artifacts" section near the end of `<body>` stating the new value (itself backed by the same island field — never an invented fact) and records a log entry naming the fallback. This is exactly the behavior `tests/html-artifact-mutation.test.ts` proves for both branches.
+A scalar mutation never re-projects, but an in-place rendered update is light enough to run inline when it is unambiguous: if the field's *old* value is rendered verbatim as **exactly one** element per the composer's badge invariant (a `<span class="badge">{value}</span>` for `type`/`status`/`date`), that element's text is replaced with the HTML-entity-escaped new value. Zero matches (nothing rendered) or more than one match (ambiguous) are both treated as **unsafe** — the mutator does not guess. Instead it appends a rendered "Related Artifacts" section near the end of `<body>` stating the new value (itself backed by the same island field — never an invented fact) and records a log entry naming the fallback. This is exactly the behavior `tests/html-artifact-mutation.test.ts` proves for both branches.
 
 ### Content-class re-projection
 

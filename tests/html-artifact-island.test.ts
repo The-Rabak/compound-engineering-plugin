@@ -424,7 +424,7 @@ describe("kind-aware required set (brainstorm kind, T03)", () => {
   })
 
   test("plan-kind required behavior is unchanged: REQUIRED_KEYS_BY_KIND.plan is exactly REQUIRED_FIXED_CORE_KEYS", () => {
-    expect(REQUIRED_KEYS_BY_KIND.plan).toEqual(REQUIRED_FIXED_CORE_KEYS as unknown as string[])
+    expect(REQUIRED_KEYS_BY_KIND.plan).toEqual(REQUIRED_FIXED_CORE_KEYS)
   })
 
   test("an unrecognized/missing kind falls back to the plan-kind required set (documented current-behavior limit, not a silent pass)", () => {
@@ -594,8 +594,8 @@ describe("kind-aware required set (architecture kind, T04)", () => {
   })
 
   test("plan-kind and brainstorm-kind required behavior stay unchanged after registering the architecture kind", () => {
-    expect(REQUIRED_KEYS_BY_KIND.plan).toEqual(REQUIRED_FIXED_CORE_KEYS as unknown as string[])
-    expect(REQUIRED_KEYS_BY_KIND.brainstorm).toEqual(REQUIRED_BRAINSTORM_FIXED_CORE_KEYS as unknown as string[])
+    expect(REQUIRED_KEYS_BY_KIND.plan).toEqual(REQUIRED_FIXED_CORE_KEYS)
+    expect(REQUIRED_KEYS_BY_KIND.brainstorm).toEqual(REQUIRED_BRAINSTORM_FIXED_CORE_KEYS)
 
     const planFixture = buildValidIslandFixture()
     const planHtml = embedIslandInHtmlDocument(serialize(planFixture))

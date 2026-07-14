@@ -71,7 +71,7 @@ When the input is a ticket index, this command supports `--batches N-M`.
       - `feature_home`, `depends_on`, `dependency_type`, `files`, `test_command`, and `status`
       - the compact packet in `## Local Context`
       - the parent trace in `## Parent Refs` and `## Deeper-Dive Refs`
-    - If the input is a ticket index or ticket file, load the parent plan and architecture artifact from the recorded refs before continuing (branch on the parent plan's extension per the dual-read rule above; the architecture artifact stays `.md`). The index chooses the batch; the ticket files remain the execution packets; the parent artifacts provide WHY and boundary context.
+    - If the input is a ticket index or ticket file, load the parent plan and architecture artifact from the recorded refs before continuing (branch on the parent plan's extension per the dual-read rule above; branch on the architecture artifact's own extension per the dual-read rules below). The index chooses the batch; the ticket files remain the execution packets; the parent artifacts provide WHY and boundary context.
     - **Resolve canonical WHY linkage** from parent refs (these ground everything that follows):
       - **Canonical WHY source** -- `brainstorm_ref` when present, otherwise the parent `plan_ref`
       - **User outcome anchor** -- one concise line from the parent user story

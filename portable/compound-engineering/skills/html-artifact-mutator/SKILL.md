@@ -57,14 +57,12 @@ field is out of policy rather than attempting an unsafe write.
 
 ## Mutable-region policy
 
-Authored here (the shipped mutation contract) and mirrored in `island-contract.md`:
-
-| Class | May touch | May NOT touch |
-|---|---|---|
-| **scalar** | Tier-1 envelope `status`, and every `refs.*` leaf (`refs.brainstorm_ref`, `refs.architecture_ref`, `refs.tickets_ref`, `refs.source_docs.*`) | `title`, `type`, `date`, `kind`, `schema_version` (identity/classification, set once at composition and never rewritten), `render_meta` (writer-only) |
-| **content** | Tier-2 contract-core fields **for the artifact's own `kind`** (e.g. `plan`: `execution_shape`, `tdd`, `runtime_stack`, `constitution`, `handoff`, `slices`, `success_criteria`, `suggested_e2e_suite`; `brainstorm`: `chosen_approach`, `key_decisions`, `resolved_questions`, `open_questions`, `handoff`), Tier-3 prose fields, Tier-4 `ext{}` | Every Tier-1 envelope key, including `render_meta` |
-
-The per-kind field names above are illustrative, not an exhaustive allowlist scoped to `plan` alone — the rule is "Tier-2/3/4 for whichever kind this artifact is, never Tier-1," so a `brainstorm` artifact's `key_decisions[]`/`resolved_questions[]`/`open_questions[]` are exactly as in-policy for a content mutation as a `plan`'s `slices[]`. See `island-contract.md`'s per-kind Tier-2 sections for the authoritative field list per `kind`.
+The authoritative Mutable-region policy table — which scalar/content fields are legal to mutate
+per `kind` (including the `architecture` kind) and whether each class re-projects — lives in
+`island-contract.md`'s **Mutable-region policy** section. Load it and follow that table; it is
+the single source of truth for both mutation classes. Do not re-list or re-derive per-kind field
+sets here — that duplication is exactly what causes a second table to drift from the canonical
+one.
 
 `render_meta` is never mutated by either class. Scalar mutations don't touch it because they
 never re-project. Content mutations don't touch it because re-projection must *reuse* the
@@ -86,16 +84,16 @@ design stable across edits (no classifier drift between one edit and the next).
      then shallow-merge `patch` onto the island object (each key's value fully replaces the
      existing value at that key). `render_meta` is carried forward unchanged.
 4. **Re-serialize** the mutated island with the exact T01 primitive (`island-contract.md` →
-   "Serialization primitive"): `JSON.stringify`, then `<`→`<`, `>`→`>`, `/`→`/`,
-   U+2028→` `, U+2029→` `. Replace the `#artifact-data` script tag's inner text with
+   "Serialization primitive"): `JSON.stringify`, then `<`→`\u003C`, `>`→`\u003E`, `/`→`\u002F`,
+   U+2028→`\u2028`, U+2029→`\u2029`. Replace the `#artifact-data` script tag's inner text with
    this string — the opening/closing tags and every other byte of the document stay untouched.
    **Never re-implement or re-derive this escape** — do not use HTML-entity escaping (`&lt;`)
    for the island; it is not reversible inside `<script type="application/json">` (see
    `island-contract.md` for why).
 5. **Re-project the affected view, only when required:**
    - **Scalar class — no re-projection.** Instead, attempt one light, inline, single-element
-     rendered update: if the field's *old* value is rendered verbatim as exactly one element the
-     composer's own conventions produce (e.g. a `<span class="badge">{value}</span>` for
+     rendered update: if the field's *old* value is rendered verbatim as exactly one element per
+     the composer's badge invariant (a `<span class="badge">{value}</span>` for
      `type`/`status`/`date`), replace that element's text with the HTML-entity-escaped new value.
      If zero or more than one such element exists — **or the field's old value was `null`/absent
      and is being set for the first time** (e.g. a `refs.tickets_ref: null → "..."` back-write,

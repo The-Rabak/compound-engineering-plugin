@@ -395,7 +395,7 @@ export function extractIslandData(html: string): IslandExtractionResult {
     return {
       ok: false,
       error: "INVALID_JSON",
-      message: `The artifact-data island is not valid JSON: ${(cause as Error).message}`,
+      message: `The artifact-data island is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`,
     }
   }
 

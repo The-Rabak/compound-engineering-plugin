@@ -163,6 +163,14 @@ describe("published support surface", () => {
     expect(await pathExists("plugins", "compound-engineering", "commands", "visual-artifact.md")).toBeFalse()
   })
 
+  test("root README does not describe the removed MDX visual-artifact system", async () => {
+    const rootReadme = await readRepoFile("README.md")
+
+    expect(rootReadme).not.toContain("local-only visual artifacts")
+    expect(rootReadme).not.toContain("/visual-artifact")
+    expect(rootReadme).not.toContain("local-visual-artifact-renderer")
+  })
+
   test("retires the local visual artifact renderer agent and its style/reference docs", async () => {
     const plugin = await loadPortablePlugin(portableRoot)
     const pluginReadme = await readRepoFile("plugins", "compound-engineering", "README.md")

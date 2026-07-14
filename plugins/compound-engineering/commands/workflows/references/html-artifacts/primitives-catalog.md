@@ -154,7 +154,7 @@ The risk/impact table renders exactly the island's exception/waiver-shaped array
 
 Before projecting any island field into visible HTML:
 
-- **Prose fields** (Tier 3, or any Tier 2 field shown as running text) must be HTML-entity-escaped: `&` → `&amp;`, `<` → `&lt;`, `>` → `&gt;`. Never interpolate raw island text into markup.
+- **Prose fields** (Tier 3, or any Tier 2 field shown as running text) must be HTML-entity-escaped: `&` → `&amp;`, `<` → `&lt;`, `>` → `&gt;`. Never interpolate raw island text into markup. This text-node escape set does not cover `"`/`'` and is insufficient for attribute contexts: island prose must never be interpolated into a quoted HTML attribute value (`title="…"`, `aria-label="…"`, `data-*="…"`, `alt="…"`) — render it only as text-node content.
 - **The island `<script>` block itself** uses the T01 serialization primitive (`JSON.stringify` then escape `<`, `>`, `/`, U+2028, U+2029) — never the `&lt;`-entity approach, which is not reversible inside a `<script>` raw-text element (see `island-contract.md`).
 - A representative hostile payload (`</script>`, `<img src=x onerror=...>`) must round-trip through the island exactly and render only in escaped form in the visible view. This is the composer's own self-check before finishing a generation — not something delegated to a downstream test.
 

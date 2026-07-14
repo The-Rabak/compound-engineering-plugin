@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { promises as fs } from "fs"
 import path from "path"
+import { extract, readArtifactDataScriptText, REQUIRED_FIXED_CORE_KEYS } from "./support/island-spec"
 
 /**
  * Structural-assert suite for the `html-artifact-composer` skill (T03).
@@ -21,11 +22,14 @@ import path from "path"
  *   (e) zero user design input (systematic token layer, not ad hoc styling)
  *   (f) `render_meta` recorded as `{ archetypes: string[], design_seed: string }`
  *
- * Parsing note: mirrors `tests/html-artifact-island.test.ts`'s DOM-free,
- * regex-based script-tag lookup + plain `JSON.parse` (no unescape step).
- * That reference implementation is NOT imported here -- re-implementing the
- * tiny read-only lookup keeps the composer test independent of the T01 test
- * file and keeps the reference impl un-shippable by construction.
+ * Parsing note: imports `readArtifactDataScriptText`, `extract`, and
+ * `REQUIRED_FIXED_CORE_KEYS` from `tests/support/island-spec.ts` -- the
+ * canonical, DOM-free, regex-based script-tag lookup + plain `JSON.parse`
+ * (no unescape step) shared with `tests/html-artifact-island.test.ts` (T01)
+ * and `tests/html-artifact-mutation.test.ts` (T02). Importing keeps this
+ * suite coupled to the same parsing behavior and required-key contract as
+ * the other island suites, instead of re-declaring a third, independently
+ * drifting copy.
  */
 
 const fixturePath = path.join(
@@ -34,24 +38,6 @@ const fixturePath = path.join(
   "html-artifacts",
   "representative-plan.html",
 )
-
-/**
- * Locates the `<script type="application/json" id="artifact-data">` island
- * in a raw HTML document string and returns its inner text -- the
- * string-level equivalent of reading `.textContent` in a real DOM. Mirrors
- * `readArtifactDataScriptText` in `tests/html-artifact-island.test.ts`
- * byte-for-byte in behavior (not by import).
- */
-function readArtifactDataScriptText(html: string): string | null {
-  const pattern = /<script\b[^>]*\bid=["']artifact-data["'][^>]*>([\s\S]*?)<\/script\s*>/i
-  const match = pattern.exec(html)
-  return match ? match[1] : null
-}
-
-/** Plain `JSON.parse`, no unescape step -- the exact T01 `extract()` primitive. */
-function extract(scriptText: string): Record<string, unknown> {
-  return JSON.parse(scriptText) as Record<string, unknown>
-}
 
 /**
  * Reads a dot/bracket path like `"tdd.evidence.unit"` or `"slices[].id"` off
@@ -83,25 +69,6 @@ function hasPath(value: unknown, dottedPath: string): boolean {
 
   return true
 }
-
-const REQUIRED_FIXED_CORE_KEYS = [
-  "schema_version",
-  "kind",
-  "title",
-  "type",
-  "date",
-  "status",
-  "refs",
-  "render_meta",
-  "execution_shape",
-  "tdd",
-  "runtime_stack",
-  "constitution",
-  "handoff",
-  "slices",
-  "success_criteria",
-  "suggested_e2e_suite",
-] as const
 
 /**
  * One representative path per field-coverage-map tier the fixture must
@@ -203,7 +170,7 @@ describe("html-artifact-composer representative fixture (structural asserts)", (
 
     test("kind is \"plan\" and schema_version is 1 (v1 discipline)", async () => {
       const html = await fs.readFile(fixturePath, "utf8")
-      const data = extract(readArtifactDataScriptText(html)!)
+      const data = extract(readArtifactDataScriptText(html)!) as Record<string, unknown>
 
       expect(data.kind).toBe("plan")
       expect(data.schema_version).toBe(1)
@@ -244,7 +211,7 @@ describe("html-artifact-composer representative fixture (structural asserts)", (
 
     test("a [data-tabs] viewer renders one tab per execution slice", async () => {
       const html = await fs.readFile(fixturePath, "utf8")
-      const data = extract(readArtifactDataScriptText(html)!)
+      const data = extract(readArtifactDataScriptText(html)!) as Record<string, unknown>
       const slices = data.slices as Array<{ id: string }>
 
       expect(/<[a-z0-9-]+[^>]*\bdata-tabs\b/i.test(html)).toBe(true)
@@ -309,7 +276,7 @@ describe("html-artifact-composer representative fixture (structural asserts)", (
   describe("(d) injection-safe rendering", () => {
     test("a hostile </script> + <img onerror> payload round-trips through the island exactly", async () => {
       const html = await fs.readFile(fixturePath, "utf8")
-      const data = extract(readArtifactDataScriptText(html)!)
+      const data = extract(readArtifactDataScriptText(html)!) as Record<string, unknown>
 
       expect(typeof data.problem_narrative).toBe("string")
       expect(data.problem_narrative as string).toContain(HOSTILE_SCRIPT_BREAKOUT)
@@ -359,7 +326,7 @@ describe("html-artifact-composer representative fixture (structural asserts)", (
   describe("(f) render_meta recorded as writer-only projection recipe", () => {
     test("render_meta matches { archetypes: string[], design_seed: string }", async () => {
       const html = await fs.readFile(fixturePath, "utf8")
-      const data = extract(readArtifactDataScriptText(html)!)
+      const data = extract(readArtifactDataScriptText(html)!) as Record<string, unknown>
       const renderMeta = data.render_meta as { archetypes: unknown; design_seed: unknown }
 
       expect(Array.isArray(renderMeta.archetypes)).toBe(true)
