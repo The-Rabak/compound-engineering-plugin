@@ -58,6 +58,7 @@ Use these references as contracts. Load them only when their section is needed; 
 - `commands/workflows/references/tdd-evidence-contract.md`
 - `commands/workflows/references/e2e-testing-contract.md`
 - `commands/workflows/references/vertical-slice-architecture.md` when `execution_shape.mode=vertical-slices`
+- `commands/workflows/references/html-artifacts/island-extraction-helper.md` and `commands/workflows/references/html-artifacts/island-contract.md` when the brainstorm being read as input (Path A or Path B) is a `.html` artifact
 
 When dispatching a named agent, apply `Named Agent Dispatch` from `orchestration-protocol.md`: verify the bundled agent source and metadata, dispatch the resolved agent identifier, and pass only workflow-specific payload plus resolved context. Do not paste the agent file body into the prompt.
 
@@ -134,23 +135,32 @@ Every plan must have:
 
 Choose exactly one source path.
 
+#### Brainstorm Input Dual-Read (feature-local)
+
+Whenever a brainstorm is read as input below (Path A step 4's `brainstorm_ref`, or Path B's matched brainstorm), detect which reader applies from the brainstorm path's extension before reading anything -- `/workflows:brainstorm` now emits `.html`, but older `.md` brainstorms still exist and are read unchanged:
+
+- **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the brainstorm's `#artifact-data` JSON island. Read the same lynchpin facts the legacy path reads from frontmatter/sections, sourced from the island instead: `problem_narrative`, `user_story`, `architectural_context`, `success_criteria[]`, `chosen_approach`, `key_decisions[]`, `resolved_questions[]`, `open_questions[]`, and `handoff.*` (see `island-contract.md`'s brainstorm-kind field-coverage map for the section-name -> island-field mapping). If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
+
+This branch is feature-local to this workflow's brainstorm-input step and does not change how `/workflows:plan` writes its own artifact (still the composer, per step 4 below).
+
 #### Path A: Spec or Plan File Provided
 
 If the arguments contain a `.md` path:
 1. Read the file.
 2. Announce the source path.
 3. Extract title, problem, approach, acceptance criteria, existing tasks, open questions, and any frontmatter refs.
-4. If `brainstorm_ref` exists, read that brainstorm and inherit its lynchpin sections.
+4. If `brainstorm_ref` exists, read that brainstorm (`.md` or `.html` -- see Brainstorm Input Dual-Read above) and inherit its lynchpin sections.
 5. Preserve well-defined sections and enrich only the gaps needed for this workflow's required contract.
 
 #### Path B: Matching Brainstorm Found
 
-If no file path is provided, check `docs/brainstorms/` for a matching recent brainstorm.
+If no file path is provided, check `docs/brainstorms/` for a matching recent brainstorm (`.md` or `.html`).
 
 Use a brainstorm only when topic/title/frontmatter clearly matches the request. If several match, ask the user which one to use.
 
 When a brainstorm is selected:
-1. Read it.
+1. Read it (see Brainstorm Input Dual-Read above).
 2. Carry forward its Problem Narrative, User Story, Architectural Context, Success Criteria, Chosen Approach, Key Decisions, and Open Questions.
 3. Resolve blocking open questions before planning.
 4. Do not re-decide settled brainstorm decisions unless research exposes a contradiction.
@@ -332,37 +342,49 @@ When dispatched, insert its plan-ready `## Suggested E2E Suite` deltas. Do not i
 
 For simple low-risk plans, the orchestrator may write a compact suggested e2e suite directly from the runtime stack and success criteria, while preserving the `e2e-testing-contract.md` rules.
 
-### 4. Build One Adaptive Plan Template
+### 4. Compose the Plan Artifact
 
-Use one adaptive template. Start with the decision-bearing spine, then include optional sections only when they materially change scope, sequencing, risks, validation, or approvals.
+Assemble one decision-bearing payload, then hand it to the `html-artifact-composer` skill to project as a self-contained HTML artifact. Do not hand-write HTML and do not hand-write a `.md` file for the plan output — the composer is the single writer of the artifact. (The brainstorm this plan may have read as *input* in step 1 — `.md` or `.html`, per the Brainstorm Input Dual-Read above — is unaffected; only the plan's own *output* format changes.)
 
 Write the plan to:
 
 ```text
-docs/plans/YYYY-MM-DD-<type>-<descriptive-name>-plan.md
+docs/plans/YYYY-MM-DD-<type>-<descriptive-name>-plan.html
 ```
 
 Use today's date. Keep the filename descriptive and kebab-case.
 
 Ensure `docs/plans/` exists. Ensure `.gitignore` contains `docs/plans/` and `docs/brainstorms/` if `.gitignore` exists or must be created. Do not add `docs/solutions/` to `.gitignore`.
 
-#### Required Frontmatter
+Assemble the payload, then **delegate composition to a fresh subagent per the composer's Invocation contract** (`skills/html-artifact-composer/SKILL.md` → "Invocation — the calling command MUST run the composer in a fresh subagent"). Do **not** load and run the composer inline in this planning context — by now it is large, and the single-file HTML generation belongs in a clean, focused context. Dispatch one fresh subagent and give it only:
+
+- an instruction to **load and follow** `skills/html-artifact-composer/SKILL.md` (point it at the file; do not paste the skill body into the prompt — the skill is its instruction set),
+- `target_path`: the path above,
+- `payload`: the object below, fully populated from this workflow's steps 0–3. The payload's shape matches `commands/workflows/references/html-artifacts/island-contract.md`'s Tier 1 envelope + Tier 2 `plan` contract core exactly; the composer projects the visible HTML and writes `render_meta` — this workflow does not choose an archetype or write markup by hand.
+
+The subagent writes the artifact and returns its path. If it reports a missing required field, fill it from steps 0–3 and re-dispatch; do not let the composer fabricate a value.
+
+#### Required Island Payload (Tier 1 envelope + Tier 2 contract core)
+
+Gather exactly these fields before invoking the composer — same content the legacy frontmatter used to carry, now the composer's input rather than hand-written YAML:
 
 ```yaml
----
 title: [Issue Title]
 type: [feat|fix|refactor]
 status: active
 date: YYYY-MM-DD
-constitution_version: [version or null]
-constitution_waivers: []
-brainstorm_ref: [path or null]
-tickets_ref: null
-source_docs:
-  tickets: []
-  docs: []
-  figma: []
-  plans: []
+constitution:
+  version: [version or null]
+  waivers: []
+refs:
+  brainstorm_ref: [path or null]
+  architecture_ref: [path or null]
+  tickets_ref: null
+  source_docs:
+    tickets: []
+    docs: []
+    figma: []
+    plans: []
 handoff:
   problem_narrative: true
   user_story: true
@@ -384,62 +406,53 @@ runtime_stack:
   qa: ""
   prod: ""
   e2e_surface: true
----
 ```
 
-#### Required Body Sections
+#### Required Island Content (Tier 3 prose + Tier 2 structured lists)
 
-Emit this decision-bearing spine:
+Gather exactly the content the legacy body sections used to hold — the composer projects each into a navigable section, table, or card grid instead of a markdown heading:
 
-- `## Problem Narrative`
-- `## User Story`
-- `## Architectural Context`
-- `## Runtime Stack & Environments`
-- `## Success Criteria`
-- `## Specified Scope Contract`
-- `## TDD & Evidence Contract`
-- `## Suggested E2E Suite`
-- `## Execution Shape`
-- `## Constitution Alignment`
-- `## Implementation`
-- exactly one execution packet section matching `execution_shape.mode`
-- `## References`
+- `problem_narrative`, `user_story`, `architectural_context`, `specified_scope_contract`, `references` — Tier 3 prose, rendered as-is (never machine-parsed downstream).
+- `success_criteria[]` (`{ id, statement, verification }`) — the structured twin of the legacy `## Success Criteria` section.
+- `suggested_e2e_suite[]` (`{ id, ... }`, semi-structured per scenario) — the structured twin of `## Suggested E2E Suite`.
+- `tdd`, `execution_shape`, `constitution` (already gathered above) restate as the composer's `## TDD & Evidence Contract` / `## Execution Shape` / `## Constitution Alignment` equivalents — one structured copy, not a duplicated prose mirror.
+- `slices[]` — see Packet Fields below; the composer projects these as a tabbed viewer plus, when the payload has more than one slice with real dependency chains, a milestone/roadmap timeline.
+- Anything decision-bearing that has no field above (a bespoke visual, a diagram) goes into `ext{}` on the payload, never handed to the composer as free-floating prose — the composer's hard rule requires island backing for every rendered fact.
+
+Never emit an empty optional element: if a list above is legitimately empty (e.g. no TDD exceptions, no architecture ref yet), pass it as empty/`null` rather than omitting the key — the composer still needs the key present per the fixed-core contract, and an empty value renders as nothing rather than a placeholder.
 
 #### Optional sections catalog (include only when decision-bearing)
 
-For every optional section below: Include only when this section changes a decision.
+None of these have a fixed-core field — gather one only when it changes a decision, and pass it as a named `ext{}` key so the composer projects it as its own section (per the hard rule: bespoke content still needs island backing):
 
-- `## Stakeholder Impact`
-- `## Technical Considerations`
-- `## Alternative Approaches Considered`
-- `## Dependencies & Risks`
-- `## Success Metrics`
-- `## Future Considerations`
-- `## Complexity Justification`
+- `ext.stakeholder_impact`
+- `ext.technical_considerations`
+- `ext.alternative_approaches_considered`
+- `ext.dependencies_and_risks`
+- `ext.success_metrics`
+- `ext.future_considerations`
+- `ext.complexity_justification`
 
-Never emit empty optional sections.
+Include only when this section changes a decision. Never add an `ext{}` key just to render an empty section.
 
 #### Representative routine plan (compact and scannable)
 
-For routine plans, keep the same required spine but write compact sections and one or a few packets. Do not add optional sections when they do not change decisions.
+For routine plans, gather the same required payload but keep prose fields compact and pass one or a few slices. The composer still enforces every invariant (token layer, TOC, exporters, injection-safety) regardless of plan size — "routine" changes how much content there is, never which invariants apply.
 
 #### Packet Fields
 
-Use the exact required fields from `execution-shape.md`.
+Use the exact required fields from `execution-shape.md`, expressed as one `slices[]` entry per execution packet:
+- `id`
+- `feature_home`
+- `scope` (with owns/non-goals/scope fence folded into `scope`/`scope_fence`)
+- `scope_fence`
+- `files`
+- `depends_on`
+- `dependency_type`
+- `acceptance_criteria`
+- `test_command`
 
-For `vertical-slices`, each slice must include at minimum:
-- Slice type
-- Serves
-- Demo scenario
-- Feature home
-- Files
-- Depends on
-- Dependency type
-- Scope with owns/non-goals/scope fence
-- Acceptance criteria
-- Evidence with test command and evidence focus
-
-For `infra-track` and `fix-batch`, use the matching packet requirements from `execution-shape.md`.
+For `infra-track` and `fix-batch`, use the matching packet requirements from `execution-shape.md`, mapped onto the same `slices[]` shape.
 
 ### 5. Final Validation
 

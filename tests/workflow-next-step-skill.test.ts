@@ -39,9 +39,9 @@ describe("workflow-next-step skill", () => {
     expect(content).toContain("/workflows:triage todos <first>-<last>")
     expect(content).toContain("/workflows:triage todos 13-23")
     expect(content).toContain("## Advisor-Owned Options")
-    expect(content).toContain("## Visual Plan Routing")
-    expect(content).toContain("Generate the local visual plan with local-visual-artifact-renderer")
-    expect(content).toContain("Then run:")
+    expect(content).not.toContain("## Visual Plan Routing")
+    expect(content).not.toContain("Generate the local visual plan with local-visual-artifact-renderer")
+    expect(content).not.toContain("Then run:")
   })
 
   test("defines a meticulous advisor decision procedure before routing", async () => {
@@ -68,7 +68,6 @@ describe("workflow-next-step skill", () => {
     const expectedGates = [
       "**Validity gate**",
       "**Blocked-input gate**",
-      "**Visual-plan gate**",
       "**Graph gate**",
       "**Stop gate**",
     ]
@@ -178,6 +177,25 @@ describe("workflow-next-step skill", () => {
     expect(grill).toContain("load the `workflow-next-step` skill")
   })
 
+  test("plan artifact check is dual-read aware for .html plan artifacts", async () => {
+    const content = await readRepoFile(
+      "portable",
+      "compound-engineering",
+      "skills",
+      "workflow-next-step",
+      "SKILL.md",
+    )
+
+    // The plan artifact was the first artifact kind to gain a `.html`
+    // pilot output; brainstorm (T03) and architecture (T04) are now
+    // dual-read the same way. The advisor must discover either
+    // extension and, for `.html`, read the same fixed-core facts from the
+    // island via the shared extraction helper instead of frontmatter.
+    expect(content).toContain("docs/plans/YYYY-MM-DD-*-plan.md")
+    expect(content).toContain("docs/plans/YYYY-MM-DD-*-plan.html")
+    expect(content).toContain("references/html-artifacts/island-extraction-helper.md")
+  })
+
   test("core workflow commands do not own final handoff menus", async () => {
     const workflowFiles = [
       ["portable", "compound-engineering", "commands", "workflows", "constitution.md"],
@@ -203,9 +221,6 @@ describe("workflow-next-step skill", () => {
       "What's next?",
       "Based on selection:",
       "Loop back to options",
-      "Create local visual artifact from this brainstorm.",
-      "Create local visual plan from this plan.",
-      "Create local architecture visual artifact.",
     ]
 
     for (const file of workflowFiles) {

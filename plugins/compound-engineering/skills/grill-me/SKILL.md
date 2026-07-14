@@ -76,11 +76,23 @@ After each question is answered with concrete implementation, architecture, data
 
 Prefer updating the most specific existing section over inventing a catch-all notes bucket:
 
-- **Brainstorm doc:** update `## Chosen Approach`, `## Key Decisions`, `## Architectural Context`, and move answered items into `## Resolved Questions`.
-- **Plan doc:** update `## Implementation` or `## Overview`, `## Technical Considerations`, `## Architectural Context`, `## Success Criteria`, and the relevant execution slice, acceptance criteria, or file list when the answer changes execution shape.
+- **Brainstorm doc:** update the Chosen Approach, Key Decisions, and Architectural Context content, and move answered items into Resolved Questions.
+- **Plan doc:** update the Implementation/Overview, Technical Considerations, Architectural Context, and Success Criteria content, and the relevant execution slice, acceptance criteria, or file list when the answer changes execution shape.
 - If a new answer supersedes earlier wording, edit the earlier section in place so the document stays coherent.
 
 `CONTEXT.md` should be totally devoid of implementation details. Do not treat `CONTEXT.md` as a spec, a scratch pad, or a repository for implementation decisions. It is a glossary and nothing else.
+
+### `grill-with-docs` is the canonical brainstorm mutator (`.md` vs `.html`)
+
+Detect the active feature doc's format by extension before writing -- a brainstorm or plan may now be a legacy `.md` file or the composer's `.html` output (`island-contract.md`).
+
+- **`.md` brainstorm or plan** -- edit the file directly as today: the section updates above (Chosen Approach, Key Decisions, Architectural Context, Resolved Questions, etc.) are literal Markdown edits (legacy path, unchanged).
+- **`.html` brainstorm** -- `grill-with-docs` is the canonical brainstorm mutator: it is the skill that first proves in-place mutation on this artifact kind. A content decision (a rewritten Key Decision, an updated Chosen Approach, a question moved from Open to Resolved) never edits the rendered markup directly -- it routes through `skills/html-artifact-mutator/SKILL.md` (the shared T01 update capability; do not reimplement or re-derive its read/parse/mutate/re-serialize/re-project pipeline here):
+  1. Load and follow `commands/workflows/references/html-artifacts/island-contract.md` ("Mutation contract" section, including the brainstorm-kind Tier-2 core) and the mutator's own `SKILL.md`.
+  2. Build `mutation: { class: "content", patch: {...} }` against the brainstorm's `.html` path, supplying the complete new value for each changed top-level field -- e.g. the full `key_decisions[]` array with one entry rewritten, or the full `resolved_questions[]` **and** `open_questions[]` arrays together when a question moves from one to the other (supply both fields' complete new values in the same patch).
+  3. The mutator handles fail-loud extraction, mutable-region validation, and re-serialization; never touch a Tier-1 envelope key (including `render_meta`) from this path.
+  4. Content mutations always re-project. Dispatch **one fresh subagent** with exactly: an instruction to load and follow `skills/html-artifact-composer/SKILL.md` in re-projection mode (point at the file; do not paste the skill body into the prompt), the brainstorm's `target_path`, and the recorded `render_meta` read back from the just-mutated island. The subagent re-renders only the affected section(s), reusing the exact `archetypes`/`design_seed` already recorded -- never reclassifying, never inventing a fact the island doesn't carry. The update is not complete, and must not be reported complete to the user, until this subagent returns the rewritten artifact path.
+- **`.html` plan** -- when the active sink is the plan instead of the brainstorm, the same routing already exists via `/deepen-plan`'s `.html`-plan content-enrichment step; `grill-with-docs` only needs to pick the active sink per "Choose the right documentation sink" above and hand the same content decision to that existing path.
 
 ## Final Handoff: Workflow Next Step Advisor
 

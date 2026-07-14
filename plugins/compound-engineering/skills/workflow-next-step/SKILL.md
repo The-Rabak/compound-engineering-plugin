@@ -39,6 +39,8 @@ Prefer explicit paths over discovery:
 3. frontmatter refs in known artifacts
 4. newest matching artifacts by date and topic
 
+When discovering or matching the plan artifact, treat either `docs/plans/YYYY-MM-DD-*-plan.md` or `docs/plans/YYYY-MM-DD-*-plan.html` as the plan (dual-read by extension). Brainstorm and architecture artifacts are dual-read the same way -- `.md` legacy or `.html` since T03 (brainstorm) and T04 (architecture) respectively; see the `brainstorm` and `architecture` rows in Artifact Checks below. Tickets, execution sessions, and solutions stay `.md`-only.
+
 Never mark a step complete only because an unrelated file exists. Match by explicit ref, topic slug, date proximity, source path, or parent/child frontmatter.
 
 ## Advisor Procedure
@@ -49,7 +51,7 @@ Run the advisor in this order. Do not jump directly from the just-finished comma
 2. **Bind the current chain**: collect only artifacts that belong to the same feature, bug, plan, ticket set, execution session, or maintenance target.
 3. **Audit completion evidence**: evaluate every relevant checklist row against the artifact checks below.
 4. **Summarize completed stages**: extract one precise handoff summary for each completed stage in the current chain.
-5. **Apply decision gates in order**: resolve blockers, optional advisor-owned actions, visual routing, then the graph transition.
+5. **Apply decision gates in order**: resolve blockers, optional advisor-owned actions, then the graph transition.
 6. **Emit one next-session directive**: output the exact command or skill invocation and the inputs needed to run it.
 
 ### Current Chain Selection
@@ -72,11 +74,11 @@ Use these checks to decide whether each step is complete for the current feature
 | Step | Completion evidence |
 |---|---|
 | constitution | `docs/constitution.md` exists with active/versioned constitution content. Optional for a feature unless the repo already has one. |
-| brainstorm | Matching `docs/brainstorms/YYYY-MM-DD-*-brainstorm.md` exists with `status: complete`, all `handoff.*` fields true, and no unresolved open questions. |
+| brainstorm | Matching `docs/brainstorms/YYYY-MM-DD-*-brainstorm.md` (legacy) or `docs/brainstorms/YYYY-MM-DD-*-brainstorm.html` (since T03) exists with `status: complete`, all `handoff.*` fields true, and no unresolved open questions. For `.html`, read these same fixed-core facts from the brainstorm's `#artifact-data` JSON island via `commands/workflows/references/html-artifacts/island-extraction-helper.md` instead of frontmatter/sections — never scrape the rendered HTML, and never fall back to a `.md` mirror. |
 | grill-with-docs | `CONTEXT.md` exists or was updated with canonical glossary terms, and the active brainstorm or plan has inline additions to decision-bearing sections such as `## Chosen Approach`, `## Key Decisions`, `## Architectural Context`, `## Resolved Questions`, `## Implementation`, or execution packets. |
-| plan | Matching `docs/plans/YYYY-MM-DD-*-plan.md` exists with `status: active` or later, `handoff.*` true, `tdd`, `execution_shape`, runtime/e2e sections, and execution packets. |
-| architecture | Matching `docs/architecture/YYYY-MM-DD-*-architecture.md` exists and the parent plan records it with `architecture_ref` or a labeled related-artifact link. |
-| deepen-plan | The selected plan was updated by deepening, or a `*-plan-deepened.md` file exists; WHY handoff remains intact; architecture artifact or explicit handoff was consumed. |
+| plan | Matching `docs/plans/YYYY-MM-DD-*-plan.md` (legacy) or `docs/plans/YYYY-MM-DD-*-plan.html` (pilot HTML-artifact output) exists with `status: active` or later, `handoff.*` true, `tdd`, `execution_shape`, runtime/e2e sections, and execution packets. For `.html`, read these same fixed-core facts from the plan's `#artifact-data` JSON island via `commands/workflows/references/html-artifacts/island-extraction-helper.md` instead of frontmatter/sections — never scrape the rendered HTML, and never fall back to a `.md` mirror. |
+| architecture | Matching `docs/architecture/YYYY-MM-DD-*-architecture.md` (legacy) or `docs/architecture/YYYY-MM-DD-*-architecture.html` (since T04) exists and the parent plan records it with `architecture_ref` or a labeled related-artifact link. For `.html`, read these same fixed-core facts from the architecture artifact's `#artifact-data` JSON island via `commands/workflows/references/html-artifacts/island-extraction-helper.md` instead of frontmatter/sections — never scrape the rendered HTML, and never fall back to a `.md` mirror. |
+| deepen-plan | The selected plan was updated by deepening, or a `*-plan-deepened.md`/`*-plan-deepened.html` file exists (dual-read by extension, same as the plan row above); WHY handoff remains intact; architecture artifact or explicit handoff was consumed. |
 | to-issues | `docs/tickets/YYYY-MM-DD-<topic>/index.md` exists with ticket files, dependency graph, execution batches, `last_completed_batch`, and the parent plan records `tickets_ref` or a labeled related-artifact link. |
 | work | `docs/execution-sessions/work-*/STATE.md` for the current plan/ticket source has `status: completed`, unit files exist, relevant plan/ticket statuses were updated, and validation/evidence is recorded. |
 | review | A review summary was produced, TDD/e2e evidence was checked when relevant, and review findings were either absent or written to `todos/`. |
@@ -113,9 +115,8 @@ Apply these rules only after the advisor procedure and artifact checks are compl
 
 1. **Validity gate**: If the just-finished artifact fails its required checks, recommend the same workflow again or `document-review <artifact-path>` when review can repair ambiguity without rerunning the workflow.
 2. **Blocked-input gate**: If the next graph step lacks a required input path, recommend the narrowest command or skill that can produce or identify that input. Do not invent a path.
-3. **Visual-plan gate**: For complete brainstorm, plan, or architecture artifacts without a matching local visual sidecar, recommend visual generation first, followed immediately by the graph command.
-4. **Graph gate**: If the artifact is valid and inputs are known, recommend the next graph command from the stage rules below.
-5. **Stop gate**: If the chain is complete or the lane is maintenance-only, recommend `complete` with no command required.
+3. **Graph gate**: If the artifact is valid and inputs are known, recommend the next graph command from the stage rules below.
+4. **Stop gate**: If the chain is complete or the lane is maintenance-only, recommend `complete` with no command required.
 
 ### Stage Rules
 
@@ -145,29 +146,6 @@ The core workflow commands do not present handoff menus. Preserve their former c
 - **Open/view diff/revert**: After `plan` or `deepen-plan`, include these only as optional human inspection notes under "Inputs to pass" or "Why this is next"; do not make them the recommended next command unless the artifact is invalid or the user explicitly asked.
 - **Commit/push after triage**: Recommend commit/push only when triage executed changes that are complete and validated but not committed; otherwise route to review or compound.
 - **Done/stop**: When no next workflow is needed, set the recommended next step to `complete` and state that no command is required.
-
-## Visual Plan Routing
-
-For `brainstorm`, `plan`, and `architecture`, visual rendering is advisor-owned. If the source artifact is complete and a matching `docs/visual-artifacts/<workflow>/<slug>/` sidecar does not already exist, recommend generating the local visual plan first, then immediately proceed to the next graph command in the same next-session directive.
-
-Use this format in `Run it with` when a visual plan is next:
-
-```text
-Generate the local visual plan with local-visual-artifact-renderer:
-source_path: <artifact-path>
-source_workflow: <brainstorm|plan|architecture>
-visual_kind: plan
-template_profile: <brainstorm|plan|architecture>
-
-Then run:
-<next workflow command with exact inputs>
-```
-
-Do not recommend hosted Plan MCP setup, hosted URLs, share flows, publishing, or review visual recaps. For the next graph command after visual generation:
-
-- brainstorm -> `grill-with-docs <brainstorm-path>` unless lite/trivial, then `/workflows:plan <brainstorm-path>`
-- plan -> `/workflows:architecture <plan-path>`
-- architecture -> `/deepen-plan <plan-path>`
 
 ## Required Output
 

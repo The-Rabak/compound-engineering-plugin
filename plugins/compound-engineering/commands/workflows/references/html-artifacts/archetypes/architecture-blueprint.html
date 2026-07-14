@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add CSV Export to the Reporting Dashboard — Architecture — architecture-blueprint archetype exemplar</title>
+<style>
+  :root {
+    --bg: #f7f9fb; --surface: #ffffff; --fg: #142433; --muted: #5b7386;
+    --accent: #0f7ea6; --line: #b9c9d6; --border: #d7e2ea; --radius: 6px;
+    --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0b1620; --surface:#0f202c; --fg:#dbeaf3; --muted:#7fa0b3; --accent:#57c8ee; --line:#1f3a4a; --border:#1c3442; }
+  }
+  :root[data-theme="dark"] { --bg:#0b1620; --surface:#0f202c; --fg:#dbeaf3; --muted:#7fa0b3; --accent:#57c8ee; --line:#1f3a4a; --border:#1c3442; }
+  :root[data-theme="light"] { --bg:#f7f9fb; --surface:#ffffff; --fg:#142433; --muted:#5b7386; --accent:#0f7ea6; --line:#b9c9d6; --border:#d7e2ea; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background:
+      linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 100% 28px,
+      linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 28px 100%,
+      var(--bg);
+    background-blend-mode: normal;
+    opacity: 1;
+    color: var(--fg); font-family: var(--font-sans); line-height: 1.55;
+  }
+  body::before { content: none; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.5rem; border-bottom: 2px solid var(--accent); background: var(--surface); }
+  header .kicker { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .08em; color: var(--accent); text-transform: uppercase; display: block; }
+  header h1 { font-size: 1.1rem; margin: .15rem 0 0; }
+  .exporters button, #theme-toggle { background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); padding: .4rem .7rem; cursor: pointer; font-family: var(--font-mono); font-size: .8rem; }
+  .layout { display: grid; grid-template-columns: 210px minmax(0, 720px); gap: 2rem; padding: 1.5rem 1.5rem 3rem; justify-content: center; }
+  nav.toc { position: sticky; top: 1rem; align-self: start; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .9rem; }
+  nav.toc ol { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .4rem; }
+  nav.toc a { color: var(--muted); text-decoration: none; font-size: .8rem; font-family: var(--font-mono); }
+  nav.toc a:hover { color: var(--accent); }
+  main section { margin-bottom: 2.25rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem 1.25rem; }
+  main h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); margin: 0 0 .9rem; font-family: var(--font-mono); }
+  .lede { font-size: .95rem; color: var(--muted); margin: 0 0 .5rem; }
+  table.blueprint { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  table.blueprint th, table.blueprint td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.blueprint th { font-family: var(--font-mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .8rem; }
+  .home-card { border: 1px solid var(--border); border-radius: var(--radius); padding: .8rem .9rem; position: relative; }
+  .home-card::before { content: ""; position: absolute; left: 0; top: .6rem; bottom: .6rem; width: 3px; background: var(--accent); border-radius: 2px; }
+  .home-card h3 { margin: 0 0 .35rem; font-size: .9rem; font-family: var(--font-mono); }
+  .home-card p { margin: 0; font-size: .82rem; color: var(--muted); }
+  .decision-row { display: grid; grid-template-columns: minmax(0,1fr) 140px minmax(0,1.4fr); gap: .75rem; align-items: start; padding: .55rem 0; border-bottom: 1px dashed var(--border); font-size: .85rem; }
+  .decision-row:last-child { border-bottom: none; }
+  .decision-row .candidate { font-weight: 600; }
+  .badge { display: inline-block; font-family: var(--font-mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; padding: .15rem .5rem; border-radius: 999px; border: 1px solid var(--border); }
+  .badge[data-decision="keep"], .badge[data-decision="shared-global"] { color: var(--accent); border-color: var(--accent); }
+  .badge[data-decision="delete"] { color: #d9534f; border-color: #d9534f; }
+  .badge[data-decision="delay"], .badge[data-decision="feature-local"] { color: var(--muted); }
+  ul.plain-list { margin: 0; padding-left: 1.1rem; font-size: .88rem; }
+  ul.plain-list li { margin-bottom: .4rem; }
+  .tier-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+  .tier-strip > div { border: 1px solid var(--border); border-radius: var(--radius); padding: .7rem .8rem; }
+  .tier-strip h4 { margin: 0 0 .3rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-family: var(--font-mono); }
+  .tier-strip p { margin: 0; font-size: .82rem; }
+  details.iface { border: 1px solid var(--border); border-radius: var(--radius); padding: .6rem .9rem; margin-bottom: .5rem; }
+  details.iface summary { cursor: pointer; font-weight: 600; font-size: .88rem; font-family: var(--font-mono); }
+  details.iface dl { margin: .6rem 0 0; display: grid; grid-template-columns: 140px 1fr; gap: .3rem .8rem; font-size: .82rem; }
+  details.iface dt { color: var(--muted); font-family: var(--font-mono); font-size: .74rem; text-transform: uppercase; }
+  details.iface dd { margin: 0; }
+  .seam-diagram { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; font-size: .85rem; margin-bottom: .5rem; }
+  .seam-diagram .node { border: 1px solid var(--accent); border-radius: var(--radius); padding: .4rem .7rem; font-family: var(--font-mono); font-size: .78rem; }
+  .seam-diagram .arrow { color: var(--accent); font-weight: 700; }
+  .stability { font-size: .75rem; color: var(--muted); margin-left: .4rem; }
+  .rec-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+  .rec-columns h3 { font-size: .78rem; font-family: var(--font-mono); color: var(--accent); margin: 0 0 .4rem; }
+  @media (max-width: 780px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; }
+    .decision-row { grid-template-columns: 1fr; }
+    .tier-strip { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <span class="kicker">Architecture Improvement</span>
+    <h1>Add CSV Export to the Reporting Dashboard</h1>
+  </div>
+  <div class="exporters">
+    <button id="theme-toggle" type="button" aria-pressed="false">Toggle theme</button>
+    <button id="export-json" type="button">Copy as JSON</button>
+    <button id="export-prompt" type="button">Copy as Prompt</button>
+    <button id="export-markdown" type="button">Copy as Markdown</button>
+  </div>
+</header>
+<div class="layout">
+  <nav class="toc" aria-label="Table of contents">
+    <ol>
+      <li><a href="#purpose">Purpose Linkage</a></li>
+      <li><a href="#homes">Feature Homes</a></li>
+      <li><a href="#shared">Shared / Global</a></li>
+      <li><a href="#deepening">Deepening Candidates</a></li>
+      <li><a href="#deletion">Deletion Test</a></li>
+      <li><a href="#interfaces">Interfaces</a></li>
+      <li><a href="#seams">Seams &amp; Contracts</a></li>
+      <li><a href="#tiers">Context Tiers</a></li>
+      <li><a href="#drift">Drift Checks</a></li>
+      <li><a href="#recs">Recommendations</a></li>
+    </ol>
+  </nav>
+  <main>
+    <section id="purpose">
+      <h2>Purpose Linkage</h2>
+      <p class="lede">Canonical WHY source: the CSV-export brainstorm. Local intent: keep the serializer feature-local and streaming-safe. Success-criteria focus: both brainstorm success criteria. Architectural scope: the reporting module's export surface only.</p>
+    </section>
+    <section id="homes">
+      <h2>Feature Homes and Ownership</h2>
+      <div class="home-grid">
+        <article class="home-card">
+          <h3>src/reporting/export/</h3>
+          <p>Owns the toCsv() serializer, the export API route, and the UI export button. New feature home — nothing else in the reporting module currently owns export formatting.</p>
+        </article>
+        <article class="home-card">
+          <h3>src/reporting/ (existing)</h3>
+          <p>Owns the report query result the exporter reads; unchanged by this feature — a read-only dependency, not a new owner.</p>
+        </article>
+      </div>
+    </section>
+    <section id="shared">
+      <h2>Shared / Global Decisions</h2>
+      <div class="decision-row">
+        <span class="candidate">toCsv() serializer</span>
+        <span class="badge" data-decision="feature-local">feature-local</span>
+        <span>Only one consumer (the export route) exists today; promote to shared only when the scheduled-export job needs it.</span>
+      </div>
+      <div class="decision-row">
+        <span class="candidate">Report-read permission check</span>
+        <span class="badge" data-decision="shared-global">reuse shared</span>
+        <span>Export reads the same data the viewer already authorizes; a new scope would duplicate an existing shared decision.</span>
+      </div>
+    </section>
+    <section id="deepening">
+      <h2>Deepening Candidates</h2>
+      <ul class="plain-list">
+        <li>Confirm the streaming-export approach handles 100k+ row reports without exceeding the API pod's memory limits.</li>
+        <li>Decide whether the CSV UTF-8 BOM is always emitted or only for locales where Excel needs it.</li>
+      </ul>
+    </section>
+    <section id="deletion">
+      <h2>Deletion Test</h2>
+      <div class="decision-row">
+        <span class="candidate">Scheduled/recurring export job</span>
+        <span class="badge" data-decision="delay">delay</span>
+        <span>No user has asked for exports larger than an interactive request can serve; building it now is unused structure.</span>
+      </div>
+      <div class="decision-row">
+        <span class="candidate">Streaming CSV serializer</span>
+        <span class="badge" data-decision="keep">keep</span>
+        <span>Survives the deletion test: without it, the 100k+ row success criterion cannot be met without risking OOM.</span>
+      </div>
+    </section>
+    <section id="interfaces">
+      <h2>Interfaces as Test Surfaces</h2>
+      <details class="iface" open>
+        <summary>toCsv() serializer</summary>
+        <dl>
+          <dt>Callers rely on</dt><dd>A pure function that streams rows to a writable without buffering the full result set.</dd>
+          <dt>Must not leak</dt><dd>Report-viewer rendering details; the serializer must not import UI code.</dd>
+          <dt>Evidence needed</dt><dd>Unit test streaming a 100k+ row fixture without exceeding a fixed memory ceiling.</dd>
+        </dl>
+      </details>
+    </section>
+    <section id="seams">
+      <h2>Seams, Adapters, and Contracts</h2>
+      <div class="seam-diagram">
+        <span class="node">Export route</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node">toCsv() adapter</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node">Existing query result</span>
+      </div>
+      <p class="lede">Contract: the export route never re-queries the data; it reuses the viewer's already-authorized result.<span class="stability">Stability: permanent</span></p>
+    </section>
+    <section id="tiers">
+      <h2>Context Tiers</h2>
+      <div class="tier-strip">
+        <div>
+          <h4>Global</h4>
+          <p>Dependency-free single-file HTML is a hard invariant; the existing report-read permission model applies to every export surface.</p>
+        </div>
+        <div>
+          <h4>On-demand</h4>
+          <p>This architecture artifact; the CSV-export brainstorm; the reporting module's existing query-layer docs.</p>
+        </div>
+        <div>
+          <h4>Ticket-local</h4>
+          <p>The exporter's feature home, the exact files, the scope fence, and the one acceptance criterion each execution slice owns.</p>
+        </div>
+      </div>
+    </section>
+    <section id="drift">
+      <h2>Drift Checks</h2>
+      <ul class="plain-list">
+        <li>A new export format is added without reusing the existing report-read permission check.</li>
+        <li>The serializer buffers the full result set in memory instead of streaming.</li>
+      </ul>
+    </section>
+    <section id="recs">
+      <h2>Recommendations</h2>
+      <div class="rec-columns">
+        <div>
+          <h3>/deepen-plan</h3>
+          <ul class="plain-list"><li>Confirm the streaming approach's memory ceiling before execution hardening.</li></ul>
+        </div>
+        <div>
+          <h3>/workflows:work</h3>
+          <ul class="plain-list"><li>Keep the serializer feature-local; do not promote it to shared until a second consumer exists.</li></ul>
+        </div>
+        <div>
+          <h3>/workflows:review</h3>
+          <ul class="plain-list"><li>Verify the export route reuses the existing permission check rather than introducing a new scope.</li></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<!--
+  This is a static, hand-projected exemplar: every fact above was written
+  directly from the island below at generation time -- the composer does
+  NOT ship a runtime templating script that reconstructs the view from this
+  JSON on page load (see html-artifact-composer/SKILL.md step 4). The
+  inline script below is limited to genuine interactivity: theme toggling
+  and the three exporters -- never content generation. The <details> blocks
+  need zero JavaScript (native disclosure behavior); this exemplar has no
+  other bespoke interaction script.
+
+  Visible-variety note (this archetype vs. `implementation-plan` and
+  `brainstorm-narrative`): a graph-paper/blueprint background instead of a
+  flat surface, a cyan/teal accent instead of blue or violet, monospace
+  labels throughout (feature homes, badges, seam nodes) evoking a technical
+  schematic rather than a narrative read or an execution tracker, decision
+  rows with a keep/delete/delay or shared/feature-local badge instead of a
+  risk table or a decision spine, and a labeled node-arrow-node seam diagram
+  instead of a flowchart SVG. Three artifact kinds, three genuinely
+  different reading experiences.
+-->
+<script type="application/json" id="artifact-data">{"schema_version":1,"kind":"example","archetype":"architecture-blueprint","title":"Add CSV Export to the Reporting Dashboard — Architecture (archetype exemplar)","purpose_linkage":"Canonical WHY source: the CSV-export brainstorm. Local intent: keep the serializer feature-local and streaming-safe. Success-criteria focus: both brainstorm success criteria. Architectural scope: the reporting module's export surface only.","feature_homes":[{"feature_home":"src/reporting/export/","owns":"The toCsv() serializer, the export API route, and the UI export button.","notes":"New feature home; nothing else in the reporting module currently owns export formatting."},{"feature_home":"src/reporting/ (existing)","owns":"The report query result the exporter reads; unchanged by this feature.","notes":"Read-only dependency, not a new owner."}],"shared_global_decisions":[{"candidate":"toCsv() serializer","decision":"feature-local","rationale":"Only one consumer (the export route) exists today; promote to shared only when the scheduled-export job needs it."},{"candidate":"Report-read permission check","decision":"reuse existing shared permission model","rationale":"Export reads the same data the viewer already authorizes; a new scope would duplicate an existing shared decision."}],"deepening_candidates":["Confirm the streaming-export approach handles 100k+ row reports without exceeding the API pod's memory limits.","Decide whether the CSV UTF-8 BOM is always emitted or only for locales where Excel needs it."],"deletion_test":[{"candidate":"Scheduled/recurring export job","decision":"delay","rationale":"No user has asked for exports larger than an interactive request can serve; building it now is unused structure."},{"candidate":"Streaming CSV serializer","decision":"keep","rationale":"Survives the deletion test: without it, the 100k+ row success criterion cannot be met without risking OOM."}],"interfaces_as_test_surfaces":[{"interface":"toCsv() serializer","callers_rely_on":"A pure function that streams rows to a writable without buffering the full result set.","must_not_leak":"Report-viewer rendering details; the serializer must not import UI code.","evidence_needed":"Unit test streaming a 100k+ row fixture without exceeding a fixed memory ceiling."}],"seams_adapters_contracts":[{"seam":"Export route to serializer","adapter":"toCsv() called with the same query result the viewer already fetched","contract":"The export route never re-queries the data; it reuses the viewer's already-authorized result.","stability_class":"permanent"}],"context_tiers":{"global":"Dependency-free single-file HTML is a hard invariant for any generated artifact; the existing report-read permission model applies to every export surface.","on_demand":"This architecture artifact; the CSV-export brainstorm; the reporting module's existing query-layer docs.","ticket_local":"The exporter's feature home, the exact files, the scope fence, and the one acceptance criterion each execution slice owns."},"drift_checks":["A new export format is added without reusing the existing report-read permission check.","The serializer buffers the full result set in memory instead of streaming."],"recommendations":{"deepen_plan":["Confirm the streaming approach's memory ceiling before execution hardening."],"work":["Keep the serializer feature-local; do not promote it to shared until a second consumer exists."],"review":["Verify the export route reuses the existing permission check rather than introducing a new scope."]}}</script>
+<script>
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var root = document.documentElement;
+    root.setAttribute("data-theme", root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  var islandRawText = document.getElementById("artifact-data").textContent;
+  var islandData = JSON.parse(islandRawText);
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+      return;
+    }
+    var scratch = document.createElement("textarea");
+    scratch.value = text;
+    document.body.appendChild(scratch);
+    scratch.select();
+    document.execCommand("copy");
+    scratch.remove();
+  }
+
+  document.getElementById("export-json").addEventListener("click", function () {
+    copyToClipboard(islandRawText);
+  });
+
+  document.getElementById("export-prompt").addEventListener("click", function () {
+    copyToClipboard("Resume work on this architecture artifact. Structured island data follows.\n\n" + islandRawText);
+  });
+
+  document.getElementById("export-markdown").addEventListener("click", function () {
+    var lines = ["# " + islandData.title, "", "## Feature Homes and Ownership"];
+    islandData.feature_homes.forEach(function (entry) {
+      lines.push("- " + entry.feature_home + ": " + entry.owns);
+    });
+    copyToClipboard(lines.join("\n"));
+  });
+</script>
+</body>
+</html>

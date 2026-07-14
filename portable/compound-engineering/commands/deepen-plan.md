@@ -27,8 +27,8 @@ The orchestrator is a compiler and editor, not a second specialist. It extracts 
 <plan_path> #$ARGUMENTS </plan_path>
 
 If the plan path above is empty:
-1. Check for recent plans: `ls -la docs/plans/`
-2. Ask the user: "Which plan would you like to deepen? Please provide the path (e.g., `docs/plans/2026-01-15-feat-my-feature-plan.md`)."
+1. Check for recent plans (a plan may be a legacy `.md` file or the pilot `.html` output of `/workflows:plan`): `ls -t docs/plans/*-plan*.md docs/plans/*-plan*.html 2>/dev/null | head -5`
+2. Ask the user: "Which plan would you like to deepen? Please provide the path (e.g., `docs/plans/2026-01-15-feat-my-feature-plan.md` or `docs/plans/2026-01-15-feat-my-feature-plan.html`)."
 
 Do not proceed until you have a valid plan file path.
 
@@ -42,6 +42,8 @@ Use these references as contracts. Load only the references needed for the curre
 - `commands/workflows/references/tdd-evidence-contract.md`
 - `commands/workflows/references/e2e-testing-contract.md` when the plan has a runtime surface or a suggested e2e suite
 - `commands/workflows/references/vertical-slice-architecture.md` when `execution_shape.mode=vertical-slices`
+- `commands/workflows/references/html-artifacts/island-extraction-helper.md` when the plan path is `.html`, or when `architecture_ref` (T04) resolves to `.html`
+- `commands/workflows/references/html-artifacts/island-contract.md` and `skills/html-artifact-mutator/SKILL.md` when this run will back-write into an `.html` plan (a content enrichment or a `status`/`tickets_ref` scalar patch)
 
 When dispatching a named agent, apply `Named Agent Dispatch` from `orchestration-protocol.md`: verify the bundled agent source and metadata, dispatch the resolved agent identifier, and pass only workflow-specific payload plus resolved context. Do not paste the agent file body into the prompt.
 
@@ -97,6 +99,13 @@ Reject raw research dumps. If a helper returns broad notes, distill them into th
 
 ### 1. Load The Current Plan Contract
 
+**Dual-read by plan-file extension.** Detect which reader applies from the plan path's extension before reading anything:
+
+- **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the plan's `#artifact-data` JSON island. Read the same fixed-core facts the legacy path reads from frontmatter/sections, sourced from the island instead (see the helper's field-coverage-map pointer for the frontmatter-key/section-name -> island-field mapping). If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
+
+`architecture_ref` may now be `.md` **or** `.html` (T04) -- detect its own extension independently of the plan's, and read it via the dual-read branch below (where `architecture_ref` is read). `tickets_ref` still always resolves to `.md` regardless of the plan's own format -- read it as legacy Markdown. `brainstorm_ref` may also be `.md` **or** `.html` (T03) -- detect its own extension independently of the plan's, and read it via the dual-read branch below (where `brainstorm_ref` is read).
+
 Read the plan and extract only the contract needed for deepening:
 - Problem Narrative
 - User Story
@@ -112,9 +121,19 @@ Read the plan and extract only the contract needed for deepening:
 
 If any `handoff` field is false or missing, flag it before deepening: "Plan is missing [X]. Deepening may add technically correct but purpose-misaligned changes. Consider running `/workflows:plan` to repair the plan first." Continue only when the missing field is not required for the requested hardening.
 
-Read `brainstorm_ref` only when it exists and the plan needs missing stakeholder impact, rejected approaches, resolved-question context, or WHY clarification. Do not summarize the entire brainstorm; extract only facts that affect the manifest.
+Read `brainstorm_ref` only when it exists and the plan needs missing stakeholder impact, rejected approaches, resolved-question context, or WHY clarification. Detect which reader applies from its own file extension (independent of the plan's):
 
-Read `architecture_ref` when present and extract: Feature Homes and Ownership, shared/global decisions, deepening candidates, context tiers, deletion-test decisions, interfaces as test surfaces, seams, adapters, contracts, drift checks, and downstream recommendations. If no architecture artifact exists, build a compact explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and Related Artifacts. Record whether the handoff is real or plan-derived.
+- **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** (T03) -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the brainstorm artifact's `#artifact-data` JSON island for the same fixed-core facts, sourced from the island's `brainstorm`-kind Tier-2 core instead. If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
+
+Do not summarize the entire brainstorm; extract only facts that affect the manifest.
+
+Read `architecture_ref` when present, detecting which reader applies from its own file extension (independent of the plan's):
+
+- **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged).
+- **`.html`** (T04) -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and use it to read the architecture artifact's `#artifact-data` JSON island. Read the same fixed-core facts the legacy path reads from sections, sourced from the island's `architecture`-kind Tier-2 core instead (see `island-contract.md`'s architecture field-coverage map for the section-name -> island-field mapping). If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact).
+
+Whichever path applied, extract: Feature Homes and Ownership, shared/global decisions, deepening candidates, context tiers, deletion-test decisions, interfaces as test surfaces, seams, adapters, contracts, drift checks, and downstream recommendations. If no architecture artifact exists, build a compact explicit architecture handoff contract from the plan's Architectural Context, Key Decisions, Constitution Alignment, brainstorm context, and Related Artifacts. Record whether the handoff is real or plan-derived.
 
 ### 2. Resolve Required Contracts
 
@@ -248,7 +267,23 @@ Optional compact change note, only when it helps downstream readers:
 - Why these updates matter: [1-2 concise bullets tied to success criteria/risks]
 ```
 
-Update the plan file in place. If the user asks for a separate file, append `-deepened` after `-plan`, e.g. `2026-01-15-feat-auth-plan-deepened.md`.
+**Write the update by plan-file extension.**
+
+- **`.md` plan** -- update the plan file in place as today: edit frontmatter/sections directly (legacy path, unchanged).
+- **`.html` plan** -- content enrichment (execution packets, `tdd` contract clarifications, `## Suggested E2E Suite` hardening, a `### WHY Reassessment` note, or any other Tier-2/3/4 field) never edits the rendered markup directly; it routes through `skills/html-artifact-mutator/SKILL.md` (the shared T01 update capability -- do not reimplement or re-derive its read/parse/mutate/re-serialize/re-project pipeline here):
+  1. Load and follow `commands/workflows/references/html-artifacts/island-contract.md` ("Mutation contract" section) and the mutator's own `SKILL.md`.
+  2. Build `mutation: { class: "content", patch: {...} }` against `target_path` (the plan's `.html` path), supplying the complete new value for each changed top-level field -- e.g. the full `slices[]` array with the enriched packet, the full `tdd` object with the clarified evidence, the full `suggested_e2e_suite[]` array with the hardened scenario. A `### WHY Reassessment` note has no fixed-schema home, so it goes into `ext{}`.
+  3. The mutator handles the fail-loud extraction, mutable-region validation, and re-serialization; never touch a Tier-1 envelope key (including `render_meta`) from this path.
+  4. Content mutations always re-project -- this mirrors the composer's 3-part Invocation contract (`commands/workflows/plan.md:339-359`). Dispatch **one fresh subagent** with exactly: an instruction to **load and follow** `skills/html-artifact-composer/SKILL.md` in re-projection mode (point at the file; do not paste the skill body into the prompt), `target_path`, and the recorded `render_meta` read back from the just-mutated island. The subagent re-renders only the affected section(s), reusing the exact `archetypes`/`design_seed` already recorded -- it must never reclassify the design or invent a fact the island doesn't carry. The deepening is not complete, and must not be reported as complete, until this subagent returns the rewritten artifact path. If it reports a missing required field, fill it from the deepening synthesis and re-dispatch -- never let it fabricate a value.
+
+If the user asks for a separate file, append `-deepened` after `-plan` for either format, e.g. `2026-01-15-feat-auth-plan-deepened.md` / `...-plan-deepened.html`.
+
+### 7. Land Scalar Back-Writes (`status`, `tickets_ref`)
+
+Deepening can also confirm or change two Tier-1 scalars: the plan's `status` (for example, once deepening resolves a previously-flagged readiness gap) and `refs.tickets_ref` (for example, recording a ticket set that already exists but was not yet linked back to this plan). This is the only status/ref back-write logic in this command today -- there is no other write path to retrofit, so every write of these two fields must be `.html`-aware from here on.
+
+- **`.md` plan** -- edit the `status` / `tickets_ref` frontmatter field directly (legacy path, unchanged).
+- **`.html` plan** -- route through `skills/html-artifact-mutator/SKILL.md` with `mutation: { class: "scalar", field: "status" | "refs.tickets_ref", value }` against `target_path`. This is the scalar-only dispatch carve-out: it runs entirely inline, no subagent. Follow the mutator's single-element-or-fallback rule for the rendered view -- if the old value is rendered as exactly one element, its text is replaced in place; otherwise the mutator appends the graceful "Related Artifacts" fallback section and logs that the fallback ran. Never touch `title`, `type`, `date`, `kind`, `schema_version`, or `render_meta` from this path -- they sit outside the scalar mutable region.
 
 ## Quality Checks
 
@@ -270,6 +305,13 @@ WHY and evidence integrity:
 - [ ] Scope-expanding recommendations are deferred instead of silently added to packets
 - [ ] `tdd` frontmatter and `## TDD & Evidence Contract` still agree on precedence, loop, evidence, and justified exceptions
 - [ ] `## Suggested E2E Suite` was hardened or a justified no-surface N/A was confirmed
+
+HTML-artifact integrity (only when the plan is `.html`):
+- [ ] Every content patch stayed inside the content-class mutable region -- no Tier-1 envelope key, no `render_meta`, was included in `patch`
+- [ ] A content mutation's fresh-subagent re-projection ran and returned before the deepening was reported complete
+- [ ] `render_meta` is byte-identical after the mutation (reused, not regenerated)
+- [ ] Any `status`/`tickets_ref` back-write stayed inside the scalar mutable region and ran inline (no subagent)
+- [ ] No fact was written into the rendered HTML that is not already on the island
 
 ## Post-Enhancement Boundary
 

@@ -190,22 +190,13 @@ After the approach is chosen, construct a lightweight architectural context map.
 
 ### Phase 3: Capture the Design
 
-Summarize everything in a structured brainstorm document.
+The design is captured as a self-contained **`.html`** brainstorm artifact, composed by the `html-artifact-composer` skill and dispatched as a fresh subagent -- mirroring how `/workflows:brainstorm` dispatches it at its own write-step (`skills/html-artifact-composer/SKILL.md` -> "Invocation"). Do not hand-author a `.md` document: assemble the payload below and hand it to the composer, which is the single writer of the artifact.
 
-**Document Template:**
+**Content Structure (composer payload):**
+
+The payload must carry every fact below -- it maps to the brainstorm-kind island's Tier-2 contract core (structured facts) and Tier-3 prose (rendered narrative):
 
 ```markdown
----
-date: YYYY-MM-DD
-topic: <kebab-case-topic>
-status: complete
-handoff:
-  problem_narrative: true
-  user_story: true
-  architectural_context: true
-  success_criteria: true
----
-
 # <Topic Title>
 
 ## Problem Narrative
@@ -266,9 +257,11 @@ which causes [impact].
 -> `/workflows:plan` for implementation details
 ```
 
-**Output Location:** `docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.md`
+Frontmatter-equivalent fields (`date`, `topic`, `status`, and `handoff.{problem_narrative,user_story,architectural_context,success_criteria}`) are no longer hand-authored YAML -- they are carried in the payload's Tier-1 envelope, which the composer projects into the artifact's `#artifact-data` island.
 
-**Handoff Contract:** The `handoff` frontmatter fields signal to downstream phases which lynchpin sections are present. All four should be `true` before handing off to `/workflows:plan`.
+**Output Location:** `docs/brainstorms/YYYY-MM-DD-<topic>-brainstorm.html`
+
+**Handoff Contract:** The `handoff` fields signal to downstream phases which lynchpin sections are present. All four should be `true` before handing off to `/workflows:plan`.
 
 ### Phase 4: Handoff
 

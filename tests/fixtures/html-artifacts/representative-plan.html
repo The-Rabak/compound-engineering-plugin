@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add CSV Export to the Reporting Dashboard — Plan</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f6f7f9;
+    --fg: #17181c;
+    --muted: #5b6270;
+    --accent: #3457d5;
+    --border: #dde1e7;
+    --radius: 10px;
+    --done: #2f9e5b;
+    --pending: #b9860b;
+    --font-sans: -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0e14; --surface: #12161f; --fg: #e7e9ee; --muted: #9aa2b1; --accent: #7c9bff; --border: #262c38;
+    }
+  }
+  :root[data-theme="dark"] { --bg: #0b0e14; --surface: #12161f; --fg: #e7e9ee; --muted: #9aa2b1; --accent: #7c9bff; --border: #262c38; }
+  :root[data-theme="light"] { --bg: #ffffff; --surface: #f6f7f9; --fg: #17181c; --muted: #5b6270; --accent: #3457d5; --border: #dde1e7; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-sans); line-height: 1.5; }
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 1; }
+  header h1 { font-size: 1.15rem; margin: 0; }
+  .badges { display: flex; gap: .4rem; margin-top: .3rem; }
+  .badge { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: .1rem .6rem; font-size: .75rem; color: var(--muted); }
+  .exporters { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .exporters button, #theme-toggle { background: var(--surface); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); padding: .4rem .7rem; cursor: pointer; font-family: var(--font-sans); font-size: .85rem; }
+  .exporters button:hover, #theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .layout { display: grid; grid-template-columns: 220px 1fr; gap: 2rem; padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+  nav.toc { position: sticky; top: 4.5rem; align-self: start; }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .4rem; }
+  nav.toc a { color: var(--muted); text-decoration: none; font-size: .88rem; }
+  nav.toc a:hover { color: var(--accent); }
+  main section { margin-bottom: 2.25rem; }
+  main h2 { font-size: 1rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); margin: 0 0 .75rem; }
+  .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+  .stat-card h3 { margin: 0 0 .4rem; color: var(--accent); }
+  .stat-card footer { margin-top: .6rem; color: var(--muted); font-size: .85rem; }
+  .tabs .tab-list { display: flex; gap: .25rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; flex-wrap: wrap; }
+  .tabs [role="tab"] { background: none; border: none; padding: .5rem .8rem; cursor: pointer; color: var(--muted); font-family: var(--font-mono); font-size: .9rem; border-bottom: 2px solid transparent; }
+  .tabs [role="tab"][aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+  [role="tabpanel"] { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+  [role="tabpanel"][hidden] { display: none; }
+  [role="tabpanel"] code, .risk-table code { font-family: var(--font-mono); font-size: .85rem; }
+  ol.timeline { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--border); }
+  .timeline-item { position: relative; padding: 0 0 1.25rem 1.5rem; }
+  .timeline-item .timeline-marker { position: absolute; left: -6px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+  .timeline-item[data-status="ready"] .timeline-marker { background: var(--done); }
+  .timeline-item[data-status="blocked"] .timeline-marker { background: var(--pending); }
+  .timeline-item h4 { margin: 0 0 .2rem; font-size: .95rem; }
+  .timeline-item p { margin: 0; color: var(--muted); font-size: .85rem; }
+  table.risk-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  table.risk-table th, table.risk-table td { text-align: left; padding: .6rem .7rem; border-bottom: 1px solid var(--border); vertical-align: top; font-size: .9rem; }
+  table.risk-table th { color: var(--muted); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .02em; }
+  table.risk-table tr:last-child td { border-bottom: none; }
+  details { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: .6rem .9rem; margin-bottom: .5rem; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details > div { margin-top: .6rem; }
+  .muted { color: var(--muted); font-size: .85rem; }
+  @media (max-width: 720px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.toc { position: static; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Add CSV Export to the Reporting Dashboard</h1>
+    <div class="badges">
+      <span class="badge">feat</span>
+      <span class="badge">active</span>
+      <span class="badge">2026-07-09</span>
+    </div>
+  </div>
+  <div class="exporters">
+    <button id="theme-toggle" type="button" aria-pressed="false">Toggle theme</button>
+    <button id="export-json" type="button">Copy as JSON</button>
+    <button id="export-prompt" type="button">Copy as Prompt</button>
+    <button id="export-markdown" type="button">Copy as Markdown</button>
+  </div>
+</header>
+<div class="layout">
+  <nav class="toc" aria-label="Table of contents">
+    <ol>
+      <li><a href="#problem-narrative">Problem Narrative</a></li>
+      <li><a href="#user-story">User Story</a></li>
+      <li><a href="#architectural-context">Architectural Context</a></li>
+      <li><a href="#success-criteria">Success Criteria</a></li>
+      <li><a href="#specified-scope-contract">Specified Scope Contract</a></li>
+      <li><a href="#execution-slices">Execution Slices</a></li>
+      <li><a href="#milestone-grid">Milestone Grid</a></li>
+      <li><a href="#risk-table">Risk Table</a></li>
+      <li><a href="#suggested-e2e-suite">Suggested E2E Suite</a></li>
+      <li><a href="#contract-details">Contract Details</a></li>
+      <li><a href="#references">References</a></li>
+    </ol>
+  </nav>
+  <main>
+    <section id="problem-narrative">
+      <h2>Problem Narrative</h2>
+      <p>Analysts currently screenshot report tables to share them, losing precision and making downstream re-analysis impossible. Hostile-input regression probe (kept verbatim to prove the artifact's island-escaping and HTML-escaping both hold): &lt;/script&gt;&lt;img src=x onerror="alert(1)"&gt;</p>
+    </section>
+
+    <section id="user-story">
+      <h2>User Story</h2>
+      <p>As an analyst, I need to export any report I can view as a CSV file, so that I can re-analyze the underlying numbers in my own tools instead of retyping them from a screenshot.</p>
+    </section>
+
+    <section id="architectural-context">
+      <h2>Architectural Context</h2>
+      <p>Lives in the existing reporting module; the serializer is a pure function reused by both the new export route and, later, a scheduled-export job.</p>
+    </section>
+
+    <section id="success-criteria">
+      <h2>Success Criteria</h2>
+      <div class="stat-cards">
+        <article class="stat-card">
+          <h3>SC1</h3>
+          <p>A user can export any report they can view as a CSV file.</p>
+          <footer>E2E: open a report, click Export CSV, verify the downloaded file parses back to the same row count.</footer>
+        </article>
+        <article class="stat-card">
+          <h3>SC2</h3>
+          <p>Exported CSV opens correctly in Excel and Google Sheets without column misalignment.</p>
+          <footer>Manual spot-check plus the BOM exception recorded below.</footer>
+        </article>
+      </div>
+    </section>
+
+    <section id="specified-scope-contract">
+      <h2>Specified Scope Contract</h2>
+      <p>Explicitly included: serializer, export route, UI button. Deferred: scheduled/recurring exports, XLSX format.</p>
+    </section>
+
+    <section id="execution-slices">
+      <h2>Execution Slices</h2>
+      <div class="tabs" data-tabs>
+        <div class="tab-list" role="tablist">
+          <button role="tab" id="tab-S01" aria-controls="panel-S01" aria-selected="true" data-tab-target="panel-S01">S01</button>
+          <button role="tab" id="tab-S02" aria-controls="panel-S02" aria-selected="false" data-tab-target="panel-S02">S02</button>
+          <button role="tab" id="tab-S03" aria-controls="panel-S03" aria-selected="false" data-tab-target="panel-S03">S03</button>
+        </div>
+        <div class="tab-panels">
+          <div role="tabpanel" id="panel-S01" data-tab-panel>
+            <p><strong>Feature home:</strong> <code>src/reporting/export/</code></p>
+            <p>Add a <code>toCsv()</code> serializer for the reporting query result shape.</p>
+            <p><strong>Scope fence:</strong> Do not touch the UI trigger or the API route in this slice.</p>
+            <p><strong>Files:</strong> <code>src/reporting/export/toCsv.ts</code>, <code>src/reporting/export/toCsv.test.ts</code></p>
+            <p><strong>Depends on:</strong> none</p>
+            <p><strong>Acceptance criteria:</strong> Given a query result with mixed types, toCsv() emits RFC 4180-compliant rows.</p>
+            <p><strong>Test command:</strong> <code>bun test src/reporting/export/toCsv.test.ts</code></p>
+          </div>
+          <div role="tabpanel" id="panel-S02" data-tab-panel hidden>
+            <p><strong>Feature home:</strong> <code>src/reporting/api/</code></p>
+            <p>Expose <code>GET /api/reports/:id/export.csv</code> streaming the serializer output.</p>
+            <p><strong>Scope fence:</strong> Do not add new auth scopes; reuse the existing report-read permission.</p>
+            <p><strong>Files:</strong> <code>src/reporting/api/exportRoute.ts</code>, <code>src/reporting/api/exportRoute.test.ts</code></p>
+            <p><strong>Depends on:</strong> S01 (hard)</p>
+            <p><strong>Acceptance criteria:</strong> Requesting the endpoint with a valid report id streams a CSV response with the correct Content-Type.</p>
+            <p><strong>Test command:</strong> <code>bun test src/reporting/api/exportRoute.test.ts</code></p>
+          </div>
+          <div role="tabpanel" id="panel-S03" data-tab-panel hidden>
+            <p><strong>Feature home:</strong> <code>src/reporting/ui/</code></p>
+            <p>Add an Export CSV button to the report toolbar that calls the new endpoint.</p>
+            <p><strong>Scope fence:</strong> Do not redesign the toolbar; add one button to the existing action group.</p>
+            <p><strong>Files:</strong> <code>src/reporting/ui/ReportToolbar.tsx</code></p>
+            <p><strong>Depends on:</strong> S02 (hard)</p>
+            <p><strong>Acceptance criteria:</strong> Clicking Export CSV downloads a file named &lt;report-name&gt;.csv.</p>
+            <p><strong>Test command:</strong> <code>bun test src/reporting/ui/ReportToolbar.test.tsx</code></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="milestone-grid">
+      <h2>Milestone Grid</h2>
+      <ol class="timeline">
+        <li class="timeline-item" data-status="ready">
+          <span class="timeline-marker"></span>
+          <h4>S01 — toCsv() serializer</h4>
+          <p>No dependencies.</p>
+        </li>
+        <li class="timeline-item" data-status="blocked">
+          <span class="timeline-marker"></span>
+          <h4>S02 — export route</h4>
+          <p>Depends on S01 (hard).</p>
+        </li>
+        <li class="timeline-item" data-status="blocked">
+          <span class="timeline-marker"></span>
+          <h4>S03 — Export CSV button</h4>
+          <p>Depends on S02 (hard).</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="risk-table">
+      <h2>Risk Table</h2>
+      <table class="risk-table">
+        <thead>
+          <tr><th>Scope</th><th>Reason</th><th>Replacement Evidence</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CSV byte-order-mark handling for Excel on Windows</td>
+            <td>No Windows Excel runtime is available in CI; behavior is verified manually once per release.</td>
+            <td>Manual verification checklist recorded in the release runbook.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="suggested-e2e-suite">
+      <h2>Suggested E2E Suite</h2>
+      <ul>
+        <li><strong>E01</strong> — Export button downloads a valid CSV for a populated report (staging)</li>
+        <li><strong>E02</strong> — Export endpoint rejects a report id the caller cannot read (staging)</li>
+      </ul>
+    </section>
+
+    <section id="contract-details">
+      <h2>Contract Details</h2>
+      <details name="plan-accordion" open>
+        <summary>TDD &amp; Evidence Contract</summary>
+        <div>
+          <p><strong>Precedence:</strong> plan_overrides_local</p>
+          <p><strong>Mode:</strong> red-green-refactor</p>
+          <p><strong>Loop:</strong> failing-tests-first</p>
+          <p><strong>Evidence:</strong> unit required, e2e required</p>
+        </div>
+      </details>
+      <details name="plan-accordion">
+        <summary>Runtime Stack &amp; Environments</summary>
+        <div>
+          <p><strong>Local:</strong> Node 20 dev server with a seeded Postgres instance.</p>
+          <p><strong>QA:</strong> Staging environment mirroring production with anonymized data.</p>
+          <p><strong>Prod:</strong> Production Kubernetes cluster behind the reporting-dashboard service.</p>
+        </div>
+      </details>
+      <details name="plan-accordion">
+        <summary>Constitution Alignment</summary>
+        <div>
+          <p>No constitution version is recorded for this repository; no waivers apply.</p>
+        </div>
+      </details>
+    </section>
+
+    <section id="references">
+      <h2>References</h2>
+      <p>Brainstorm: <code>docs/brainstorms/2026-07-09-feat-csv-export-brainstorm.md</code></p>
+      <p class="muted">Composed using archetypes: implementation-plan, milestone-grid, risk-table.</p>
+    </section>
+  </main>
+</div>
+<footer class="muted" style="padding: 1rem 1.5rem 2rem; max-width: 1100px; margin: 0 auto;">
+  Generated by the html-artifact-composer skill · design seed: html-artifact-composer-v1-2026-07-09
+</footer>
+<script type="application/json" id="artifact-data">{"schema_version":1,"kind":"plan","title":"Add CSV Export to the Reporting Dashboard","type":"feat","date":"2026-07-09","status":"active","refs":{"brainstorm_ref":"docs\u002Fbrainstorms\u002F2026-07-09-feat-csv-export-brainstorm.md","architecture_ref":null,"tickets_ref":null,"source_docs":{"tickets":[],"docs":["docs\u002Fsolutions\u002Freporting-dashboard-notes.md"],"figma":[],"plans":[]}},"render_meta":{"archetypes":["implementation-plan","milestone-grid","risk-table"],"design_seed":"html-artifact-composer-v1-2026-07-09"},"execution_shape":{"mode":"vertical-slices","rationale":"Export is a self-contained vertical: serializer -\u003E API route -\u003E UI trigger, each independently demoable."},"tdd":{"precedence":"plan_overrides_local","mode":"red-green-refactor","loop":"failing-tests-first","evidence":{"unit":"required","e2e":"required"},"exceptions":[{"scope":"CSV byte-order-mark handling for Excel on Windows","reason":"No Windows Excel runtime is available in CI; behavior is verified manually once per release.","replacement_evidence":"Manual verification checklist recorded in the release runbook."}]},"runtime_stack":{"local":"Node 20 dev server with a seeded Postgres instance.","qa":"Staging environment mirroring production with anonymized data.","prod":"Production Kubernetes cluster behind the reporting-dashboard service.","e2e_surface":true},"constitution":{"version":null,"waivers":[]},"handoff":{"problem_narrative":true,"user_story":true,"architectural_context":true,"success_criteria":true},"slices":[{"id":"S01","feature_home":"src\u002Freporting\u002Fexport\u002F","scope":"Add a toCsv() serializer for the reporting query result shape.","scope_fence":"Do not touch the UI trigger or the API route in this slice.","files":["src\u002Freporting\u002Fexport\u002FtoCsv.ts","src\u002Freporting\u002Fexport\u002FtoCsv.test.ts"],"depends_on":[],"dependency_type":"none","acceptance_criteria":"Given a query result with mixed types, toCsv() emits RFC 4180-compliant rows.","test_command":"bun test src\u002Freporting\u002Fexport\u002FtoCsv.test.ts"},{"id":"S02","feature_home":"src\u002Freporting\u002Fapi\u002F","scope":"Expose GET \u002Fapi\u002Freports\u002F:id\u002Fexport.csv streaming the serializer output.","scope_fence":"Do not add new auth scopes; reuse the existing report-read permission.","files":["src\u002Freporting\u002Fapi\u002FexportRoute.ts","src\u002Freporting\u002Fapi\u002FexportRoute.test.ts"],"depends_on":["S01"],"dependency_type":"hard","acceptance_criteria":"Requesting the endpoint with a valid report id streams a CSV response with the correct Content-Type.","test_command":"bun test src\u002Freporting\u002Fapi\u002FexportRoute.test.ts"},{"id":"S03","feature_home":"src\u002Freporting\u002Fui\u002F","scope":"Add an Export CSV button to the report toolbar that calls the new endpoint.","scope_fence":"Do not redesign the toolbar; add one button to the existing action group.","files":["src\u002Freporting\u002Fui\u002FReportToolbar.tsx"],"depends_on":["S02"],"dependency_type":"hard","acceptance_criteria":"Clicking Export CSV downloads a file named \u003Creport-name\u003E.csv.","test_command":"bun test src\u002Freporting\u002Fui\u002FReportToolbar.test.tsx"}],"success_criteria":[{"id":"SC1","statement":"A user can export any report they can view as a CSV file.","verification":"E2E: open a report, click Export CSV, verify the downloaded file parses back to the same row count."},{"id":"SC2","statement":"Exported CSV opens correctly in Excel and Google Sheets without column misalignment.","verification":"Manual spot-check plus the BOM exception recorded above."}],"suggested_e2e_suite":[{"id":"E01","title":"Export button downloads a valid CSV for a populated report","environment":"staging"},{"id":"E02","title":"Export endpoint rejects a report id the caller cannot read","environment":"staging"}],"problem_narrative":"Analysts currently screenshot report tables to share them, losing precision and making downstream re-analysis impossible. Hostile-input regression probe (kept verbatim to prove the artifact's island-escaping and HTML-escaping both hold): \u003C\u002Fscript\u003E\u003Cimg src=x onerror=\"alert(1)\"\u003E","user_story":"As an analyst, I need to export any report I can view as a CSV file, so that I can re-analyze the underlying numbers in my own tools instead of retyping them from a screenshot.","architectural_context":"Lives in the existing reporting module; the serializer is a pure function reused by both the new export route and, later, a scheduled-export job.","specified_scope_contract":"Explicitly included: serializer, export route, UI button. Deferred: scheduled\u002Frecurring exports, XLSX format.","references":"Brainstorm: docs\u002Fbrainstorms\u002F2026-07-09-feat-csv-export-brainstorm.md","ext":{"notes":"No bespoke Tier-4 content was needed for this representative fixture; the anchor archetypes covered every fact this plan carries."}}</script>
+<script>
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    var root = document.documentElement;
+    root.setAttribute("data-theme", root.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
+
+  document.querySelectorAll("[data-tabs]").forEach(function (group) {
+    var tabs = group.querySelectorAll('[role="tab"]');
+    var panels = group.querySelectorAll("[data-tab-panel]");
+    tabs.forEach(function (tabButton) {
+      tabButton.addEventListener("click", function () {
+        tabs.forEach(function (btn) { btn.setAttribute("aria-selected", "false"); });
+        panels.forEach(function (panel) { panel.setAttribute("hidden", ""); });
+        tabButton.setAttribute("aria-selected", "true");
+        document.getElementById(tabButton.dataset.tabTarget).removeAttribute("hidden");
+      });
+    });
+  });
+
+  var islandRawText = document.getElementById("artifact-data").textContent;
+  var islandData = JSON.parse(islandRawText);
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+      return;
+    }
+    var scratch = document.createElement("textarea");
+    scratch.value = text;
+    document.body.appendChild(scratch);
+    scratch.select();
+    document.execCommand("copy");
+    scratch.remove();
+  }
+
+  document.getElementById("export-json").addEventListener("click", function () {
+    copyToClipboard(islandRawText);
+  });
+
+  document.getElementById("export-prompt").addEventListener("click", function () {
+    copyToClipboard("Resume work on this plan. Structured island data follows.\n\n" + islandRawText);
+  });
+
+  document.getElementById("export-markdown").addEventListener("click", function () {
+    var lines = ["# " + islandData.title, "", "## Problem Narrative", islandData.problem_narrative, "", "## Execution Slices"];
+    islandData.slices.forEach(function (slice) {
+      lines.push("- **" + slice.id + "** (" + slice.feature_home + "): " + slice.scope);
+    });
+    copyToClipboard(lines.join("\n"));
+  });
+</script>
+</body>
+</html>

@@ -8,6 +8,15 @@ async function readRepoFile(...segments: string[]): Promise<string> {
   return fs.readFile(path.join(repoRoot, ...segments), "utf8")
 }
 
+async function pathExists(...segments: string[]): Promise<boolean> {
+  try {
+    await fs.access(path.join(repoRoot, ...segments))
+    return true
+  } catch {
+    return false
+  }
+}
+
 describe("workflow orchestration references", () => {
   test("defines shared orchestration and TDD references once", async () => {
     const orchestration = await readRepoFile(
@@ -66,105 +75,14 @@ describe("workflow orchestration references", () => {
     expect(sliceArchitecture).toContain("## Context tiers")
   })
 
-  test("local visual artifact reference defines local-only sidecar rules", async () => {
-    const portableReference = await readRepoFile(
-      "portable",
-      "compound-engineering",
-      "commands",
-      "workflows",
-      "references",
-      "local-visual-artifacts.md",
-    )
-    const generatedReference = await readRepoFile(
-      "plugins",
-      "compound-engineering",
-      "commands",
-      "workflows",
-      "references",
-      "local-visual-artifacts.md",
-    )
-    const portableStyleReference = await readRepoFile(
-      "portable",
-      "compound-engineering",
-      "commands",
-      "workflows",
-      "references",
-      "agent-native-plan-style.md",
-    )
-    const generatedStyleReference = await readRepoFile(
-      "plugins",
-      "compound-engineering",
-      "commands",
-      "workflows",
-      "references",
-      "agent-native-plan-style.md",
-    )
-    const forbiddenHostedTools = [
-      "create-visual-plan",
-      "create-visual-recap",
-      "update-visual-plan",
-      "patch-visual-plan-source",
-      "import-visual-plan-source",
-      "export-visual-plan",
-      "set-resource-visibility",
-    ]
-
-    for (const reference of [portableReference, generatedReference]) {
-      expect(reference).toContain("Canonical Markdown artifacts remain the source of truth")
-      expect(reference).toContain("docs/visual-artifacts/<workflow>/<slug>/")
-      expect(reference).toContain(".plan-url")
-      expect(reference).toContain("Raw upstream `visual-plan` and `visual-recap` skills are not vendored")
-      expect(reference).toContain("Hosted MCP tools are forbidden")
-      expect(reference).toContain("commands/workflows/references/agent-native-plan-style.md")
-      expect(reference).toContain("native Agent-Native Plan primitives")
-      expect(reference).toContain("plain Markdown with a different background is a rendering failure")
-      expect(reference).toContain("@agent-native/core@0.67.0 plan blocks --format reference")
-      expect(reference).toContain("@agent-native/core@0.67.0 plan blocks --format schema")
-      expect(reference).toContain("@agent-native/core@0.67.0 plan local check")
-      expect(reference).toContain("@agent-native/core@0.67.0 plan local preview")
-      expect(reference).toContain("@agent-native/core@0.67.0 plan local serve")
-      expect(reference).toContain("preview.html` when command execution is available")
-      expect(reference).toContain("--kind recap --out docs/visual-artifacts/review/<slug>/preview.html")
-      expect(reference).toContain("Static preview is the default local handoff")
-      expect(reference).toContain("license: MIT")
-      expect(reference).toContain("engines.node: >=22")
-      expect(reference).toContain("--app-url http://127.0.0.1:3001")
-      expect(reference).toContain("never silently substitute `30001`")
-      expect(reference).toContain("`--port` controls the bridge port")
-      expect(reference).not.toContain("http://127.0.0.1:30001")
-      expect(reference).toContain("--kind recap")
-      expect(reference).toContain("## Workflow Template Profiles")
-      expect(reference).toContain("### brainstorm")
-      expect(reference).toContain("### plan")
-      expect(reference).toContain("### architecture")
-      expect(reference).toContain("### review")
-      expect(reference).not.toContain("mcpServers.plan")
-      expect(reference).not.toContain("@agent-native/core@latest")
-      expect(reference).not.toContain("@agent-native/core@<approved-version>")
-
-      for (const tool of forbiddenHostedTools) {
-        expect(reference).toContain(`\`${tool}\``)
-      }
-    }
-
-    for (const reference of [portableStyleReference, generatedStyleReference]) {
-      expect(reference).toContain("Agent-Native Plan Style And Primitives")
-      expect(reference).toContain("BuilderIO Agent-Native visual-plan style guidance")
-      expect(reference).toContain("Complete Primitive Catalog")
-      expect(reference).toContain("Anti-Flat-MDX Gate")
-      expect(reference).toContain("Visual Surface Choice")
-      expect(reference).toContain("Diagram Rules")
-      expect(reference).toContain("Wireframe Rules")
-      expect(reference).toContain("Canvas Rules")
-      expect(reference).toContain("Do not author from memory")
-      expect(reference).toContain("Plain Markdown with only cosmetic styling is a failure")
-      expect(reference).toContain("`diagram`")
-      expect(reference).toContain("`file-tree`")
-      expect(reference).toContain("`wireframe`")
-      expect(reference).toContain(".diagram-panel")
-      expect(reference).toContain("--wf-*")
-      expect(reference).not.toContain("@agent-native/core@latest")
-      expect(reference).not.toContain("mcpServers.plan")
+  test("retires the local visual artifact and Agent-Native plan style reference docs", async () => {
+    for (const root of ["portable", "plugins"]) {
+      expect(
+        await pathExists(root, "compound-engineering", "commands", "workflows", "references", "local-visual-artifacts.md"),
+      ).toBeFalse()
+      expect(
+        await pathExists(root, "compound-engineering", "commands", "workflows", "references", "agent-native-plan-style.md"),
+      ).toBeFalse()
     }
   })
 
@@ -210,7 +128,7 @@ describe("workflow orchestration references", () => {
     }
   })
 
-  test("workflow prompts leave visual artifact routing to the next-step advisor", async () => {
+  test("workflow prompts do not own visual artifact routing menus", async () => {
     const workflowPrompts = {
       brainstorm: await readRepoFile(
         "portable",
@@ -253,17 +171,14 @@ describe("workflow orchestration references", () => {
     expect(workflowPrompts.review).not.toContain("Want to run browser tests")
     expect(workflowPrompts.review).toContain("This must be the only final process of the review workflow.")
 
-    expect(nextStepSkill).toContain("## Visual Plan Routing")
-    expect(nextStepSkill).toContain("Generate the local visual plan with local-visual-artifact-renderer")
-    expect(nextStepSkill).toContain("source_workflow: <brainstorm|plan|architecture>")
-    expect(nextStepSkill).toContain("template_profile: <brainstorm|plan|architecture>")
-    expect(nextStepSkill).toContain("brainstorm -> `grill-with-docs <brainstorm-path>`")
-    expect(nextStepSkill).toContain("plan -> `/workflows:architecture <plan-path>`")
-    expect(nextStepSkill).toContain("architecture -> `/deepen-plan <plan-path>`")
+    expect(nextStepSkill).not.toContain("## Visual Plan Routing")
+    expect(nextStepSkill).not.toContain("Generate the local visual plan with local-visual-artifact-renderer")
+    expect(nextStepSkill).not.toContain("source_workflow: <brainstorm|plan|architecture>")
+    expect(nextStepSkill).not.toContain("template_profile: <brainstorm|plan|architecture>")
 
-    expect(nextStepSkill).toContain("source_path")
-    expect(nextStepSkill).toContain("visual_kind: plan")
-    expect(nextStepSkill).toContain("local-visual-artifact-renderer")
+    expect(nextStepSkill).not.toContain("source_path")
+    expect(nextStepSkill).not.toContain("visual_kind: plan")
+    expect(nextStepSkill).not.toContain("local-visual-artifact-renderer")
 
     expect(workflowPrompts.brainstorm).not.toContain("source_workflow: brainstorm")
     expect(workflowPrompts.plan).not.toContain("source_workflow: plan")
@@ -669,7 +584,7 @@ describe("workflow orchestration references", () => {
       "plan.md",
     )
 
-    expect(planPrompt).toContain("### 4. Build One Adaptive Plan Template")
+    expect(planPrompt).toContain("### 4. Compose the Plan Artifact")
     expect(planPrompt).toContain("Optional sections catalog (include only when decision-bearing)")
     expect(planPrompt).toContain("Representative routine plan (compact and scannable)")
     expect(planPrompt).toContain("Include only when this section changes a decision")

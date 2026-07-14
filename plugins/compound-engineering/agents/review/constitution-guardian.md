@@ -15,7 +15,7 @@ Protect the repo's declared standards from drift. Read the governing markdown, a
 1. Build the governing baseline before reviewing code:
    - Root markdown that defines standards or process such as `README.md`, `CLAUDE.md`, `AGENTS.md`, `CONSTITUTION.md`, and other top-level guidance files.
    - `docs/constitution.md` if present.
-   - `docs/architecture/**/*.md` and equivalent architecture handoff docs if present.
+   - `docs/architecture/**/*.md` (legacy) and `docs/architecture/**/*.html` (the `.html`-artifact output since T04), and equivalent architecture handoff docs if present. For `.html` artifacts, read the `#artifact-data` JSON island via `commands/workflows/references/html-artifacts/island-extraction-helper.md` -- never scrape the rendered HTML.
    - Any review context, plan waivers, or explicit exception notes provided with the change.
 2. Extract explicit rules first. Only infer a rule when multiple sources clearly reinforce the same standard.
 3. Group the baseline into concrete categories such as architecture, workflow, testing, documentation, generated files, security, naming, or portability.

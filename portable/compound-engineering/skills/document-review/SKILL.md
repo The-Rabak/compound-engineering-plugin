@@ -27,11 +27,13 @@ This skill supports both:
 
 If a document path is provided, read it first and infer the artifact type from path and content.
 
+**Dual-read by artifact extension.** Brainstorm, plan, and architecture artifacts may each be legacy `.md` or the `.html`-artifact output (brainstorm since T03, plan since the html-artifacts pilot, architecture since T04). Detect which reader applies from the artifact's own file extension before reading its content: **`.md`** -- parse frontmatter and sections as today (legacy path, unchanged). **`.html`** -- load `commands/workflows/references/html-artifacts/island-extraction-helper.md`, quote its first non-empty line, and read the artifact's `#artifact-data` JSON island for that kind's fixed-core facts instead of frontmatter/sections. If extraction fails for any reason, stop immediately and report the artifact path and the exact failure per the helper's fail-loud branch -- do not proceed on partial data, scrape the rendered HTML, or fall back to a `.md` mirror (none exists for an `.html` artifact). Ticket-index, ticket, and solution artifacts stay `.md`-only.
+
 If no document is specified, ask which artifact to review or look for the most recent relevant file in:
 
-- `docs/brainstorms/`
-- `docs/plans/`
-- `docs/architecture/`
+- `docs/brainstorms/` (`.md` or `.html`)
+- `docs/plans/` (`.md` or `.html`)
+- `docs/architecture/` (`.md` or `.html`)
 - `docs/tickets/`
 - `docs/solutions/`
 
