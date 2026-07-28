@@ -14,15 +14,17 @@ import {
 } from "../src/targets"
 
 describe("support-tier policy", () => {
-  test("orders OpenCode first, Copilot and Codex second, and Claude third", () => {
+  test("orders OpenCode first, Copilot/Codex/Cursor second, and Claude third", () => {
     expect(targetPolicies.opencode.tier).toBe("first-class")
     expect(targetPolicies.opencode.cleanup).toBe("keep")
     expect(targetPolicies.copilot.tier).toBe("second-class")
     expect(targetPolicies.codex.tier).toBe("second-class")
+    expect(targetPolicies.cursor.tier).toBe("second-class")
     expect(targetPolicies.codex.cleanup).toBe("keep")
+    expect(targetPolicies.cursor.cleanup).toBe("keep")
     expect(targetPolicies.claude.tier).toBe("third-class")
     expect(supportTierPositioning).toContain("OpenCode is first-class")
-    expect(supportTierPositioning).toContain("Copilot and Codex are second-class")
+    expect(supportTierPositioning).toContain("Cursor are second-class")
     expect(supportTierPositioning).toContain("Claude Code remains a third-class")
   })
 
@@ -37,9 +39,7 @@ describe("support-tier policy", () => {
     expect(targetPolicies.kiro.cleanup).toBe("de-emphasize")
 
     expect(legacyAssets.find((asset) => asset.name === ".github_gpt export tree")?.cleanup).toBe("remove")
-    expect(legacyAssets.find((asset) => asset.name === "Dormant Cursor exporter and sync code")?.rationale).toContain(
-      "not part of the surfaced target matrix",
-    )
+    expect(legacyAssets.find((asset) => asset.name === "Dormant Cursor exporter and sync code")).toBeUndefined()
   })
 
   test("command help text exposes the support tiers", () => {
@@ -47,10 +47,12 @@ describe("support-tier policy", () => {
     expect(String(convert.args.to.description)).toContain("opencode (first-class)")
     expect(String(convert.args.to.description)).toContain("copilot (second-class)")
     expect(String(convert.args.to.description)).toContain("codex (second-class)")
+    expect(String(convert.args.to.description)).toContain("cursor (second-class)")
     expect(String(convert.args.to.description)).toContain("de-emphasized")
 
     expect(String(install.meta.description)).toContain("OpenCode-first")
     expect(String(install.args.to.description)).toContain("opencode (first-class)")
+    expect(String(install.args.to.description)).toContain("cursor (second-class)")
     expect(String(install.args.also.description)).toContain("extra targets")
 
     expect(String(sync.meta.description)).toContain("OpenCode-first")
@@ -59,20 +61,39 @@ describe("support-tier policy", () => {
 
   test("surface registries only expose targets allowed by the support matrix", () => {
     expect(getTargetNamesForSurface("build")).toEqual(["copilot", "claude", "codex"])
-    expect(getTargetNamesForSurface("convert")).toEqual(["opencode", "copilot", "codex", "droid", "pi", "gemini", "kiro"])
-    expect(getTargetNamesForSurface("install")).toEqual(["opencode", "copilot", "codex", "droid", "pi", "gemini", "kiro"])
-    expect(getTargetNamesForSurface("sync")).toEqual(["opencode", "copilot", "codex", "droid", "pi"])
+    expect(getTargetNamesForSurface("convert")).toEqual([
+      "opencode",
+      "copilot",
+      "codex",
+      "cursor",
+      "droid",
+      "pi",
+      "gemini",
+      "kiro",
+    ])
+    expect(getTargetNamesForSurface("install")).toEqual([
+      "opencode",
+      "copilot",
+      "codex",
+      "cursor",
+      "droid",
+      "pi",
+      "gemini",
+      "kiro",
+    ])
+    expect(getTargetNamesForSurface("sync")).toEqual(["opencode", "copilot", "codex", "cursor", "droid", "pi"])
 
-    expect(() => resolveTargetHandler("cursor", "convert")).toThrow("Unknown convert target: cursor")
+    expect(resolveTargetHandler("cursor", "convert").name).toBe("cursor")
+    expect(resolveTargetHandler("cursor", "install").name).toBe("cursor")
     expect(() => resolveTargetHandler("claude", "install")).toThrow("Unknown install target: claude")
   })
 
-  test("removes legacy cursor and github_gpt assets from the supported workflow", () => {
+  test("keeps cursor exporter files in the supported workflow", () => {
     const repoRoot = path.join(import.meta.dir, "..")
 
     expect(existsSync(path.join(repoRoot, ".github_gpt"))).toBe(false)
-    expect(existsSync(path.join(repoRoot, "src", "converters", "claude-to-cursor.ts"))).toBe(false)
-    expect(existsSync(path.join(repoRoot, "src", "sync", "cursor.ts"))).toBe(false)
-    expect(existsSync(path.join(repoRoot, "src", "targets", "cursor.ts"))).toBe(false)
+    expect(existsSync(path.join(repoRoot, "src", "converters", "claude-to-cursor.ts"))).toBe(true)
+    expect(existsSync(path.join(repoRoot, "src", "sync", "cursor.ts"))).toBe(true)
+    expect(existsSync(path.join(repoRoot, "src", "targets", "cursor.ts"))).toBe(true)
   })
 })

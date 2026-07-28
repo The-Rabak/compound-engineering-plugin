@@ -2,7 +2,7 @@ import path from "path"
 import { formatFrontmatter, parseFrontmatter } from "./frontmatter"
 import { pathExists, readText, walkFiles, writeText } from "./files"
 
-export type TargetContentSurface = "claude" | "copilot" | "codex" | "opencode"
+export type TargetContentSurface = "claude" | "copilot" | "codex" | "opencode" | "cursor"
 
 type ModelTier = "primary" | "small"
 
@@ -22,6 +22,10 @@ const TARGET_MODELS: Record<TargetContentSurface, Record<ModelTier, string>> = {
   opencode: {
     primary: "openrouter/moonshotai/kimi-k2.6",
     small: "gpt-5.4-mini",
+  },
+  cursor: {
+    primary: "gpt-5.6-terra-high",
+    small: "composer-2.5",
   },
 }
 
@@ -78,15 +82,34 @@ export function modelForTargetTier(target: TargetContentSurface, tier: ModelTier
   return TARGET_MODELS[target][tier]
 }
 
+const CURSOR_HEAVY_MODEL = "cursor-grok-4.5-high"
+
+const CURSOR_OPUS_GRADE_PATTERNS = [
+  new RegExp(`anthropic\\/${CLAUDE_OPUS_4_8_PATTERN}`, "g"),
+  new RegExp(CLAUDE_OPUS_4_8_PATTERN, "g"),
+  new RegExp(OPUS_4_8_SHORTHAND_PATTERN, "g"),
+  new RegExp(`anthropic\\/${LEGACY_CLAUDE_OPUS_PATTERN}`, "g"),
+  new RegExp(LEGACY_CLAUDE_OPUS_PATTERN, "g"),
+  /claude-3-opus(?:-\d{8})?/g,
+  /claude-opus(?!-)/g,
+]
+
 export function replaceModelIdsForTarget(content: string, target: TargetContentSurface): string {
   let result = content
   for (const pattern of SMALL_MODEL_PATTERNS) {
     result = result.replace(pattern, modelForTargetTier(target, "small"))
   }
-  for (const pattern of OPUS_4_8_MODEL_PATTERNS) {
-    pattern.lastIndex = 0
-    const model = target === "claude" ? CLAUDE_OPUS_4_8_ID : modelForTargetTier(target, "primary")
-    result = result.replace(pattern, model)
+  if (target === "cursor") {
+    for (const pattern of CURSOR_OPUS_GRADE_PATTERNS) {
+      pattern.lastIndex = 0
+      result = result.replace(pattern, CURSOR_HEAVY_MODEL)
+    }
+  } else {
+    for (const pattern of OPUS_4_8_MODEL_PATTERNS) {
+      pattern.lastIndex = 0
+      const model = target === "claude" ? CLAUDE_OPUS_4_8_ID : modelForTargetTier(target, "primary")
+      result = result.replace(pattern, model)
+    }
   }
   for (const pattern of PRIMARY_MODEL_PATTERNS) {
     result = result.replace(pattern, modelForTargetTier(target, "primary"))
@@ -242,8 +265,10 @@ function normalizeFrontmatterModel(model: string | undefined, target: TargetCont
   if (normalized === "haiku" || normalized.endsWith("/haiku") || normalized.includes("haiku")) {
     return modelForTargetTier(target, "small")
   }
-  if (isOpus48Model(model)) {
-    return target === "claude" ? CLAUDE_OPUS_4_8_ID : modelForTargetTier(target, "primary")
+  if (isOpus48Model(model) || (target === "cursor" && isCursorOpusGradeModel(model))) {
+    if (target === "claude") return CLAUDE_OPUS_4_8_ID
+    if (target === "cursor") return CURSOR_HEAVY_MODEL
+    return modelForTargetTier(target, "primary")
   }
   if (isKnownPrimaryModel(model) || isKnownSmallModel(model)) {
     return modelForTargetTier(target, modelTier(model))
@@ -267,6 +292,13 @@ function isKnownPrimaryModel(model: string): boolean {
 
 function isOpus48Model(model: string): boolean {
   return OPUS_4_8_MODEL_PATTERNS.some((pattern) => {
+    pattern.lastIndex = 0
+    return pattern.test(model)
+  })
+}
+
+function isCursorOpusGradeModel(model: string): boolean {
+  return CURSOR_OPUS_GRADE_PATTERNS.some((pattern) => {
     pattern.lastIndex = 0
     return pattern.test(model)
   })

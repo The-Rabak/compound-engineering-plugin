@@ -4,6 +4,7 @@ import path from "path"
 import { loadClaudeHome } from "../parsers/claude-home"
 import { syncToOpenCode } from "../sync/opencode"
 import { syncToCodex } from "../sync/codex"
+import { syncToCursor } from "../sync/cursor"
 import { syncToPi } from "../sync/pi"
 import { syncToDroid } from "../sync/droid"
 import { syncToCopilot } from "../sync/copilot"
@@ -14,6 +15,7 @@ const syncHandlers = {
   opencode: syncToOpenCode,
   copilot: syncToCopilot,
   codex: syncToCodex,
+  cursor: syncToCursor,
   droid: syncToDroid,
   pi: syncToPi,
 } as const
@@ -40,6 +42,8 @@ function resolveOutputRoot(target: SyncTarget): string {
       return path.join(os.homedir(), ".config", "opencode")
     case "codex":
       return path.join(os.homedir(), ".codex")
+    case "cursor":
+      return path.join(os.homedir(), ".cursor")
     case "pi":
       return path.join(os.homedir(), ".pi", "agent")
     case "droid":

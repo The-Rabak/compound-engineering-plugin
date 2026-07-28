@@ -1,6 +1,7 @@
 import type { ClaudePlugin } from "../types/claude"
 import type { OpenCodeBundle } from "../types/opencode"
 import type { CodexBundle } from "../types/codex"
+import type { CursorBundle } from "../types/cursor"
 import type { DroidBundle } from "../types/droid"
 import type { PiBundle } from "../types/pi"
 import type { CopilotBundle } from "../types/copilot"
@@ -8,6 +9,7 @@ import type { GeminiBundle } from "../types/gemini"
 import type { KiroBundle } from "../types/kiro"
 import { convertClaudeToOpenCode, type ClaudeToOpenCodeOptions } from "../converters/claude-to-opencode"
 import { convertClaudeToCodex } from "../converters/claude-to-codex"
+import { convertClaudeToCursor } from "../converters/claude-to-cursor"
 import { convertClaudeToDroid } from "../converters/claude-to-droid"
 import { convertClaudeToPi } from "../converters/claude-to-pi"
 import { convertClaudeToCopilot } from "../converters/claude-to-copilot"
@@ -15,6 +17,7 @@ import { convertClaudeToGemini } from "../converters/claude-to-gemini"
 import { convertClaudeToKiro } from "../converters/claude-to-kiro"
 import { writeOpenCodeBundle } from "./opencode"
 import { writeCodexBundle } from "./codex"
+import { writeCursorBundle } from "./cursor"
 import { writeDroidBundle } from "./droid"
 import { writePiBundle } from "./pi"
 import { writeCopilotBundle } from "./copilot"
@@ -26,7 +29,7 @@ export type CleanupRubric = "keep" | "de-emphasize" | "remove"
 export type TargetSurface = "build" | "convert" | "install" | "sync"
 
 export const supportTierPositioning =
-  "OpenCode is first-class, Copilot and Codex are second-class generated surfaces, and Claude Code remains a third-class generated compatibility surface."
+  "OpenCode is first-class, Copilot, Codex, and Cursor are second-class generated surfaces, and Claude Code remains a third-class generated compatibility surface."
 
 export const cleanupRubric = {
   keep: "Actively maintain the surface because it directly serves the supported workflow order.",
@@ -71,6 +74,13 @@ export const targetPolicies = {
     rationale: "Supported generated output for OpenAI Codex workflows, including full local export and repo marketplace packaging.",
     surfaces: ["build", "convert", "install", "sync"],
   },
+  cursor: {
+    name: "cursor",
+    tier: "second-class",
+    cleanup: "keep",
+    rationale: "Supported global ~/.cursor export for Cursor agents, commands, skills, and MCP config.",
+    surfaces: ["convert", "install", "sync"],
+  },
   droid: {
     name: "droid",
     tier: "non-core",
@@ -106,11 +116,6 @@ export const legacyAssets = [
     name: ".github_gpt export tree",
     cleanup: "remove",
     rationale: "Historical Copilot-shaped output outside the canonical portable -> .github generation path.",
-  },
-  {
-    name: "Dormant Cursor exporter and sync code",
-    cleanup: "remove",
-    rationale: "Cursor-specific converter, writer, and sync code exist in the repo but are not part of the surfaced target matrix.",
   },
   {
     name: "Claude-home sync mirrors",
@@ -213,6 +218,16 @@ export const targets: Record<string, TargetHandler> = {
     implemented: true,
     convert: convertClaudeToCodex as TargetHandler<CodexBundle>["convert"],
     write: writeCodexBundle as TargetHandler<CodexBundle>["write"],
+  },
+  cursor: {
+    name: "cursor",
+    tier: targetPolicies.cursor.tier,
+    cleanup: targetPolicies.cursor.cleanup,
+    rationale: targetPolicies.cursor.rationale,
+    surfaces: [...targetPolicies.cursor.surfaces],
+    implemented: true,
+    convert: convertClaudeToCursor as TargetHandler<CursorBundle>["convert"],
+    write: writeCursorBundle as TargetHandler<CursorBundle>["write"],
   },
   droid: {
     name: "droid",

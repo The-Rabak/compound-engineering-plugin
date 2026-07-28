@@ -1,4 +1,4 @@
-export type CursorRule = {
+export type CursorAgent = {
   name: string
   content: string
 }
@@ -10,7 +10,16 @@ export type CursorCommand = {
 
 export type CursorSkillDir = {
   name: string
+  description?: string
+  model?: string
   sourceDir: string
+  skillPath?: string
+}
+
+export type CursorGeneratedSkill = {
+  name: string
+  content: string
+  sourcePath?: string
 }
 
 export type CursorMcpServer = {
@@ -22,8 +31,9 @@ export type CursorMcpServer = {
 }
 
 export type CursorBundle = {
-  rules: CursorRule[]
+  agents: CursorAgent[]
   commands: CursorCommand[]
   skillDirs: CursorSkillDir[]
+  generatedSkills: CursorGeneratedSkill[]
   mcpServers?: Record<string, CursorMcpServer>
 }

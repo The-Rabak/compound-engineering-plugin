@@ -1,6 +1,6 @@
-# Cursor Spec (Rules, Commands, Skills, MCP)
+# Cursor Spec (Rules, Commands, Skills, Agents, MCP)
 
-Last verified: 2026-02-12
+Last verified: 2026-07-28
 
 ## Primary sources
 
@@ -17,11 +17,53 @@ https://docs.cursor.com/customize/model-context-protocol
 | Project rules | `.cursor/rules/*.mdc` |
 | Project commands | `.cursor/commands/*.md` |
 | Project skills | `.cursor/skills/*/SKILL.md` |
+| Project agents | `.cursor/agents/*.md` |
 | Project MCP | `.cursor/mcp.json` |
 | Project CLI permissions | `.cursor/cli.json` |
+| Global agents | `~/.cursor/agents/*.md` |
+| Global commands | `~/.cursor/commands/*.md` |
+| Global skills | `~/.cursor/skills/*/SKILL.md` |
 | Global MCP | `~/.cursor/mcp.json` |
 | Global CLI config | `~/.cursor/cli-config.json` |
 | Legacy rules | `.cursorrules` (deprecated) |
+
+## Compound Engineering export
+
+Install/convert target: `cursor` (second-class, explicit-only).
+
+```bash
+bun run cli:install ./portable/compound-engineering --to cursor
+# or
+bun run convert ./portable/compound-engineering --to cursor
+```
+
+Default output root: `~/.cursor` (override with `--cursor-home`).
+
+| Portable source | Cursor output |
+|-----------------|---------------|
+| Agents | `~/.cursor/agents/<name>.md` |
+| Commands | `~/.cursor/commands/<name>.md` |
+| Skills | `~/.cursor/skills/<name>/SKILL.md` |
+| MCP servers | merged into `~/.cursor/mcp.json` |
+| Hooks | skipped (unsupported) |
+
+### Model routing
+
+Content sanitization remaps Claude-grade model IDs:
+
+| Grade | Cursor model ID |
+|-------|-----------------|
+| Opus | `cursor-grok-4.5-high` |
+| Sonnet | `gpt-5.6-terra-high` |
+| Haiku | `composer-2.5` |
+
+`composer-2.5` is the non-fast Composer ID (high-quality default). Fast variant is `composer-2.5-fast` and is not used by this export.
+
+## Agents (subagents)
+
+- User-scoped agents live in `~/.cursor/agents/`; project agents live in `.cursor/agents/`.
+- Each agent is a Markdown file with YAML frontmatter (`name`, `description`, optional `model`) and a markdown body used as the system prompt.
+- When multiple agents share a name, project agents take priority over user agents.
 
 ## Rules (.mdc files)
 
@@ -37,6 +79,7 @@ https://docs.cursor.com/customize/model-context-protocol
 | Manual | `false` | empty | empty | Only included via `@rule-name` mention |
 
 - Precedence: Team Rules > Project Rules > User Rules > Legacy `.cursorrules` > `AGENTS.md`.
+- The compound-engineering Cursor export maps portable agents to Cursor agents, not rules.
 
 ## Commands (slash commands)
 
@@ -45,6 +88,7 @@ https://docs.cursor.com/customize/model-context-protocol
 - The filename (without `.md`) becomes the command name.
 - Commands are invoked by typing `/` in the chat UI.
 - Commands support parameterized arguments via `$1`, `$2`, etc.
+- Portable namespaced commands (`workflows:plan`) export as hyphenated filenames (`workflows-plan`).
 
 ## Skills (Agent Skills)
 

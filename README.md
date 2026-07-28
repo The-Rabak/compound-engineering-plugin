@@ -185,9 +185,10 @@ Use the full chain when you want the plugin to take a feature from vague intent 
 | Portable source + OpenCode install/convert + `bun run sync:ov` | **First-class** | primary authoring and day-to-day workflow |
 | Explicit Copilot output in ignored `.github/agents`, `.github/skills`, and `.github/copilot-mcp-config.json` | **Second-class** | supported GitHub-native output, generated only when requested |
 | Codex local export and generated repo marketplace | **Second-class** | writes `.agents/skills`, `.codex/agents`, MCP/hooks config, and installable plugin metadata |
+| Cursor global export to `~/.cursor` | **Second-class** | writes agents, commands, skills, and MCP config for Cursor |
 | Generated Claude Code plugin + marketplace metadata | **Third-class** | supported compatibility output |
 | Droid, Pi, Gemini, Kiro exporters | **De-emphasized** | kept as compatibility bridges, not co-equal surfaces |
-| `.github_gpt/` and dormant Cursor-specific export/sync code | **Removed** | removed to stop unsupported workflow drift |
+| `.github_gpt/` historical export tree | **Removed** | removed to stop unsupported workflow drift |
 
 ## Quick start
 
@@ -236,6 +237,29 @@ Codex native plugins package installable **skills**. This repo also ships Codex 
 - personal marketplace: `~/.agents/plugins/marketplace.json`
 
 Use `bun run cli:install ./portable/compound-engineering --to codex` when you want the complete working Codex environment, including custom agents used by command-derived skills. `bun run build:codex` generates the ignored repo-local Codex package/export surface explicitly.
+
+### Export directly into Cursor (global)
+
+```bash
+bun run cli:install ./portable/compound-engineering --to cursor
+```
+
+That writes the global Cursor tree under `~/.cursor`:
+
+- agents: `~/.cursor/agents/*.md`
+- commands: `~/.cursor/commands/*.md`
+- skills: `~/.cursor/skills/*/SKILL.md`
+- MCP: merges into `~/.cursor/mcp.json`
+
+Model routing for Cursor exports:
+
+| Portable grade | Cursor model ID |
+|---|---|
+| Opus | `cursor-grok-4.5-high` |
+| Sonnet | `gpt-5.6-terra-high` |
+| Haiku | `composer-2.5` |
+
+Override the destination with `--cursor-home /path/to/.cursor` when needed.
 
 ### Sync portable assets into OpenViking globals
 

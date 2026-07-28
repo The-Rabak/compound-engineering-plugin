@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.23.0] - 2026-07-28
+
+### Added
+
+- **Cursor global export** -- Added second-class `convert` / `install` / `sync` support for Cursor. `bun run cli:install ./portable/compound-engineering --to cursor` writes agents, commands, skills, and MCP config under `~/.cursor` (override with `--cursor-home`).
+- **Cursor model routing** -- Opus-grade models map to `cursor-grok-4.5-high`, Sonnet-grade to `gpt-5.6-terra-high`, and Haiku-grade to `composer-2.5`.
+
 ## [4.22.0] - 2026-07-10
 
 ### Added

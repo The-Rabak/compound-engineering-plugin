@@ -1,6 +1,6 @@
 # Agent Instructions
 
-This repository distributes the `compound-engineering` plugin from a portable source of truth, then generates Claude Code output by default. Copilot and Codex outputs are explicit-only exports.
+This repository distributes the `compound-engineering` plugin from a portable source of truth, then generates Claude Code output by default. Copilot, Codex, and Cursor outputs are explicit-only exports.
 
 ## Working Agreement
 
@@ -55,6 +55,11 @@ bun run build:copilot
 bun run build:codex
 ```
 
+Cursor is install/convert only (global `~/.cursor` path):
+
+```bash
+bun run cli:install ./portable/compound-engineering --to cursor
+```
 ## Docs Directory Convention
 
 All workflows write output to `{project_root}/docs/`:

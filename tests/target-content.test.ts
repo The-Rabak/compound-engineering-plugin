@@ -32,6 +32,9 @@ describe("target model replacement", () => {
     expect(replaceModelIdsForTarget("model: claude-sonnet-5", "opencode")).toBe(
       "model: openrouter/moonshotai/kimi-k2.6",
     )
+    expect(replaceModelIdsForTarget("model: claude-sonnet-5", "cursor")).toBe(
+      "model: gpt-5.6-terra-high",
+    )
   })
 
   test("normalizes Opus shorthand to the Claude API ID", () => {
@@ -49,6 +52,15 @@ describe("target model replacement", () => {
     expect(replaceModelIdsForTarget(`model: ${officialOpus}`, "codex")).toBe("model: gpt-5.5")
     expect(replaceModelIdsForTarget(`model: ${shorthandOpus}`, "opencode")).toBe(
       "model: openrouter/moonshotai/kimi-k2.6",
+    )
+    expect(replaceModelIdsForTarget(`model: ${officialOpus}`, "cursor")).toBe(
+      "model: cursor-grok-4.5-high",
+    )
+  })
+
+  test("maps haiku-grade models to Cursor Composer 2.5", () => {
+    expect(replaceModelIdsForTarget("model: claude-haiku-4-5-20251001", "cursor")).toBe(
+      "model: composer-2.5",
     )
   })
 })

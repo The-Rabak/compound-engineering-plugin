@@ -6,11 +6,12 @@ This Claude plugin install surface contains only Claude-relevant files. Codex pl
 
 ## Support policy
 
-- OpenCode first-class, GitHub Copilot and Codex second, Claude Code third.
-- **Keep:** OpenCode-first portable source, this generated Claude Code plugin, and explicit Copilot/Codex exports.
+- OpenCode first-class, GitHub Copilot, Codex, and Cursor second, Claude Code third.
+- **Keep:** OpenCode-first portable source, this generated Claude Code plugin, and explicit Copilot/Codex/Cursor exports.
 - **Codex:** explicit full local export plus repo marketplace packaging through `.codex-plugin/plugin.json`, `codex-skills/`, and `.agents/plugins/marketplace.json`.
+- **Cursor:** explicit global export to `~/.cursor` (agents, commands, skills, MCP) via `cli:install --to cursor`.
 - **De-emphasize:** compatibility exporters for Droid, Pi, Gemini, and Kiro, plus legacy Claude-home sync mirrors.
-- **Removed legacy surfaces:** `.github_gpt/` and dormant Cursor-specific export/sync code that no longer fit the supported target matrix.
+- **Removed legacy surfaces:** `.github_gpt/` historical export tree that no longer fit the supported target matrix.
 
 ## Workflow contract highlights
 
@@ -66,8 +67,8 @@ Lite mode keeps the problem narrative, user story, success criteria, TDD/evidenc
 ## Migration notes
 
 - `/technical_review` is no longer part of the supported workflow. Use `/workflows:architecture` between planning and `/deepen-plan`, then continue through `/workflows:work` and `/workflows:review`.
-- OpenCode remains the canonical first-class surface for the source repo. This generated Claude output is the third-class compatibility surface, while Copilot and Codex are supported second-class generated outputs.
-- `.github_gpt/` and dormant Cursor-specific export/sync code have been removed from the supported workflow. Droid, Pi, Gemini, and Kiro remain de-emphasized compatibility exporters.
+- OpenCode remains the canonical first-class surface for the source repo. This generated Claude output is the third-class compatibility surface, while Copilot, Codex, and Cursor are supported second-class generated outputs.
+- `.github_gpt/` has been removed from the supported workflow. Droid, Pi, Gemini, and Kiro remain de-emphasized compatibility exporters.
 - Ralph evidence is now part of the normal work/review contract: red, green, and post-refactor green proof are expected unless a plan records an explicit exception.
 
 ### Verification guidance

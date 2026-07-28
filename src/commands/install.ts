@@ -43,6 +43,11 @@ export default defineCommand({
       alias: "codex-home",
       description: "Write Codex output to this .codex root (ex: ~/.codex)",
     },
+    cursorHome: {
+      type: "string",
+      alias: "cursor-home",
+      description: "Write Cursor output to this .cursor root (ex: ~/.cursor)",
+    },
     piHome: {
       type: "string",
       alias: "pi-home",
@@ -84,6 +89,7 @@ export default defineCommand({
       const plugin = await loadPluginForTargetConversion(resolvedPlugin.path)
       const outputRoot = resolveOutputRoot(args.output)
       const codexHome = resolveTargetHome(args.codexHome, path.join(os.homedir(), ".codex"))
+      const cursorHome = resolveTargetHome(args.cursorHome, path.join(os.homedir(), ".cursor"))
       const piHome = resolveTargetHome(args.piHome, path.join(os.homedir(), ".pi", "agent"))
 
       const options = {
@@ -97,7 +103,7 @@ export default defineCommand({
         throw new Error(`Target ${targetName} did not return a bundle.`)
       }
       const hasExplicitOutput = Boolean(args.output && String(args.output).trim())
-      const primaryOutputRoot = resolveTargetOutputRoot(targetName, outputRoot, codexHome, piHome, hasExplicitOutput)
+      const primaryOutputRoot = resolveTargetOutputRoot(targetName, outputRoot, codexHome, cursorHome, piHome, hasExplicitOutput)
       await target.write(primaryOutputRoot, bundle)
       console.log(`Installed ${plugin.manifest.name} to ${primaryOutputRoot}`)
 
@@ -111,7 +117,7 @@ export default defineCommand({
           console.warn(`Skipping ${extra}: no output returned.`)
           continue
         }
-        const extraRoot = resolveTargetOutputRoot(extra, path.join(outputRoot, extra), codexHome, piHome, hasExplicitOutput)
+        const extraRoot = resolveTargetOutputRoot(extra, path.join(outputRoot, extra), codexHome, cursorHome, piHome, hasExplicitOutput)
         await handler.write(extraRoot, extraBundle)
         console.log(`Installed ${plugin.manifest.name} to ${extraRoot}`)
       }
@@ -187,10 +193,12 @@ function resolveTargetOutputRoot(
   targetName: string,
   outputRoot: string,
   codexHome: string,
+  cursorHome: string,
   piHome: string,
   hasExplicitOutput: boolean,
 ): string {
   if (targetName === "codex") return codexHome
+  if (targetName === "cursor") return cursorHome
   if (targetName === "pi") return piHome
   if (targetName === "droid") return path.join(os.homedir(), ".factory")
   if (targetName === "gemini") {
